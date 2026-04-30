@@ -74,6 +74,8 @@ class UISystem {
             this.mouseDown = true;
             this.clicked = true;
             this._lastClickTime = performance.now();
+            // 在首次用户交互时初始化 AudioContext（浏览器 autoplay 策略要求）
+            if (typeof SFX !== 'undefined' && !SFX._ctx) SFX.init();
         });
         this.canvas.addEventListener('mouseup', () => {
             this.mouseDown = false;
@@ -89,6 +91,7 @@ class UISystem {
             this.mouseDown = true;
             this.clicked = true;
             this._lastClickTime = performance.now();
+            if (typeof SFX !== 'undefined' && !SFX._ctx) SFX.init();
         }, { passive: false });
         this.canvas.addEventListener('touchmove', (e) => {
             e.preventDefault();
@@ -2752,6 +2755,7 @@ _roundRect(ctx, x, y, w, h, r) {
         ctx.fillText(this.settings.soundEnabled ? '开启' : '关闭', soundBtnX + soundBtnW / 2, soundBtnY + soundBtnH / 2 + 1);
         if (soundHover && this.consumeClick()) {
             this.settings.soundEnabled = !this.settings.soundEnabled;
+            SFX.toggle(this.settings.soundEnabled);
         }
 
         curY += itemH;
