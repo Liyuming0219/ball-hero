@@ -928,9 +928,6 @@ class UISystem {
             ctx.globalAlpha = 1;
         }
 
-        // 清除本帧未消费的点击，防止残留 clicked 带入升级面板
-        this.clicked = false;
-
         ctx.restore();
     }
 
