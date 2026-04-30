@@ -589,7 +589,7 @@ class Game {
                 }
 
                 // 死亡特效
-                this.particles.explode(enemy.x, enemy.y, enemy.colors, enemy.isBoss ? 40 : (enemy.isElite ? 25 : 12), enemy.isBoss ? 8 : 4);
+                this.particles.explode(enemy.x, enemy.y, enemy.colors, enemy.isBoss ? 40 : (enemy.isElite ? 18 : 12), enemy.isBoss ? 8 : 4);
                 if (enemy.isBoss) {
                     this.particles.superExplode(enemy.x, enemy.y, enemy.colors);
                     // Boss击杀：冻帧 + 屏幕闪白 + 掉落遗物
@@ -601,9 +601,12 @@ class Game {
                     this.battleStats.bossKills++;
                     this.combatLog.addEntry(`☠ Boss击杀！${enemy.type}`, '#ff4444');
                 } else if (enemy.isElite) {
-                    // 精英击杀：小冻帧
-                    this.freezeTimer = 0.05;
-                    this.screenFlash = { color: '#ffaa00', alpha: 0.3 };
+                    // 精英击杀：轻微冻帧，闪屏有冷却防止连续晃眼
+                    if (!this._lastEliteFlashTime || performance.now() - this._lastEliteFlashTime > 800) {
+                        this.freezeTimer = 0.03;
+                        this.screenFlash = { color: '#ffaa00', alpha: 0.15 };
+                        this._lastEliteFlashTime = performance.now();
+                    }
                     this.battleStats.eliteKills++;
                     this.combatLog.addEntry(`⭐ 精英击杀！${enemy.type}`, '#ffaa00');
                 }
