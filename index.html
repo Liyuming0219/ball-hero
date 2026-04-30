@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>球球英雄 - Ball Hero</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #0a0a0f;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            height: 100dvh; /* 动态视口高度，适配手机地址栏 */
+            font-family: 'Microsoft YaHei', 'PingFang SC', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+        }
+        canvas {
+            display: block;
+            touch-action: none; /* 阻止浏览器手势 */
+            -webkit-touch-callout: none;
+        }
+        #gameCanvas {
+            border: none;
+            border-radius: 0;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas"></canvas>
+    <script src="js/utils.js"></script>
+    <script src="js/particles.js"></script>
+    <script src="js/characters.js"></script>
+    <script src="js/enemies.js"></script>
+    <script src="js/weapons.js"></script>
+    <script src="js/summons.js"></script>
+    <script src="js/upgrades.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/game.js"></script>
+    <script>
+        window.addEventListener('load', () => {
+            const game = new Game('gameCanvas');
+            game.start();
+        });
+    </script>
+</body>
+</html>
