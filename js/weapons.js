@@ -383,7 +383,7 @@ class WeaponSystem {
         const py = this.player.y;
         const angle = Utils.angle(px, py, target.x, target.y);
 
-        const numBalls = 1 + Math.floor(level / 2) + this.player.bonuses.projectileBonus;
+        const numBalls = Math.min(10, 1 + Math.floor(level / 2) + this.player.bonuses.projectileBonus);
         const spreadAngle = numBalls > 1 ? 0.25 : 0;
 
         for (let i = 0; i < numBalls; i++) {
@@ -630,7 +630,7 @@ class WeaponSystem {
         const angle = Utils.angle(px, py, target.x, target.y);
 
         // 弓箭手发射大量箭矢，数量随等级增长
-        const numArrows = 2 + Math.floor(level / 2) + this.player.bonuses.projectileBonus;
+        const numArrows = Math.min(10, 2 + Math.floor(level / 2) + this.player.bonuses.projectileBonus);
         const spreadAngle = 0.15 + numArrows * 0.04; // 扇形展开角度
 
         for (let i = 0; i < numArrows; i++) {
