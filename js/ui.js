@@ -1117,6 +1117,13 @@ class UISystem {
         const H = this.H;
         const S = this.scale;
 
+        // 防误触保护：面板刚弹出的前 0.2 秒不接受点击
+        if (!this._upgradePanelTimer) this._upgradePanelTimer = 0;
+        this._upgradePanelTimer += 1 / 60; // 近似每帧累加
+        if (this._upgradePanelTimer < 0.2) {
+            this.clicked = false;
+        }
+
         // 半透明背景
         ctx.fillStyle = isBossReward ? 'rgba(20, 5, 0, 0.8)' : 'rgba(0, 0, 10, 0.75)';
         ctx.fillRect(0, 0, W, H);
