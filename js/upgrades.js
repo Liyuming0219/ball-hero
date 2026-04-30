@@ -39,11 +39,11 @@ const UpgradePool = {
         ],
         bow: [
             { level: 2, name: '强弓', desc: '箭矢攻击力+20%', icon: '🏹', apply(p) { p.bonuses.attackMult += 0.2; } },
-            { level: 3, name: '连珠箭', desc: '攻速+20%，额外+1箭矢', icon: '⚡', apply(p) { p.bonuses.attackSpeedMult += 0.2; p.bonuses.projectileBonus += 1; } },
+            { level: 3, name: '连珠箭', desc: '攻速+12%，额外+1箭矢', icon: '⚡', apply(p) { p.bonuses.attackSpeedMult += 0.12; p.bonuses.projectileBonus += 1; } },
             { level: 4, name: '扇形射击', desc: '箭矢散射角度更大，穿透+1', icon: '🌬️', apply(p) { p.bonuses.areaMult += 0.2; } },
             { level: 5, name: '穿甲箭', desc: '暴击率+10%，攻击力+25%', icon: '🎯', apply(p) { p.bonuses.critRateBonus += 0.1; p.bonuses.attackMult += 0.25; } },
-            { level: 6, name: '万箭齐发', desc: '额外+2箭矢，攻速+10%', icon: '🌧️', apply(p) { p.bonuses.projectileBonus += 2; p.bonuses.attackSpeedMult += 0.10; } },
-            { level: 7, name: '弓箭大师', desc: '全面强化，箭雨冷却减半', icon: '👑', apply(p) { p.bonuses.attackMult += 0.3; p.bonuses.attackSpeedMult += 0.25; p.bonuses.projectileBonus += 2; p.passive.interval = Math.max(3, Math.floor(p.passive.interval / 2)); } },
+            { level: 6, name: '万箭齐发', desc: '额外+1箭矢，攻速+10%', icon: '🌧️', apply(p) { p.bonuses.projectileBonus += 1; p.bonuses.attackSpeedMult += 0.10; } },
+            { level: 7, name: '弓箭大师', desc: '全面强化，箭雨冷却减半', icon: '👑', apply(p) { p.bonuses.attackMult += 0.2; p.bonuses.attackSpeedMult += 0.15; p.bonuses.projectileBonus += 1; p.passive.interval = Math.max(3, Math.floor(p.passive.interval / 2)); } },
         ],
         necro: [
             { level: 2, name: '亡灵强化', desc: '召唤物伤害+30%，移速+15%', icon: '💀', apply(p) { p.bonuses.summonDamageMult += 0.3; p.bonuses.summonSpeedBonus += 0.15; } },
@@ -60,10 +60,10 @@ const UpgradePool = {
     // classOnly: 仅限这些职业可以获得
     statUpgrades: [
         // 基础数值类（所有职业通用）
-        { id: 'atk1', name: '力量提升', desc: '攻击力+6%', icon: '⚔️', weight: 8, rarity: 'common', apply(p) { p.bonuses.attackMult += 0.06; } },
-        { id: 'atk2', name: '强力打击', desc: '攻击力+12%', icon: '💪', weight: 4, rarity: 'rare', apply(p) { p.bonuses.attackMult += 0.12; } },
-        { id: 'aspd1', name: '疾速', desc: '攻速+7%', icon: '⚡', weight: 8, rarity: 'common', apply(p) { p.bonuses.attackSpeedMult += 0.07; } },
-        { id: 'aspd2', name: '狂暴', desc: '攻速+12%', icon: '🔥', weight: 4, rarity: 'rare', apply(p) { p.bonuses.attackSpeedMult += 0.12; } },
+        { id: 'atk1', name: '力量提升', desc: '攻击力+4%', icon: '⚔️', weight: 8, rarity: 'common', apply(p) { p.bonuses.attackMult += 0.04; } },
+        { id: 'atk2', name: '强力打击', desc: '攻击力+8%', icon: '💪', weight: 4, rarity: 'rare', apply(p) { p.bonuses.attackMult += 0.08; } },
+        { id: 'aspd1', name: '疾速', desc: '攻速+5%', icon: '⚡', weight: 8, rarity: 'common', apply(p) { p.bonuses.attackSpeedMult += 0.05; } },
+        { id: 'aspd2', name: '狂暴', desc: '攻速+8%', icon: '🔥', weight: 4, rarity: 'rare', apply(p) { p.bonuses.attackSpeedMult += 0.08; } },
         { id: 'crit1', name: '精准', desc: '暴击率+3%', icon: '🎯', weight: 6, rarity: 'common', classBonus: ['assassin', 'archer'], apply(p) { p.bonuses.critRateBonus += 0.03; } },
         { id: 'crit2', name: '致命一击', desc: '暴击伤害+20%', icon: '💀', weight: 5, rarity: 'rare', classBonus: ['assassin'], apply(p) { p.bonuses.critDamageBonus += 0.2; } },
         { id: 'hp1', name: '生命提升', desc: '最大生命+30', icon: '❤️', weight: 6, rarity: 'common', classBonus: ['paladin', 'swordsman'], apply(p) { p.bonuses.maxHpBonus += 30; p.stats.hp = Math.min(p.stats.hp + 30, p.getMaxHp()); } },
@@ -104,7 +104,7 @@ const UpgradePool = {
         { id: 'paladin_shield', name: '圣盾', desc: '格挡概率+15%，格挡回复5%最大生命', icon: '🛡️', weight: 5, rarity: 'epic', maxCount: 1, classOnly: ['paladin'], apply(p) { p.passive.chance = Math.min(0.6, p.passive.chance + 0.15); } },
         // 弓箭手专属
         { id: 'archer_barrage', name: '箭雨强化', desc: '箭雨冷却减少2秒，箭雨伤害+30%', icon: '🏹', weight: 5, rarity: 'epic', maxCount: 1, classOnly: ['archer'], apply(p) { p.passive.interval = Math.max(3, p.passive.interval - 2); p.bonuses.attackMult += 0.15; } },
-        { id: 'archer_multishot', name: '漫天箭雨', desc: '每次攻击额外+2箭矢，穿透力+1', icon: '🎯', weight: 4, rarity: 'legendary', maxCount: 1, classOnly: ['archer'], apply(p) { p.bonuses.projectileBonus += 2; p.bonuses.attackMult += 0.2; } },
+        { id: 'archer_multishot', name: '漫天箭雨', desc: '每次攻击额外+1箭矢，穿透力+1', icon: '🎯', weight: 3, rarity: 'legendary', maxCount: 1, classOnly: ['archer'], apply(p) { p.bonuses.projectileBonus += 1; p.bonuses.attackMult += 0.15; } },
         // 亡灵师专属
         { id: 'necro_soul_fast', name: '灵魂虹吸', desc: '灵魂积攒需求-2，更快召唤巨兽', icon: '💀', weight: 5, rarity: 'epic', maxCount: 1, classOnly: ['necromancer'], apply(p) { p.passive.maxSouls = Math.max(3, p.passive.maxSouls - 2); } },
         { id: 'necro_heal_aura', name: '亡灵光环', desc: '召唤物持续回复玩家生命', icon: '💚', weight: 4, rarity: 'epic', maxCount: 1, classOnly: ['necromancer'], apply(p) { p.bonuses.summonHealAura = true; } },
@@ -120,13 +120,13 @@ const UpgradePool = {
         { id: 'armor2', name: '钢铁壁垒', desc: '护甲+5', icon: '🛡️', weight: 4, rarity: 'rare', classBonus: ['paladin', 'swordsman'], apply(p) { p.bonuses.armorBonus += 5; } },
         { id: 'area2', name: '大范围扩散', desc: '攻击范围+12%', icon: '🌐', weight: 4, rarity: 'rare', classBonus: ['mage', 'necromancer'], apply(p) { p.bonuses.areaMult += 0.12; } },
         { id: 'pickup2', name: '强力磁场', desc: '拾取范围+60', icon: '🧲', weight: 4, rarity: 'common', apply(p) { p.bonuses.pickupRangeBonus += 60; } },
-        { id: 'atk3', name: '怒火中烧', desc: '攻击力+8%', icon: '⚔️', weight: 6, rarity: 'common', apply(p) { p.bonuses.attackMult += 0.08; } },
-        { id: 'aspd3', name: '疾风连击', desc: '攻速+9%', icon: '⚡', weight: 5, rarity: 'common', classBonus: ['swordsman', 'assassin'], apply(p) { p.bonuses.attackSpeedMult += 0.09; } },
+        { id: 'atk3', name: '怒火中烧', desc: '攻击力+5%', icon: '⚔️', weight: 6, rarity: 'common', apply(p) { p.bonuses.attackMult += 0.05; } },
+        { id: 'aspd3', name: '疾风连击', desc: '攻速+6%', icon: '⚡', weight: 5, rarity: 'common', classBonus: ['swordsman', 'assassin'], apply(p) { p.bonuses.attackSpeedMult += 0.06; } },
 
         // === 经验获取类 ===
-        { id: 'exp1', name: '求知欲', desc: '经验获取+12%', icon: '📖', weight: 6, rarity: 'common', apply(p) { p.bonuses.expMult += 0.12; } },
-        { id: 'exp2', name: '博学多才', desc: '经验获取+18%', icon: '📚', weight: 4, rarity: 'rare', apply(p) { p.bonuses.expMult += 0.18; } },
-        { id: 'exp3', name: '知识渴望', desc: '经验获取+25%，拾取范围+30', icon: '🎓', weight: 2, rarity: 'epic', maxCount: 1, apply(p) { p.bonuses.expMult += 0.25; p.bonuses.pickupRangeBonus += 30; } },
+        { id: 'exp1', name: '求知欲', desc: '经验获取+8%', icon: '📖', weight: 5, rarity: 'common', apply(p) { p.bonuses.expMult += 0.08; } },
+        { id: 'exp2', name: '博学多才', desc: '经验获取+12%', icon: '📚', weight: 3, rarity: 'rare', apply(p) { p.bonuses.expMult += 0.12; } },
+        { id: 'exp3', name: '知识渴望', desc: '经验获取+15%，拾取范围+30', icon: '🎓', weight: 2, rarity: 'epic', maxCount: 1, apply(p) { p.bonuses.expMult += 0.15; p.bonuses.pickupRangeBonus += 30; } },
 
         // === 新增·护盾类 ===
         { id: 'shield1', name: '能量护盾', desc: '获得40点护盾，受伤后3秒自动回复', icon: '🛡️', weight: 5, rarity: 'rare', maxCount: 1, classBonus: ['mage', 'archer'], apply(p) { p.bonuses.shieldMax += 40; p.bonuses.shieldRegen += 5; p.shield = Math.min(p.shield + 40, p.bonuses.shieldMax); } },
@@ -170,8 +170,8 @@ const UpgradePool = {
         { id: 'allstat2', name: '超凡入圣', desc: '全属性+10%，暴击率+3%，护甲+2', icon: '✨', weight: 1, rarity: 'legendary', maxCount: 1, requires: 'allstat1', apply(p) { p.bonuses.attackMult += 0.10; p.bonuses.attackSpeedMult += 0.10; p.bonuses.moveSpeedMult += 0.10; p.bonuses.critRateBonus += 0.03; p.bonuses.armorBonus += 2; } },
 
         // === 新增·投射物数量 ===
-        { id: 'proj1', name: '额外弹幕', desc: '额外投射物+1', icon: '🌟', weight: 5, rarity: 'rare', classBonus: ['mage', 'archer'], apply(p) { p.bonuses.projectileBonus += 1; } },
-        { id: 'proj2', name: '弹幕风暴', desc: '额外投射物+2', icon: '💥', weight: 3, rarity: 'epic', classBonus: ['mage', 'archer'], apply(p) { p.bonuses.projectileBonus += 2; } },
+        { id: 'proj1', name: '额外弹幕', desc: '额外投射物+1', icon: '🌟', weight: 3, rarity: 'epic', maxCount: 1, classBonus: ['mage', 'archer'], apply(p) { p.bonuses.projectileBonus += 1; } },
+        { id: 'proj2', name: '弹幕风暴', desc: '额外投射物+1', icon: '💥', weight: 2, rarity: 'legendary', maxCount: 1, requires: 'proj1', classBonus: ['mage', 'archer'], apply(p) { p.bonuses.projectileBonus += 1; } },
     ],
 
     // 武器进化定义（满级后可进化）
@@ -218,7 +218,7 @@ const UpgradePool = {
         const weaponUps = this.weaponUpgrades[weaponType];
         if (weaponUps && player.weaponLevel < player.weaponMaxLevel) {
             const nextWeaponUp = weaponUps.find(u => u.level === player.weaponLevel + 1);
-            if (nextWeaponUp && Math.random() < 0.3) {
+            if (nextWeaponUp && Math.random() < 0.15) {
                 choices.push({
                     ...nextWeaponUp,
                     isWeapon: true,
