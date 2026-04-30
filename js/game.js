@@ -635,7 +635,7 @@ class Game {
             this._isBossReward = true; // 标记当前为Boss奖励（UI可用来显示不同标题）
             this.state = 'upgrading';
             this.ui.clicked = false; // 清除残留点击，防止自动选技能
-            this.ui._upgradePanelTimer = 0; // 重置面板防误触计时器
+            this.ui._upgradePanelOpenTime = 0; // 重置面板防误触时间戳（下帧会用performance.now()初始化）
             // Boss击败时的华丽特效
             this.particles.superExplode(this.player.x, this.player.y, ['#ffaa00', '#ff6644', '#ffff44']);
             this.particles.addShockwave(this.player.x, this.player.y, '#ffaa00', 300, 0.5);
@@ -650,7 +650,7 @@ class Game {
             this._isBossReward = false;
             this.state = 'upgrading';
             this.ui.clicked = false; // 清除残留点击，防止自动选技能
-            this.ui._upgradePanelTimer = 0; // 重置面板防误触计时器
+            this.ui._upgradePanelOpenTime = 0; // 重置面板防误触时间戳
             return;
         }
 
@@ -1198,13 +1198,13 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
                 this._pendingBossRewards--;
                 this.upgradeChoices = UpgradePool.generateChoices(this.player);
                 this._isBossReward = true;
-                this.ui._upgradePanelTimer = 0;
+                this.ui._upgradePanelOpenTime = 0;
                 this.ui.clicked = false;
             } else if (this.pendingLevelUps > 0) {
                 this.pendingLevelUps--;
                 this.upgradeChoices = UpgradePool.generateChoices(this.player);
                 this._isBossReward = false;
-                this.ui._upgradePanelTimer = 0;
+                this.ui._upgradePanelOpenTime = 0;
                 this.ui.clicked = false;
             } else {
                 this.state = 'playing';

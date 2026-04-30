@@ -51,6 +51,7 @@ class UISystem {
         this.mouseY = 0;
         this.mouseDown = false;
         this.clicked = false;
+        this._lastClickTime = 0; // 上次点击的时间戳（用于防误触）
 
         this._setupInput();
     }
@@ -72,6 +73,7 @@ class UISystem {
         this.canvas.addEventListener('mousedown', () => {
             this.mouseDown = true;
             this.clicked = true;
+            this._lastClickTime = performance.now();
         });
         this.canvas.addEventListener('mouseup', () => {
             this.mouseDown = false;
@@ -86,6 +88,7 @@ class UISystem {
             this.mouseY = t.clientY - rect.top;
             this.mouseDown = true;
             this.clicked = true;
+            this._lastClickTime = performance.now();
         }, { passive: false });
         this.canvas.addEventListener('touchmove', (e) => {
             e.preventDefault();
@@ -925,6 +928,9 @@ class UISystem {
             ctx.globalAlpha = 1;
         }
 
+        // 清除本帧未消费的点击，防止残留 clicked 带入升级面板
+        this.clicked = false;
+
         ctx.restore();
     }
 
@@ -1117,10 +1123,11 @@ class UISystem {
         const H = this.H;
         const S = this.scale;
 
-        // 防误触保护：面板刚弹出的前 0.2 秒不接受点击
-        if (!this._upgradePanelTimer) this._upgradePanelTimer = 0;
-        this._upgradePanelTimer += 1 / 60; // 近似每帧累加
-        if (this._upgradePanelTimer < 0.2) {
+        // 防误触保护：面板打开时间戳 + 要求点击必须是面板打开之后的新点击
+        if (!this._upgradePanelOpenTime) this._upgradePanelOpenTime = performance.now();
+        const panelAge = performance.now() - this._upgradePanelOpenTime;
+        // 面板打开后 0.35 秒内，或点击发生在面板打开之前，一律忽略
+        if (panelAge < 350 || this._lastClickTime < this._upgradePanelOpenTime) {
             this.clicked = false;
         }
 
