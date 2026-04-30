@@ -58,6 +58,8 @@ class UISystem {
     _calcScale() {
         this.scale = Math.min(this.W / 1280, this.H / 720);
         if (this.scale < 0.6) this.scale = 0.6;
+        // 判断是否为小屏设备（手机竖屏等）
+        this.isSmallScreen = this.W < 600;
     }
 
     _setupInput() {
@@ -114,8 +116,9 @@ class UISystem {
     _font(weight, sizePx, family) {
         // 保留1位小数，避免过度取整导致小字号模糊
         const s = Math.round(sizePx * this.scale * 10) / 10;
-        // 设置最小字号保底，防止缩放后过小不可读
-        const finalSize = Math.max(s, 10);
+        // 小屏设备最小字号提高到12px，保证可读性
+        const minSize = this.isSmallScreen ? 12 : 10;
+        const finalSize = Math.max(s, minSize);
         family = family || "'Microsoft YaHei', 'PingFang SC', 'Helvetica Neue', Arial, sans-serif";
         return weight ? `${weight} ${finalSize}px ${family}` : `${finalSize}px ${family}`;
     }
@@ -224,12 +227,12 @@ class UISystem {
         ctx.fillStyle = '#ccddef';
         ctx.fillText('— 选择你的球球 —', W / 2, cardAreaTop - 8 * S);
 
-        // === 角色卡片：2行3列 ===
-        const cols = 3;
-        const rows = 2;
+        // === 角色卡片：小屏2列3行，大屏3列2行 ===
+        const cols = this.isSmallScreen ? 2 : 3;
+        const rows = this.isSmallScreen ? 3 : 2;
         const availH = cardAreaBottom - cardAreaTop;
-        const gapX = Math.round(18 * S);
-        const gapY = Math.round(16 * S);
+        const gapX = Math.round((this.isSmallScreen ? 10 : 18) * S);
+        const gapY = Math.round((this.isSmallScreen ? 8 : 16) * S);
         const cardW = Math.min(Math.round(240 * S), Math.floor((W - gapX * (cols + 1)) / cols));
         const cardH = Math.min(Math.round(290 * S), Math.floor((availH - gapY * (rows - 1)) / rows));
         const gridW = cols * cardW + (cols - 1) * gapX;
