@@ -192,7 +192,7 @@ class Player {
         this.stats = { ...charDef.baseStats };
         this.level = 1;
         this.exp = 0;
-        this.expToNext = 10;
+        this.expToNext = 15;
         this.kills = 0;
 
         // 状态
@@ -340,7 +340,9 @@ class Player {
         while (this.exp >= this.expToNext) {
             this.exp -= this.expToNext;
             this.level++;
-            this.expToNext = Math.floor(10 * Math.pow(1.2, this.level - 1));
+            // 经验曲线：基础15，增长率1.35，使升级节奏明显放缓
+            // Lv2=15, Lv5=40, Lv10=115, Lv15=330, Lv20=950
+            this.expToNext = Math.floor(15 * Math.pow(1.35, this.level - 1));
             leveledUp = true;
         }
         return leveledUp;
