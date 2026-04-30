@@ -684,42 +684,42 @@ class WaveManager {
         this.difficulty = 1;
         this.difficultyMultiplier = 1.0; // 由设置界面控制: easy=0.6, normal=1.0, hard=1.5
 
-        // 波次配置（12阶段渐进式难度，开局更快节奏）
+        // 波次配置（12阶段渐进式难度，前期更友好）
         this.waveConfigs = [
-            // 阶段1 (0~25s)：快速入门 - 骷髅密集出现让玩家快速升级
-            { time: 0,   types: ['skeleton'], spawnRate: 1.5, count: 3, mult: 0.7 },
-            // 阶段2 (25~60s)：加入蝙蝠，节奏加快
-            { time: 25,  types: ['skeleton', 'bat'], spawnRate: 1.2, count: 4, mult: 0.85 },
-            // 阶段3 (60~120s)：加入史莱姆，开始出精英
-            { time: 60,  types: ['skeleton', 'bat', 'slime'], spawnRate: 1.0, count: 5, mult: 1.0, elite: 'eliteSkeleton', eliteChance: 0.02 },
-            // 阶段4 (120~200s)：加入骷髅法师，精英频率提升
-            { time: 120, types: ['skeleton', 'bat', 'slime', 'skeleton', 'bat'], spawnRate: 0.9, count: 6, mult: 1.3, elite: 'eliteSkeleton', eliteChance: 0.04, rangedType: 'skeletonMage', rangedChance: 0.10 },
-            // 阶段5 (200~300s)：数量激增，更多远程
-            { time: 200, types: ['skeleton', 'bat', 'slime', 'skeleton', 'bat'], spawnRate: 0.75, count: 9, mult: 1.7, elite: 'eliteSkeleton', eliteChance: 0.06, rangedType: 'skeletonMage', rangedChance: 0.12 },
-            // 阶段6 (300~400s)：加入暗影狼和石像鬼
-            { time: 300, types: ['skeleton', 'bat', 'slime', 'shadowWolf', 'gargoyle'], spawnRate: 0.6, count: 12, mult: 2.2, elite: 'eliteSkeleton', eliteChance: 0.08, rangedType: 'skeletonMage', rangedChance: 0.15 },
-            // 阶段7 (400~500s)：加入恶魔术士，精英多样化
-            { time: 400, types: ['shadowWolf', 'bat', 'slime', 'gargoyle', 'skeleton'], spawnRate: 0.5, count: 15, mult: 3.0, elite: 'eliteDemon', eliteChance: 0.10, rangedType: 'demonCaster', rangedChance: 0.18 },
-            // 阶段8 (500~620s)：加入爆破虫，全面强敌
-            { time: 500, types: ['shadowWolf', 'gargoyle', 'exploder', 'slime', 'bat'], spawnRate: 0.4, count: 18, mult: 4.0, elite: 'eliteDemon', eliteChance: 0.12, rangedType: 'demonCaster', rangedChance: 0.20 },
-            // 阶段9 (620~750s)：地狱级密度
-            { time: 620, types: ['shadowWolf', 'gargoyle', 'exploder', 'demonCaster', 'slime'], spawnRate: 0.35, count: 22, mult: 5.5, elite: 'eliteDemon', eliteChance: 0.15, rangedType: 'demonCaster', rangedChance: 0.22 },
-            // 阶段10 (750~900s)：无尽噩梦
-            { time: 750, types: ['shadowWolf', 'gargoyle', 'exploder', 'demonCaster', 'slime', 'skeleton'], spawnRate: 0.3, count: 26, mult: 6.5, elite: 'eliteDemon', eliteChance: 0.18, rangedType: 'demonCaster', rangedChance: 0.25 },
-            // 阶段11 (900~1080s)：终极考验
-            { time: 900, types: ['shadowWolf', 'gargoyle', 'exploder', 'demonCaster', 'slime'], spawnRate: 0.25, count: 32, mult: 8.0, elite: 'eliteDemon', eliteChance: 0.22, rangedType: 'demonCaster', rangedChance: 0.28 },
-            // 阶段12 (1080s+)：真·无尽
-            { time: 1080, types: ['shadowWolf', 'gargoyle', 'exploder', 'demonCaster', 'slime', 'skeleton'], spawnRate: 0.2, count: 40, mult: 10.0, elite: 'eliteDemon', eliteChance: 0.25, rangedType: 'demonCaster', rangedChance: 0.30 },
+            // 阶段1 (0~30s)：新手入门 - 少量骷髅让玩家熟悉操作
+            { time: 0,   types: ['skeleton'], spawnRate: 1.8, count: 2, mult: 0.5 },
+            // 阶段2 (30~75s)：加入蝙蝠，缓步加压
+            { time: 30,  types: ['skeleton', 'bat'], spawnRate: 1.5, count: 3, mult: 0.65 },
+            // 阶段3 (75~150s)：加入史莱姆，开始出精英
+            { time: 75,  types: ['skeleton', 'bat', 'slime'], spawnRate: 1.2, count: 4, mult: 0.8, elite: 'eliteSkeleton', eliteChance: 0.015 },
+            // 阶段4 (150~240s)：加入骷髅法师，精英频率提升
+            { time: 150, types: ['skeleton', 'bat', 'slime', 'skeleton', 'bat'], spawnRate: 1.0, count: 5, mult: 1.0, elite: 'eliteSkeleton', eliteChance: 0.03, rangedType: 'skeletonMage', rangedChance: 0.08 },
+            // 阶段5 (240~360s)：数量渐增，更多远程
+            { time: 240, types: ['skeleton', 'bat', 'slime', 'skeleton', 'bat'], spawnRate: 0.85, count: 7, mult: 1.3, elite: 'eliteSkeleton', eliteChance: 0.05, rangedType: 'skeletonMage', rangedChance: 0.10 },
+            // 阶段6 (360~480s)：加入暗影狼和石像鬼
+            { time: 360, types: ['skeleton', 'bat', 'slime', 'shadowWolf', 'gargoyle'], spawnRate: 0.7, count: 9, mult: 1.7, elite: 'eliteSkeleton', eliteChance: 0.06, rangedType: 'skeletonMage', rangedChance: 0.12 },
+            // 阶段7 (480~600s)：加入恶魔术士，精英多样化
+            { time: 480, types: ['shadowWolf', 'bat', 'slime', 'gargoyle', 'skeleton'], spawnRate: 0.6, count: 12, mult: 2.2, elite: 'eliteDemon', eliteChance: 0.08, rangedType: 'demonCaster', rangedChance: 0.15 },
+            // 阶段8 (600~750s)：加入爆破虫，全面强敌
+            { time: 600, types: ['shadowWolf', 'gargoyle', 'exploder', 'slime', 'bat'], spawnRate: 0.5, count: 15, mult: 3.0, elite: 'eliteDemon', eliteChance: 0.10, rangedType: 'demonCaster', rangedChance: 0.18 },
+            // 阶段9 (750~900s)：高难度密度
+            { time: 750, types: ['shadowWolf', 'gargoyle', 'exploder', 'demonCaster', 'slime'], spawnRate: 0.4, count: 18, mult: 4.0, elite: 'eliteDemon', eliteChance: 0.12, rangedType: 'demonCaster', rangedChance: 0.20 },
+            // 阶段10 (900~1080s)：无尽噩梦
+            { time: 900, types: ['shadowWolf', 'gargoyle', 'exploder', 'demonCaster', 'slime', 'skeleton'], spawnRate: 0.35, count: 22, mult: 5.0, elite: 'eliteDemon', eliteChance: 0.15, rangedType: 'demonCaster', rangedChance: 0.22 },
+            // 阶段11 (1080~1260s)：终极考验
+            { time: 1080, types: ['shadowWolf', 'gargoyle', 'exploder', 'demonCaster', 'slime'], spawnRate: 0.3, count: 28, mult: 6.5, elite: 'eliteDemon', eliteChance: 0.18, rangedType: 'demonCaster', rangedChance: 0.25 },
+            // 阶段12 (1260s+)：真·无尽
+            { time: 1260, types: ['shadowWolf', 'gargoyle', 'exploder', 'demonCaster', 'slime', 'skeleton'], spawnRate: 0.25, count: 35, mult: 8.0, elite: 'eliteDemon', eliteChance: 0.22, rangedType: 'demonCaster', rangedChance: 0.28 },
         ];
 
-        // 阶段Boss：首次210秒，之后逐步缩短间隔（最短90秒）
-        this.stageBossInterval = 210; // 3.5分钟
+        // 阶段Boss：首次270秒（4.5分钟），之后逐步缩短间隔（最短120秒）
+        this.stageBossInterval = 270;
         this.nextStageBossTime = this.stageBossInterval;
         this.stageBossCount = 0;
         this.activeStageBoss = null; // 当前存活的阶段Boss引用
 
-        // 精英围攻波次：首次120秒，之后每100秒一次
-        this.nextSiegeTime = 120;
+        // 精英围攻波次：首次180秒，之后逐步缩短间隔
+        this.nextSiegeTime = 180;
         this.siegeCount = 0;
     }
 
@@ -728,15 +728,15 @@ class WaveManager {
         this.timer += dt;
         this.spawnTimer += dt;
 
-        // 难度递增（分段加速曲线）
-        // 0~5分钟: 缓慢增长; 5~10分钟: 加速; 10分钟+: 指数增长
+        // 难度递增（分段加速曲线 - 前期更平缓）
+        // 0~5分钟: 缓慢增长; 5~10分钟: 中速增长; 10分钟+: 加速增长
         const t = this.gameTime;
         if (t < 300) {
-            this.difficulty = 1 + t / 120;                // 5分钟 → 3.5x
+            this.difficulty = 1 + t / 200;                // 5分钟 → 2.5x（原3.5x）
         } else if (t < 600) {
-            this.difficulty = 3.5 + (t - 300) / 60;       // 10分钟 → 8.5x
+            this.difficulty = 2.5 + (t - 300) / 100;      // 10分钟 → 5.5x（原8.5x）
         } else {
-            this.difficulty = 8.5 + Math.pow((t - 600) / 120, 1.5); // 指数级增长
+            this.difficulty = 5.5 + Math.pow((t - 600) / 150, 1.4); // 更平缓的后期增长
         }
 
         // 获取当前波次配置
@@ -751,7 +751,7 @@ class WaveManager {
         // 生成怪物
         if (this.spawnTimer >= config.spawnRate) {
             this.spawnTimer = 0;
-            const count = config.count + Math.floor(this.gameTime / 60);
+            const count = config.count + Math.floor(this.gameTime / 90);
             for (let i = 0; i < count; i++) {
                 // 远程怪独立低概率生成，不再混入普通池
                 const _rnd = this.rng ? this.rng() : Math.random();
@@ -801,8 +801,8 @@ class WaveManager {
             }
             enemies.push(boss);
             this.activeStageBoss = boss;
-            // Boss间隔逐步缩短：210s → 180s → 150s → 120s → 90s（最短）
-            this.stageBossInterval = Math.max(90, 210 - this.stageBossCount * 30);
+            // Boss间隔逐步缩短：270s → 240s → 210s → 180s → 150s → 120s（最短）
+            this.stageBossInterval = Math.max(120, 270 - this.stageBossCount * 30);
             this.nextStageBossTime = this.gameTime + this.stageBossInterval;
             Utils.shake(10);
         }

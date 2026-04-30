@@ -32,10 +32,13 @@ class UISystem {
         this.settings = {
             soundEnabled: true,
             musicEnabled: true,
+            soundVolume: 0.5,     // 音效音量 0~1
+            musicVolume: 0.5,     // 音乐音量 0~1
             difficulty: 'normal', // easy, normal, hard
             showFps: true,
             showControls: false, // 操作说明弹窗
         };
+        this._draggingSlider = null; // 当前拖拽中的滑条（'sound' 或 'music'）
 
         // 封面动画
         this.titleGlow = 0;
@@ -79,6 +82,7 @@ class UISystem {
         });
         this.canvas.addEventListener('mouseup', () => {
             this.mouseDown = false;
+            this._draggingSlider = null;
         });
 
         // 触屏支持：将 touch 事件映射为 mouse 事件
@@ -103,6 +107,7 @@ class UISystem {
         this.canvas.addEventListener('touchend', (e) => {
             e.preventDefault();
             this.mouseDown = false;
+            this._draggingSlider = null;
         }, { passive: false });
     }
 
@@ -534,6 +539,25 @@ class UISystem {
         ctx.textAlign = 'center';
         ctx.fillText('天赋商店', shopBtnX + btnW / 2, btnY + btnH / 2 + 1);
 
+        // 返回按钮（左下角）
+        const backW = Math.round(100 * S);
+        const backH = Math.round(38 * S);
+        const backX = Math.round(20 * S);
+        const backY = btnY + (btnH - backH) / 2;
+        const backHover = this.mouseX >= backX && this.mouseX <= backX + backW &&
+                          this.mouseY >= backY && this.mouseY <= backY + backH;
+        ctx.fillStyle = backHover ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)';
+        ctx.strokeStyle = backHover ? '#ffffff' : 'rgba(255,255,255,0.25)';
+        ctx.lineWidth = 1.5;
+        this._roundRect(ctx, backX, backY, backW, backH, 19 * S);
+        ctx.fill();
+        this._roundRect(ctx, backX, backY, backW, backH, 19 * S);
+        ctx.stroke();
+        ctx.font = this._font('bold', 14);
+        ctx.fillStyle = backHover ? '#fff' : '#8899aa';
+        ctx.textAlign = 'center';
+        ctx.fillText('← 返回', backX + backW / 2, backY + backH / 2 + 1);
+
         // 操作提示（区分PC和触屏）
         ctx.font = this._font(null, 13);
         ctx.fillStyle = 'rgba(255,255,255,0.4)';
@@ -544,6 +568,10 @@ class UISystem {
             : 'WASD / 方向键移动 · 自动攻击 · 升级后选择强化';
         ctx.fillText(hintText, W / 2, btnY + btnH + 46 * S);
 
+        if (backHover && this.consumeClick()) {
+            this.clicked = false;
+            return '__back__';
+        }
         if (startHover && this.consumeClick()) {
             return this.characterList[this.selectedCharacter];
         }
@@ -2717,9 +2745,9 @@ _roundRect(ctx, x, y, w, h, r) {
 
         // 设置面板
         const panelW = Math.min(500 * S, W * 0.85);
-        const panelH = Math.round(380 * S);
+        const panelH = Math.round(440 * S);
         const panelX = W / 2 - panelW / 2;
-        const panelY = H * 0.18;
+        const panelY = H * 0.15;
         const itemH = Math.round(55 * S);
         const itemPad = Math.round(18 * S);
 
@@ -2735,49 +2763,104 @@ _roundRect(ctx, x, y, w, h, r) {
         const labelX = panelX + itemPad * 2;
         const rightX = panelX + panelW - itemPad * 2;
 
-        // --- 音效开关 ---
+        // --- 音效音量滑条 ---
         ctx.font = this._font(null, 16);
         ctx.textAlign = 'left';
         ctx.fillStyle = '#ccddee';
-        ctx.fillText('音效', labelX, curY + itemH / 2);
-        const soundBtnW = 70 * S;
-        const soundBtnH = 32 * S;
-        const soundBtnX = rightX - soundBtnW;
-        const soundBtnY = curY + (itemH - soundBtnH) / 2 - 5 * S;
-        const soundHover = this.mouseX >= soundBtnX && this.mouseX <= soundBtnX + soundBtnW &&
-                           this.mouseY >= soundBtnY && this.mouseY <= soundBtnY + soundBtnH;
-        ctx.fillStyle = this.settings.soundEnabled ? '#4ecdc4' : '#445566';
-        this._roundRect(ctx, soundBtnX, soundBtnY, soundBtnW, soundBtnH, 16 * S);
-        ctx.fill();
+        ctx.fillText('音效音量', labelX, curY + itemH / 2);
+        // 音量百分比
         ctx.font = this._font('bold', 13);
-        ctx.textAlign = 'center';
-        ctx.fillStyle = '#fff';
-        ctx.fillText(this.settings.soundEnabled ? '开启' : '关闭', soundBtnX + soundBtnW / 2, soundBtnY + soundBtnH / 2 + 1);
-        if (soundHover && this.consumeClick()) {
-            this.settings.soundEnabled = !this.settings.soundEnabled;
-            SFX.toggle(this.settings.soundEnabled);
+        ctx.textAlign = 'right';
+        ctx.fillStyle = '#4ecdc4';
+        ctx.fillText(Math.round(this.settings.soundVolume * 100) + '%', rightX, curY + itemH / 2);
+        // 滑条
+        const sliderW = Math.min(180 * S, panelW * 0.35);
+        const sliderH = 6 * S;
+        const sliderX = rightX - sliderW - 50 * S;
+        const sliderCY = curY + itemH / 2 - 3 * S;
+        // 滑轨背景
+        ctx.fillStyle = 'rgba(255,255,255,0.1)';
+        this._roundRect(ctx, sliderX, sliderCY, sliderW, sliderH, 3 * S);
+        ctx.fill();
+        // 滑轨填充
+        const soundFill = this.settings.soundVolume * sliderW;
+        ctx.fillStyle = '#4ecdc4';
+        this._roundRect(ctx, sliderX, sliderCY, soundFill, sliderH, 3 * S);
+        ctx.fill();
+        // 滑块
+        const soundKnobX = sliderX + soundFill;
+        const soundKnobR = 8 * S;
+        const soundKnobHover = Math.abs(this.mouseX - soundKnobX) < soundKnobR * 2 &&
+                               Math.abs(this.mouseY - (sliderCY + sliderH / 2)) < soundKnobR * 2;
+        ctx.fillStyle = soundKnobHover || this._draggingSlider === 'sound' ? '#66eedd' : '#4ecdc4';
+        ctx.beginPath();
+        ctx.arc(soundKnobX, sliderCY + sliderH / 2, soundKnobR, 0, Math.PI * 2);
+        ctx.fill();
+        // 滑条交互（支持点击和拖拽）
+        const soundSliderArea = this.mouseX >= sliderX - 5 && this.mouseX <= sliderX + sliderW + 5 &&
+                                this.mouseY >= sliderCY - 15 * S && this.mouseY <= sliderCY + sliderH + 15 * S;
+        if ((soundSliderArea || soundKnobHover) && this.mouseDown) {
+            this._draggingSlider = 'sound';
+        }
+        if (this._draggingSlider === 'sound') {
+            if (this.mouseDown) {
+                const rawVal = (this.mouseX - sliderX) / sliderW;
+                this.settings.soundVolume = Math.max(0, Math.min(1, rawVal));
+                this.settings.soundEnabled = this.settings.soundVolume > 0;
+                if (typeof SFX !== 'undefined') {
+                    SFX.setVolume(this.settings.soundVolume);
+                    SFX.toggle(this.settings.soundEnabled);
+                }
+            } else {
+                this._draggingSlider = null;
+            }
         }
 
         curY += itemH;
 
-        // --- 音乐开关 ---
+        // --- 音乐音量滑条 ---
         ctx.font = this._font(null, 16);
         ctx.textAlign = 'left';
         ctx.fillStyle = '#ccddee';
-        ctx.fillText('音乐', labelX, curY + itemH / 2);
-        const musicBtnX = rightX - soundBtnW;
-        const musicBtnY = curY + (itemH - soundBtnH) / 2 - 5 * S;
-        const musicHover = this.mouseX >= musicBtnX && this.mouseX <= musicBtnX + soundBtnW &&
-                           this.mouseY >= musicBtnY && this.mouseY <= musicBtnY + soundBtnH;
-        ctx.fillStyle = this.settings.musicEnabled ? '#4ecdc4' : '#445566';
-        this._roundRect(ctx, musicBtnX, musicBtnY, soundBtnW, soundBtnH, 16 * S);
-        ctx.fill();
+        ctx.fillText('音乐音量', labelX, curY + itemH / 2);
+        // 音量百分比
         ctx.font = this._font('bold', 13);
-        ctx.textAlign = 'center';
-        ctx.fillStyle = '#fff';
-        ctx.fillText(this.settings.musicEnabled ? '开启' : '关闭', musicBtnX + soundBtnW / 2, musicBtnY + soundBtnH / 2 + 1);
-        if (musicHover && this.consumeClick()) {
-            this.settings.musicEnabled = !this.settings.musicEnabled;
+        ctx.textAlign = 'right';
+        ctx.fillStyle = '#ff9f43';
+        ctx.fillText(Math.round(this.settings.musicVolume * 100) + '%', rightX, curY + itemH / 2);
+        // 滑条
+        const musicSliderCY = curY + itemH / 2 - 3 * S;
+        // 滑轨背景
+        ctx.fillStyle = 'rgba(255,255,255,0.1)';
+        this._roundRect(ctx, sliderX, musicSliderCY, sliderW, sliderH, 3 * S);
+        ctx.fill();
+        // 滑轨填充
+        const musicFill = this.settings.musicVolume * sliderW;
+        ctx.fillStyle = '#ff9f43';
+        this._roundRect(ctx, sliderX, musicSliderCY, musicFill, sliderH, 3 * S);
+        ctx.fill();
+        // 滑块
+        const musicKnobX = sliderX + musicFill;
+        const musicKnobHover = Math.abs(this.mouseX - musicKnobX) < soundKnobR * 2 &&
+                               Math.abs(this.mouseY - (musicSliderCY + sliderH / 2)) < soundKnobR * 2;
+        ctx.fillStyle = musicKnobHover || this._draggingSlider === 'music' ? '#ffbb66' : '#ff9f43';
+        ctx.beginPath();
+        ctx.arc(musicKnobX, musicSliderCY + sliderH / 2, soundKnobR, 0, Math.PI * 2);
+        ctx.fill();
+        // 滑条交互
+        const musicSliderArea = this.mouseX >= sliderX - 5 && this.mouseX <= sliderX + sliderW + 5 &&
+                                this.mouseY >= musicSliderCY - 15 * S && this.mouseY <= musicSliderCY + sliderH + 15 * S;
+        if ((musicSliderArea || musicKnobHover) && this.mouseDown) {
+            this._draggingSlider = 'music';
+        }
+        if (this._draggingSlider === 'music') {
+            if (this.mouseDown) {
+                const rawVal = (this.mouseX - sliderX) / sliderW;
+                this.settings.musicVolume = Math.max(0, Math.min(1, rawVal));
+                this.settings.musicEnabled = this.settings.musicVolume > 0;
+            } else {
+                this._draggingSlider = null;
+            }
         }
 
         curY += itemH;
@@ -2824,21 +2907,23 @@ _roundRect(ctx, x, y, w, h, r) {
         curY += itemH;
 
         // --- 显示帧率 ---
+        const toggleBtnW = 70 * S;
+        const toggleBtnH = 32 * S;
         ctx.font = this._font(null, 16);
         ctx.textAlign = 'left';
         ctx.fillStyle = '#ccddee';
         ctx.fillText('显示帧率', labelX, curY + itemH / 2);
-        const fpsBtnX = rightX - soundBtnW;
-        const fpsBtnY = curY + (itemH - soundBtnH) / 2 - 5 * S;
-        const fpsHover = this.mouseX >= fpsBtnX && this.mouseX <= fpsBtnX + soundBtnW &&
-                         this.mouseY >= fpsBtnY && this.mouseY <= fpsBtnY + soundBtnH;
+        const fpsBtnX = rightX - toggleBtnW;
+        const fpsBtnY = curY + (itemH - toggleBtnH) / 2 - 5 * S;
+        const fpsHover = this.mouseX >= fpsBtnX && this.mouseX <= fpsBtnX + toggleBtnW &&
+                         this.mouseY >= fpsBtnY && this.mouseY <= fpsBtnY + toggleBtnH;
         ctx.fillStyle = this.settings.showFps ? '#4ecdc4' : '#445566';
-        this._roundRect(ctx, fpsBtnX, fpsBtnY, soundBtnW, soundBtnH, 16 * S);
+        this._roundRect(ctx, fpsBtnX, fpsBtnY, toggleBtnW, toggleBtnH, 16 * S);
         ctx.fill();
         ctx.font = this._font('bold', 13);
         ctx.textAlign = 'center';
         ctx.fillStyle = '#fff';
-        ctx.fillText(this.settings.showFps ? '开启' : '关闭', fpsBtnX + soundBtnW / 2, fpsBtnY + soundBtnH / 2 + 1);
+        ctx.fillText(this.settings.showFps ? '开启' : '关闭', fpsBtnX + toggleBtnW / 2, fpsBtnY + toggleBtnH / 2 + 1);
         if (fpsHover && this.consumeClick()) {
             this.settings.showFps = !this.settings.showFps;
         }
@@ -2960,7 +3045,7 @@ _roundRect(ctx, x, y, w, h, r) {
             return null;
         }
 
-        if (backHover && this.consumeClick()) {
+        if (!this._draggingSlider && backHover && this.consumeClick()) {
             this.clicked = false;
             return 'back';
         }

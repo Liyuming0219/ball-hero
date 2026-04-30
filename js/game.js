@@ -16,6 +16,11 @@ class Game {
         this.ui = new UISystem(this.canvas, this.ctx);
         this.ui.resize(this.logicWidth, this.logicHeight);
 
+        // 同步音效音量到 SFX 系统
+        if (typeof SFX !== 'undefined') {
+            SFX.setVolume(this.ui.settings.soundVolume);
+        }
+
         // 游戏状态
         this.state = 'title'; // title, settings, menu, playing, upgrading, dead, paused, victory
         this.gameMode = 'normal'; // normal / daily
@@ -314,6 +319,10 @@ class Game {
     _updateMenu(dt) {
         const selected = this.ui.renderMainMenu(dt);
         if (selected) {
+            if (selected === '__back__') {
+                this.state = 'title';
+                return;
+            }
             if (selected === '__daily__') {
                 // 每日挑战模式
                 this.gameMode = 'daily';
@@ -345,7 +354,7 @@ class Game {
         this.waveManager = new WaveManager(this.gameMode === 'daily' ? this.dailyRng : null);
         // 应用难度设置（每日挑战固定normal难度）
         const diffSetting = this.gameMode === 'daily' ? 'normal' : this.ui.settings.difficulty;
-        this.waveManager.difficultyMultiplier = diffSetting === 'easy' ? 0.6 : diffSetting === 'hard' ? 1.5 : 1.0;
+        this.waveManager.difficultyMultiplier = diffSetting === 'easy' ? 0.4 : diffSetting === 'hard' ? 1.2 : 0.75;
         // 每日修饰符传给波次管理器
         if (this.gameMode === 'daily') {
             this.waveManager.eliteChanceMult = this._getDailyMod('eliteBoost', 1);
