@@ -1314,6 +1314,85 @@ class UISystem {
         return false;
     }
 
+    // --- 提前结束（胜利撤退）画面 ---
+    renderVictoryScreen(player, gameTime, goldEarned) {
+        const ctx = this.ctx;
+        const W = this.W;
+        const H = this.H;
+        const S = this.scale;
+
+        ctx.fillStyle = 'rgba(0, 5, 15, 0.85)';
+        ctx.fillRect(0, 0, W, H);
+
+        // 标题
+        ctx.save();
+        ctx.shadowColor = '#ffcc44';
+        ctx.shadowBlur = 30 * S;
+        ctx.font = this._font('bold', 48);
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#ffcc44';
+        ctx.fillText('⚔ 战术撤退', W / 2, H * 0.2);
+        ctx.restore();
+
+        ctx.font = this._font(null, 18);
+        ctx.fillStyle = '#8899aa';
+        ctx.textAlign = 'center';
+        ctx.fillText('你选择结束战斗，本次成果已记录', W / 2, H * 0.27);
+
+        // 统计
+        ctx.font = this._font(null, 24);
+        ctx.fillStyle = '#aabbcc';
+        ctx.textAlign = 'center';
+
+        const stats = [
+            `存活时间: ${Utils.formatTime(gameTime)}`,
+            `等级: ${player.level}`,
+            `击杀: ${Utils.formatNumber(player.kills)}`,
+            `武器等级: Lv.${player.weaponLevel}`,
+        ];
+
+        stats.forEach((text, i) => {
+            ctx.fillText(text, W / 2, H * 0.36 + i * 36 * S);
+        });
+
+        // 获得金币
+        if (goldEarned > 0) {
+            const goldY = H * 0.36 + stats.length * 36 * S + 20 * S;
+            ctx.font = this._font('bold', 24);
+            ctx.fillStyle = '#ffcc44';
+            ctx.fillText(`💰 +${goldEarned} 金币`, W / 2, goldY);
+        }
+
+        // 返回按钮
+        const btnW = Math.round(220 * S);
+        const btnH = Math.round(54 * S);
+        const btnX = (W - btnW) / 2;
+        const btnY = H * 0.72;
+        const btnHover = this.mouseX >= btnX && this.mouseX <= btnX + btnW && this.mouseY >= btnY && this.mouseY <= btnY + btnH;
+
+        ctx.save();
+        ctx.shadowColor = '#ffcc44';
+        ctx.shadowBlur = btnHover ? 22 * S : 10 * S;
+        ctx.fillStyle = btnHover ? '#aa8822' : '#886622';
+        ctx.strokeStyle = '#ffcc44';
+        ctx.lineWidth = 2;
+        this._roundRect(ctx, btnX, btnY, btnW, btnH, 27 * S);
+        ctx.fill();
+        ctx.stroke();
+        ctx.restore();
+
+        ctx.font = this._font('bold', 22);
+        ctx.fillStyle = '#fff';
+        ctx.textAlign = 'center';
+        ctx.fillText('返回主菜单', W / 2, btnY + btnH / 2 + 1);
+
+        if (btnHover && this.consumeClick()) {
+            return true;
+        }
+        this.clicked = false;
+        return false;
+    }
+
     // --- 暂停画面 ---
     renderPauseScreen(player, showStats) {
         const ctx = this.ctx;
@@ -1450,18 +1529,18 @@ class UISystem {
         }
 
         // 底部按钮（跟随面板底部）
-        const btnW = Math.round(160 * S);
+        const btnW = Math.round(130 * S);
         const btnH = Math.round(44 * S);
-        const btnGap = Math.round(22 * S);
-        const totalBtnW = btnW * 3 + btnGap * 2;
-        const btnStartX = (W - totalBtnW) / 2;
-        const btnY = showStats ? (this._statsPanelBottom + Math.round(18 * S)) : (H * 0.48);
-
+        const btnGap = Math.round(14 * S);
         const buttons = [
             { label: '继续', action: 'resume', color: '#44aa44', hoverColor: '#55cc55', glow: '#44ff44' },
             { label: showStats ? '关闭属性' : '查看属性', action: 'stats', color: '#4466aa', hoverColor: '#5588cc', glow: '#4488ff' },
+            { label: '结束战斗', action: 'endBattle', color: '#aa8822', hoverColor: '#ccaa33', glow: '#ffcc44' },
             { label: '退出', action: 'quit', color: '#884444', hoverColor: '#aa5555', glow: '#ff4444' },
         ];
+        const totalBtnW = btnW * buttons.length + btnGap * (buttons.length - 1);
+        const btnStartX = (W - totalBtnW) / 2;
+        const btnY = showStats ? (this._statsPanelBottom + Math.round(18 * S)) : (H * 0.48);
 
         for (let i = 0; i < buttons.length; i++) {
             const btn = buttons[i];

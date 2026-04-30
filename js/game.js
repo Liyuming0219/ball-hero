@@ -17,7 +17,7 @@ class Game {
         this.ui.resize(this.logicWidth, this.logicHeight);
 
         // 游戏状态
-        this.state = 'title'; // title, settings, menu, playing, upgrading, dead, paused
+        this.state = 'title'; // title, settings, menu, playing, upgrading, dead, paused, victory
         this.player = null;
         this.enemies = [];
         this.expGems = [];
@@ -266,6 +266,9 @@ class Game {
                 break;
             case 'dead':
                 this._updateDead(dt);
+                break;
+            case 'victory':
+                this._updateVictory(dt);
                 break;
         }
 
@@ -1225,10 +1228,40 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
             this.showStatsPanel = false;
         } else if (result === 'stats') {
             this.showStatsPanel = !this.showStatsPanel;
+        } else if (result === 'endBattle') {
+            // 提前结束战斗 → 进入胜利结算
+            this.state = 'victory';
+            this.showStatsPanel = false;
+            this._victoryRecorded = false;
+            this._victoryGold = 0;
         } else if (result === 'quit') {
             this.state = 'menu';
             this.showStatsPanel = false;
             this.particles.clear();
+        }
+    }
+
+    // === 提前结束（胜利撤退） ===
+    _updateVictory(dt) {
+        this._render();
+        this.particles.update(dt);
+
+        // 记录本次战斗成果（只记录一次）
+        if (!this._victoryRecorded) {
+            this._victoryRecorded = true;
+            this._victoryGold = 0;
+            if (typeof MetaProgress !== 'undefined') {
+                this._victoryGold = MetaProgress.recordRun(this.player, this.waveManager.gameTime);
+                MetaProgress.checkAchievements(this.player, this.waveManager.gameTime);
+            }
+        }
+
+        const back = this.ui.renderVictoryScreen(this.player, this.waveManager.gameTime, this._victoryGold);
+        if (back) {
+            this.state = 'menu';
+            this.particles.clear();
+            this._victoryRecorded = false;
+            this._victoryGold = 0;
         }
     }
 
