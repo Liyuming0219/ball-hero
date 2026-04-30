@@ -468,14 +468,20 @@ const SFX = {
 
     init() {
         try {
-            this._ctx = new (window.AudioContext || window.webkitAudioContext)();
+            if (!this._ctx) {
+                this._ctx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            // 必须在用户手势中 resume，否则移动端浏览器会一直 suspended
+            if (this._ctx && this._ctx.state === 'suspended') {
+                this._ctx.resume();
+            }
         } catch (e) { this._enabled = false; }
     },
 
     _ensureCtx() {
         if (!this._ctx) this.init();
         if (this._ctx && this._ctx.state === 'suspended') this._ctx.resume();
-        return this._ctx && this._enabled;
+        return this._ctx && this._enabled && this._ctx.state === 'running';
     },
 
     setVolume(v) { this._volume = Utils.clamp(v, 0, 1); },

@@ -74,8 +74,8 @@ class UISystem {
             this.mouseDown = true;
             this.clicked = true;
             this._lastClickTime = performance.now();
-            // 在首次用户交互时初始化 AudioContext（浏览器 autoplay 策略要求）
-            if (typeof SFX !== 'undefined' && !SFX._ctx) SFX.init();
+            // 每次用户交互都尝试初始化/resume AudioContext（移动端浏览器要求在用户手势中 resume）
+            if (typeof SFX !== 'undefined') SFX.init();
         });
         this.canvas.addEventListener('mouseup', () => {
             this.mouseDown = false;
@@ -91,7 +91,7 @@ class UISystem {
             this.mouseDown = true;
             this.clicked = true;
             this._lastClickTime = performance.now();
-            if (typeof SFX !== 'undefined' && !SFX._ctx) SFX.init();
+            if (typeof SFX !== 'undefined') SFX.init();
         }, { passive: false });
         this.canvas.addEventListener('touchmove', (e) => {
             e.preventDefault();

@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="mobile-web-app-capable" content="yes">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>球球英雄 - Ball Hero</title>
     <style>
         * {
@@ -38,20 +41,30 @@
 </head>
 <body>
     <canvas id="gameCanvas"></canvas>
-    <script src="js/utils.js"></script>
-    <script src="js/particles.js"></script>
-    <script src="js/characters.js"></script>
-    <script src="js/enemies.js"></script>
-    <script src="js/weapons.js"></script>
-    <script src="js/summons.js"></script>
-    <script src="js/upgrades.js"></script>
-    <script src="js/ui.js"></script>
-    <script src="js/game.js"></script>
     <script>
-        window.addEventListener('load', () => {
-            const game = new Game('gameCanvas');
-            game.start();
-        });
+        // 自动版本号：每次部署后玩家自动加载最新代码，彻底解决缓存问题
+        // 串行加载保证脚本依赖顺序正确
+        (function() {
+            const V = Date.now();
+            const scripts = [
+                'js/utils.js', 'js/particles.js', 'js/characters.js',
+                'js/enemies.js', 'js/weapons.js', 'js/summons.js',
+                'js/upgrades.js', 'js/ui.js', 'js/game.js'
+            ];
+            let i = 0;
+            function loadNext() {
+                if (i >= scripts.length) {
+                    const game = new Game('gameCanvas');
+                    game.start();
+                    return;
+                }
+                const s = document.createElement('script');
+                s.src = scripts[i] + '?v=' + V;
+                s.onload = () => { i++; loadNext(); };
+                document.body.appendChild(s);
+            }
+            loadNext();
+        })();
     </script>
 </body>
 </html>

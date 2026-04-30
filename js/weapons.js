@@ -332,10 +332,16 @@ class WeaponSystem {
         const slashLife = 0.9 + level * 0.06;
         const pierce = 999; // 无限贯穿
 
-        // 三道扇形龙卷风（-18°/ 0° / +18°）
+        // 基础3道 + 额外投射物加成（每个projectileBonus多1道龙卷风）
+        const baseCount = 3;
+        const bonusCount = this.player.bonuses.projectileBonus || 0;
+        const totalCount = Math.min(7, baseCount + bonusCount); // 上限7道
         const spawnDist = this.player.radius + 10;
         const spread = Math.PI / 10;  // 18°
-        const offsets = [-spread, 0, spread];
+        const offsets = [];
+        for (let i = 0; i < totalCount; i++) {
+            offsets.push((i - (totalCount - 1) / 2) * spread);
+        }
 
         for (const off of offsets) {
             const a = angle + off;
