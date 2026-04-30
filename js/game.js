@@ -18,6 +18,10 @@ class Game {
 
         // 游戏状态
         this.state = 'title'; // title, settings, menu, playing, upgrading, dead, paused, victory
+        this.gameMode = 'normal'; // normal / daily
+        this.dailySeed = null;
+        this.dailyRng = null;     // 种子随机数生成器
+        this.dailyModifiers = []; // 每日修饰符
         this.player = null;
         this.enemies = [];
         this.expGems = [];
@@ -52,6 +56,7 @@ class Game {
         // === 新系统状态 ===
         this.mapHazards = [];
         this.relicDrops = [];
+        this.envObjects = [];     // 环境交互物（加速区/传送门/陷阱）
         this.activeBoss = null;
         this.screenFlash = { color: '#fff', alpha: 0 };
         this.freezeTimer = 0; // 冻帧倒计时
@@ -104,6 +109,10 @@ class Game {
             // Tab 切换属性面板（仅在 playing / paused 时）
             if (e.code === 'Tab' && (this.state === 'playing' || this.state === 'paused')) {
                 this.showStatsPanel = !this.showStatsPanel;
+            }
+            // L 键切换战斗日志/DPS面板
+            if (e.code === 'KeyL' && this.state === 'playing') {
+                this.showCombatLog = !this.showCombatLog;
             }
 
             e.preventDefault();
@@ -305,7 +314,22 @@ class Game {
     _updateMenu(dt) {
         const selected = this.ui.renderMainMenu(dt);
         if (selected) {
-            this._startGame(selected);
+            if (selected === '__daily__') {
+                // 每日挑战模式
+                this.gameMode = 'daily';
+                const seed = DailyLeaderboard.getSeed();
+                this.dailySeed = seed;
+                this.dailyRng = Utils.seededRandom(seed);
+                this.dailyModifiers = DailyLeaderboard.getDailyModifiers(seed);
+                const charId = DailyLeaderboard.getDailyCharacter(seed);
+                this._startGame(charId);
+            } else {
+                this.gameMode = 'normal';
+                this.dailySeed = null;
+                this.dailyRng = null;
+                this.dailyModifiers = [];
+                this._startGame(selected);
+            }
         }
     }
 
@@ -318,11 +342,73 @@ class Game {
         this.expGems = [];
         this.enemyBullets = [];
         this.dropItems = [];
-        this.waveManager = new WaveManager();
-        // 应用难度设置
-        const diffSetting = this.ui.settings.difficulty;
+        this.waveManager = new WaveManager(this.gameMode === 'daily' ? this.dailyRng : null);
+        // 应用难度设置（每日挑战固定normal难度）
+        const diffSetting = this.gameMode === 'daily' ? 'normal' : this.ui.settings.difficulty;
         this.waveManager.difficultyMultiplier = diffSetting === 'easy' ? 0.6 : diffSetting === 'hard' ? 1.5 : 1.0;
-        this.weapons = new WeaponSystem(this.player, this.particles);
+        // 每日修饰符传给波次管理器
+        if (this.gameMode === 'daily') {
+            this.waveManager.eliteChanceMult = this._getDailyMod('eliteBoost', 1);
+            this.waveManager.enemySpeedMult = this._getDailyMod('enemySpeedBoost', 1);
+            this.waveManager.bossHpMult = this._getDailyMod('bossHpBoost', 1);
+        }
+
+        // 战斗日志 / DPS 统计系统（必须在 WeaponSystem 之前初始化）
+        this.combatLog = {
+            sources: {},
+            _dpsEntries: [],
+            currentDPS: 0,
+            peakDPS: 0,
+            entries: [],
+            visible: false,
+
+            record(source, amount, isCrit, isKill) {
+                if (!this.sources[source]) {
+                    this.sources[source] = { total: 0, hits: 0, crits: 0, kills: 0 };
+                }
+                const s = this.sources[source];
+                s.total += amount;
+                s.hits++;
+                if (isCrit) s.crits++;
+                if (isKill) s.kills++;
+                this._dpsEntries.push({ time: performance.now(), amount });
+            },
+
+            addEntry(text, color = '#ccc') {
+                this.entries.push({ text, color, time: performance.now() });
+                if (this.entries.length > 12) this.entries.shift();
+            },
+
+            updateDPS() {
+                const now = performance.now();
+                const window = 5000;
+                while (this._dpsEntries.length > 0 && now - this._dpsEntries[0].time > window) {
+                    this._dpsEntries.shift();
+                }
+                let sum = 0;
+                for (let i = 0; i < this._dpsEntries.length; i++) sum += this._dpsEntries[i].amount;
+                this.currentDPS = sum / (window / 1000);
+                if (this.currentDPS > this.peakDPS) this.peakDPS = this.currentDPS;
+            },
+
+            getTotalDamage() {
+                let total = 0;
+                for (const key in this.sources) total += this.sources[key].total;
+                return total;
+            },
+
+            getSorted() {
+                const arr = [];
+                for (const key in this.sources) {
+                    arr.push({ name: key, ...this.sources[key] });
+                }
+                arr.sort((a, b) => b.total - a.total);
+                return arr;
+            },
+        };
+        this.showCombatLog = false;
+
+        this.weapons = new WeaponSystem(this.player, this.particles, this.combatLog);
         // 召唤物系统（亡灵师专用）
         this.summonManager = new SummonManager(this.player, this.particles);
         this.weapons.summonManager = this.summonManager;
@@ -348,6 +434,9 @@ class Game {
         // 新系统重置
         this.mapHazards = [];
         this.relicDrops = [];
+        this.envObjects = [];
+        this._envSpawnTimer = 0;
+        this._envSpawnInterval = 30; // 首次30秒后生成
         this.activeBoss = null;
         this.screenFlash = { color: '#fff', alpha: 0 };
         this.freezeTimer = 0;
@@ -355,9 +444,52 @@ class Game {
         this.achievementTimer = 0;
         this.deathAnimEnemies = [];
 
+        // 地图边界
+        this.mapBoundary = 2500; // 软边界半径
+        this._boundaryDamageTimer = 0;
+
+        // 事件系统
+        this.activeEvent = null;
+        this.eventCooldown = 60; // 首次事件60秒后触发
+        this._eventTimer = 0;
+
+        // 战斗统计
+        this.battleStats = {
+            totalDamage: 0,
+            totalKills: 0,
+            eliteKills: 0,
+            bossKills: 0,
+            maxCombo: 0,
+            totalHealing: 0,
+            itemsCollected: 0,
+            damageTaken: 0,
+            peakDPS: 0,
+            _dpsWindow: [],
+        };
+
+        // 音效初始化
+        SFX.init();
+
         // 应用永久升级（天赋商店加成）
         if (typeof MetaProgress !== 'undefined') {
             MetaProgress.applyPermUpgrades(this.player);
+            MetaProgress.applyStartingBuffs(this.player);
+        }
+
+        // 应用每日挑战修饰符
+        if (this.gameMode === 'daily' && this.dailyModifiers.length > 0) {
+            for (const mod of this.dailyModifiers) {
+                switch (mod.key) {
+                    case 'startArmor':
+                        this.player.armor += mod.value;
+                        break;
+                    case 'berserker':
+                        this.player.attackSpeedMult = (this.player.attackSpeedMult || 1) * 1.2;
+                        this.player.maxHp = Math.floor(this.player.maxHp * 0.85);
+                        this.player.hp = this.player.maxHp;
+                        break;
+                }
+            }
         }
 
         // 初始化相机到玩家位置
@@ -383,13 +515,27 @@ class Game {
 
         // 波次管理/生怪
         const waveResult = this.waveManager.update(dt, this.player.x, this.player.y, this.enemies, this.particles);
-        if (waveResult && waveResult.type === 'stageBossDefeated') {
-            // 阶段Boss被击败 → 触发3个buff奖励选择
-            this._pendingBossRewards = 3;
+        if (waveResult) {
+            if (waveResult.type === 'stageBossDefeated') {
+                // 阶段Boss被击败 → 触发3个buff奖励选择
+                this._pendingBossRewards = 3;
+            } else if (waveResult.type === 'siegeWave') {
+                // 精英围攻波次 → 屏幕闪烁 + 警报提示
+                SFX.bossAlert();
+                this.particles.addShockwave(this.player.x, this.player.y, '#ff4444', 300, 0.6);
+                this._siegeWarning = 2.0;  // 警告显示2秒
+            }
+        }
+
+        // 构建敌人空间哈希（用于弹幕碰撞优化）
+        if (!this._enemySpatialHash) this._enemySpatialHash = new SpatialHash(80);
+        this._enemySpatialHash.clear();
+        for (const enemy of this.enemies) {
+            if (enemy.alive) this._enemySpatialHash.insert(enemy);
         }
 
         // 更新武器
-        this.weapons.update(dt, this.enemies, this.camera);
+        this.weapons.update(dt, this.enemies, this.camera, this._enemySpatialHash);
 
         // 更新怪物
         for (let i = this.enemies.length - 1; i >= 0; i--) {
@@ -414,7 +560,23 @@ class Game {
             if (!enemy.alive) {
                 // 连杀系统
                 this.player.addComboKill();
-                this.particles.addComboText(this.player.x, this.player.y - 30, this.player.comboCount);
+                this.particles.addComboText(this.player.x, this.player.y - 30, this.player.comboCount, this.player.getComboColor());
+                SFX.kill();
+
+                // 连杀里程碑特效
+                if (this.player._comboMilestone > 0) {
+                    SFX.comboMilestone();
+                    this.particles.addShockwave(this.player.x, this.player.y, this.player.getComboColor(), 200, 0.5);
+                    this.particles.emit(this.player.x, this.player.y, 30, {
+                        colors: ['#ffdd44', '#ff8800', '#ffffff'],
+                        speedMin: 4, speedMax: 10,
+                        sizeMin: 3, sizeMax: 8,
+                        lifeMin: 0.5, lifeMax: 1.0,
+                        glow: true,
+                    });
+                    Utils.shake(6);
+                    this.player._comboMilestone = 0;
+                }
 
                 // 掉落经验
                 this._spawnExp(enemy);
@@ -433,12 +595,17 @@ class Game {
                     // Boss击杀：冻帧 + 屏幕闪白 + 掉落遗物
                     this.freezeTimer = 0.15;
                     this.screenFlash = { color: '#ffffff', alpha: 0.6 };
-                    this._spawnRelicDrop(enemy);
+                    this._spawnRelicDropWeighted(enemy);
                     this.activeBoss = null;
+                    SFX.bossAlert(); // 击杀Boss音效
+                    this.battleStats.bossKills++;
+                    this.combatLog.addEntry(`☠ Boss击杀！${enemy.type}`, '#ff4444');
                 } else if (enemy.isElite) {
                     // 精英击杀：小冻帧
                     this.freezeTimer = 0.05;
                     this.screenFlash = { color: '#ffaa00', alpha: 0.3 };
+                    this.battleStats.eliteKills++;
+                    this.combatLog.addEntry(`⭐ 精英击杀！${enemy.type}`, '#ffaa00');
                 }
 
                 this.enemies.splice(i, 1);
@@ -470,6 +637,8 @@ class Game {
                     const result = this.player.takeDamage(enemy.damage, this.particles);
                     // 受伤反馈（格挡不触发红色渐变）
                     if (result && result !== 'blocked') {
+                        SFX.hurt();
+                        this.battleStats.damageTaken += enemy.damage;
                         this.damageVignette = 0.6;
                         this.damageIndicators.push({
                             angle: Utils.angle(this.player.x, this.player.y, enemy.x, enemy.y),
@@ -484,7 +653,8 @@ class Game {
                             if (!e2.alive) continue;
                             if (Utils.dist(this.player.x, this.player.y, e2.x, e2.y) < counterRange) {
                                 const a = Utils.angle(this.player.x, this.player.y, e2.x, e2.y);
-                                e2.takeDamage(counterDmg, this.particles, a, 10);
+                                const cDied = e2.takeDamage(counterDmg, this.particles, a, 10);
+                                this.combatLog.record('圣光反击', counterDmg, false, cDied);
                                 this.particles.addDamageText(e2.x, e2.y, Math.floor(counterDmg), false, '#ffdd44');
                                 if (!e2.alive) this.weapons._onKill(e2);
                             }
@@ -503,7 +673,8 @@ class Game {
                             if (!e2.alive) continue;
                             if (Utils.dist(this.player.x, this.player.y, e2.x, e2.y) < thornRange) {
                                 const thornAngle = Utils.angle(this.player.x, this.player.y, e2.x, e2.y);
-                                e2.takeDamage(thornDmg, this.particles, thornAngle, 10);
+                                const tDied = e2.takeDamage(thornDmg, this.particles, thornAngle, 10);
+                                this.combatLog.record('荆棘反伤', thornDmg, false, tDied);
                                 this.particles.addDamageText(e2.x, e2.y, thornDmg, false, '#44ff44');
                                 if (!e2.alive) this.weapons._onKill(e2);
                             }
@@ -546,6 +717,7 @@ class Game {
 
         // === 新系统更新 ===
         this._updateMapHazards(dt);
+        this._updateEnvObjects(dt);
         this._updateRelicDrops(dt);
         this._updateDeathAnimations(dt);
         this._updateScreenFlash(dt);
@@ -585,12 +757,42 @@ class Game {
             }
         }
 
+        // 经验宝石合并：超过阈值时合并附近小宝石为大宝石
+        const GEM_THRESHOLD = 50;
+        const GEM_MERGE_RADIUS = 60;
+        if (this.expGems.length > GEM_THRESHOLD) {
+            for (let i = this.expGems.length - 1; i >= 0; i--) {
+                const gem = this.expGems[i];
+                if (!gem.alive || gem.attracted || gem._merged) continue;
+                let merged = false;
+                for (let j = i - 1; j >= 0; j--) {
+                    const other = this.expGems[j];
+                    if (!other.alive || other.attracted || other._merged) continue;
+                    if (Utils.dist(gem.x, gem.y, other.x, other.y) < GEM_MERGE_RADIUS) {
+                        // 合并到other
+                        other.value += gem.value;
+                        other.radius = Math.min(4 + other.value * 0.5, 16);
+                        other.color = other.value >= 30 ? '#ffdd44' : other.value >= 15 ? '#44aaff' : other.color;
+                        gem.alive = false;
+                        gem._merged = true;
+                        merged = true;
+                        break;
+                    }
+                }
+            }
+            // 清理合并掉的宝石
+            for (let i = this.expGems.length - 1; i >= 0; i--) {
+                if (this.expGems[i]._merged) this.expGems.splice(i, 1);
+            }
+        }
+
         // 更新经验宝石
         for (let i = this.expGems.length - 1; i >= 0; i--) {
             const gem = this.expGems[i];
             const collected = gem.update(dt, this.player.x, this.player.y, this.player.getPickupRange(), this.particles);
             if (collected > 0) {
-                const leveledUp = this.player.addExp(collected);
+                const expAmount = Math.floor(collected * this._getDailyMod('expPenalty', 1));
+                const leveledUp = this.player.addExp(expAmount);
                 if (leveledUp) {
                     this.pendingLevelUps++;
                     // 升级特效
@@ -605,6 +807,8 @@ class Game {
                         lifeMax: 0.8,
                         glow: true,
                     });
+                    SFX.levelUp();
+                    this.combatLog.addEntry(`⬆ 升级! Lv.${this.player.level}`, '#44aaff');
                 }
             }
             if (!gem.alive) {
@@ -618,6 +822,8 @@ class Game {
             const picked = item.update(dt, this.player.x, this.player.y, this.player.getPickupRange());
             if (picked) {
                 this._applyDropItem(item);
+                SFX.pickup();
+                this.battleStats.itemsCollected++;
             }
             if (!item.alive) {
                 this.dropItems.splice(i, 1);
@@ -656,6 +862,19 @@ class Game {
             this.ui._upgradePanelOpenTime = 0; // 重置面板防误触时间戳
             return;
         }
+
+        // === 地图软边界 ===
+        this._updateMapBoundary(dt);
+
+        // === 精英围攻警告倒计 ===
+        if (this._siegeWarning > 0) this._siegeWarning -= dt;
+
+        // === 事件系统 ===
+        this._updateGameEvent(dt);
+
+        // === 战斗统计更新 ===
+        this.battleStats.maxCombo = Math.max(this.battleStats.maxCombo, this.player.maxCombo);
+        this.combatLog.updateDPS();
 
         // 受伤反馈更新
         if (this.damageVignette > 0) this.damageVignette -= dt * 1.5;
@@ -709,12 +928,20 @@ class Game {
         }
     }
 
+    // 获取每日挑战修饰符值
+    _getDailyMod(key, defaultVal) {
+        if (this.gameMode !== 'daily' || !this.dailyModifiers) return defaultVal;
+        const mod = this.dailyModifiers.find(m => m.key === key);
+        return mod ? mod.value : defaultVal;
+    }
+
     _spawnExp(enemy) {
         const count = enemy.isBoss ? 20 : (enemy.isElite ? 5 : 1);
         const colors = ['#44ff88', '#88ffaa', '#22dd66'];
         const bigColors = ['#44aaff', '#88ccff'];
+        const gemMult = this._getDailyMod('gemBoost', 1);
         for (let i = 0; i < count; i++) {
-            const value = Math.ceil(enemy.exp / count);
+            const value = Math.ceil(enemy.exp / count * gemMult);
             const color = enemy.isBoss || enemy.isElite ? Utils.randPick(bigColors) : Utils.randPick(colors);
             this.expGems.push(new ExpGem(
                 enemy.x + Utils.rand(-20, 20),
@@ -729,8 +956,9 @@ class Game {
         // Boss和精英有更高掉率
         const dropMult = enemy.isBoss ? 5 : (enemy.isElite ? 3 : 1);
         const luckyMult = 1 + (this.player.bonuses.luckyDrop || 0);
+        const relicMult = this._getDailyMod('relicBoost', 1);
         for (const type of Object.keys(DropItemTypes)) {
-            const chance = DropItemTypes[type].dropChance * dropMult * luckyMult;
+            const chance = DropItemTypes[type].dropChance * dropMult * luckyMult * relicMult;
             if (Math.random() < chance) {
                 this.dropItems.push(new DropItem(
                     enemy.x + Utils.rand(-15, 15),
@@ -957,6 +1185,11 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
             hz.render(ctx, cam);
         }
 
+        // 环境交互物
+        for (const eo of this.envObjects) {
+            eo.render(ctx, cam);
+        }
+
         // 遗物掉落
         for (const rd of this.relicDrops) {
             rd.render(ctx, cam);
@@ -969,7 +1202,12 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
         }
 
         // HUD
-        this.ui.renderHUD(this.player, this.waveManager);
+        this.ui.renderHUD(this.player, this.waveManager, this.gameMode);
+
+        // 战斗日志/DPS面板
+        if (this.showCombatLog) {
+            this.ui.renderCombatLog(this.combatLog, this.waveManager.gameTime);
+        }
 
         // Boss血条
         this.ui.renderBossHP(this.activeBoss);
@@ -1000,6 +1238,75 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
             ctx.fillRect(0, 0, 40 * v, sh);
             // 右边
             ctx.fillRect(sw - 40 * v, 0, 40 * v, sh);
+            ctx.restore();
+        }
+
+        // 边界警告渐变（屏幕边缘紫红色脉冲）
+        if (this._boundaryVignette > 0) {
+            ctx.save();
+            ctx.globalAlpha = this._boundaryVignette;
+            ctx.fillStyle = '#aa0044';
+            ctx.fillRect(0, 0, sw, 50);
+            ctx.fillRect(0, sh - 50, sw, 50);
+            ctx.fillRect(0, 0, 50, sh);
+            ctx.fillRect(sw - 50, 0, 50, sh);
+            ctx.restore();
+            // 边界文字提示
+            ctx.save();
+            ctx.globalAlpha = Math.min(1, this._boundaryVignette * 3);
+            ctx.font = "bold 18px 'Microsoft YaHei','PingFang SC',Arial,sans-serif";
+            ctx.fillStyle = '#ff4466';
+            ctx.textAlign = 'center';
+            ctx.fillText('⚠ 已接近地图边界 ⚠', sw / 2, 36);
+            ctx.restore();
+        }
+
+        // 精英围攻警告
+        if (this._siegeWarning > 0) {
+            const siegeAlpha = Math.min(1, this._siegeWarning);
+            ctx.save();
+            ctx.globalAlpha = siegeAlpha * 0.6;
+            ctx.font = "bold 28px 'Microsoft YaHei','PingFang SC',Arial,sans-serif";
+            ctx.fillStyle = '#ff2222';
+            ctx.textAlign = 'center';
+            ctx.shadowColor = '#ff0000';
+            ctx.shadowBlur = 20;
+            ctx.fillText('⚠ 精英围攻! ⚠', sw / 2, sw > 600 ? 60 : 50);
+            ctx.restore();
+        }
+
+        // 事件进度条
+        if (this.activeEvent) {
+            const evW = 300;
+            const evH = 28;
+            const evX = (sw - evW) / 2;
+            const evY = 70;
+            const progress = Math.max(0, this.activeEvent.timer / this.activeEvent.duration);
+            const evColor = this.activeEvent.color || '#ffcc44';
+            ctx.save();
+            ctx.globalAlpha = 0.8;
+            // 背景
+            ctx.fillStyle = '#1a1a2e';
+            ctx.strokeStyle = evColor;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.roundRect(evX, evY, evW, evH, 14);
+            ctx.fill();
+            ctx.stroke();
+            // 进度填充
+            const fillW = Math.max(0, (evW - 4) * progress);
+            if (fillW > 0) {
+                ctx.fillStyle = evColor;
+                ctx.beginPath();
+                ctx.roundRect(evX + 2, evY + 2, fillW, evH - 4, 12);
+                ctx.fill();
+            }
+            // 文字
+            ctx.globalAlpha = 1;
+            ctx.font = "bold 14px 'Microsoft YaHei','PingFang SC',Arial,sans-serif";
+            ctx.fillStyle = '#ffffff';
+            ctx.textAlign = 'center';
+            ctx.fillText(`${this.activeEvent.name} - ${Math.ceil(this.activeEvent.timer)}s`, sw / 2, evY + evH / 2 + 5);
             ctx.restore();
         }
 
@@ -1075,6 +1382,13 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
         }
     }
 
+    _getMapTheme(t) {
+        for (let i = MapThemes.length - 1; i >= 0; i--) {
+            if (t >= MapThemes[i].timeRange[0]) return MapThemes[i];
+        }
+        return MapThemes[0];
+    }
+
     _renderBackground(ctx, camera) {
         const W = this.logicWidth;
         const H = this.logicHeight;
@@ -1083,23 +1397,26 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
         const startY = Math.floor(camera.y / gridSize) * gridSize;
         const endX = startX + W + gridSize;
         const endY = startY + H + gridSize;
+        const gt = this.waveManager ? this.waveManager.gameTime : 0;
+        const theme = this._getMapTheme(gt);
 
-        // ── 深空渐变底色 ──
-        if (!this._bgGradCache || this._bgGradCache._h !== H) {
+        // ── 渐变底色（主题驱动） ──
+        const gradKey = theme.id + '_' + H;
+        if (!this._bgGradCache || this._bgGradCache._key !== gradKey) {
             this._bgGradCache = ctx.createLinearGradient(0, 0, 0, H);
-            this._bgGradCache.addColorStop(0, '#06060e');
-            this._bgGradCache.addColorStop(0.5, '#0a0a18');
-            this._bgGradCache.addColorStop(1, '#080814');
-            this._bgGradCache._h = H;
+            this._bgGradCache.addColorStop(0, theme.bgGrad[0]);
+            this._bgGradCache.addColorStop(0.5, theme.bgGrad[1]);
+            this._bgGradCache.addColorStop(1, theme.bgGrad[2]);
+            this._bgGradCache._key = gradKey;
         }
         ctx.fillStyle = this._bgGradCache;
         ctx.fillRect(0, 0, W, H);
 
-        // ── 角落微弱色彩光晕（视差跟随相机缓动） ──
+        // ── 角落色彩光晕（主题驱动） ──
         const cx1 = W * 0.15 - (camera.x % W) * 0.02;
         const cy1 = H * 0.2 - (camera.y % H) * 0.02;
         const g1 = ctx.createRadialGradient(cx1, cy1, 0, cx1, cy1, H * 0.5);
-        g1.addColorStop(0, 'rgba(40,20,80,0.12)');
+        g1.addColorStop(0, theme.glowA);
         g1.addColorStop(1, 'rgba(0,0,0,0)');
         ctx.fillStyle = g1;
         ctx.fillRect(0, 0, W, H);
@@ -1107,12 +1424,21 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
         const cx2 = W * 0.85 + (camera.x % W) * 0.015;
         const cy2 = H * 0.8 + (camera.y % H) * 0.015;
         const g2 = ctx.createRadialGradient(cx2, cy2, 0, cx2, cy2, H * 0.45);
-        g2.addColorStop(0, 'rgba(15,40,60,0.10)');
+        g2.addColorStop(0, theme.glowB);
         g2.addColorStop(1, 'rgba(0,0,0,0)');
         ctx.fillStyle = g2;
         ctx.fillRect(0, 0, W, H);
 
-        // ── 星尘粒子（固定在世界坐标，跟随相机） ──
+        // ── 氛围雾气 ──
+        if (theme.fogColor) {
+            const fogPhase = gt * 0.3;
+            ctx.globalAlpha = 0.5 + 0.3 * Math.sin(fogPhase);
+            ctx.fillStyle = theme.fogColor;
+            ctx.fillRect(0, 0, W, H);
+            ctx.globalAlpha = 1;
+        }
+
+        // ── 星尘粒子（固定在世界坐标） ──
         if (!this._bgStars) {
             this._bgStars = [];
             for (let i = 0; i < 120; i++) {
@@ -1133,15 +1459,15 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
             if (sx < -10 || sx > W + 10 || sy < -10 || sy > H + 10) continue;
             const alpha = star.a * (0.6 + 0.4 * Math.sin(gameTime * star.twinkleSpeed + star.twinklePhase));
             ctx.globalAlpha = alpha;
-            ctx.fillStyle = '#8899bb';
+            ctx.fillStyle = theme.starColor;
             ctx.beginPath();
             ctx.arc(sx, sy, star.r, 0, Math.PI * 2);
             ctx.fill();
         }
         ctx.globalAlpha = 1;
 
-        // ── 网格线（柔和亮度，交叉点加亮） ──
-        ctx.strokeStyle = '#16162a';
+        // ── 网格线（主题颜色） ──
+        ctx.strokeStyle = theme.gridColor;
         ctx.lineWidth = 1;
         ctx.beginPath();
         for (let x = startX; x <= endX; x += gridSize) {
@@ -1157,7 +1483,7 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
         ctx.stroke();
 
         // 交叉点发光小点
-        ctx.fillStyle = '#2a2a44';
+        ctx.fillStyle = theme.dotColor;
         for (let x = startX; x <= endX; x += gridSize) {
             for (let y = startY; y <= endY; y += gridSize) {
                 const px = x - camera.x;
@@ -1165,6 +1491,95 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
                 ctx.fillRect(px - 1, py - 1, 2, 2);
             }
         }
+
+        // ── 环境装饰物（固定在世界坐标） ──
+        if (!this._mapDecors) {
+            this._mapDecors = [];
+            for (let i = 0; i < 40; i++) {
+                this._mapDecors.push({
+                    wx: Math.random() * 5000 - 500,
+                    wy: Math.random() * 5000 - 500,
+                    scale: 0.5 + Math.random() * 0.8,
+                    rot: Math.random() * Math.PI * 2,
+                    variant: Math.floor(Math.random() * 3),
+                });
+            }
+        }
+        this._renderDecors(ctx, camera, theme, W, H, gt);
+    }
+
+    _renderDecors(ctx, camera, theme, W, H, gt) {
+        ctx.save();
+        for (const d of this._mapDecors) {
+            const sx = d.wx - camera.x;
+            const sy = d.wy - camera.y;
+            if (sx < -60 || sx > W + 60 || sy < -60 || sy > H + 60) continue;
+
+            ctx.globalAlpha = 0.15 + 0.05 * Math.sin(gt * 0.5 + d.rot);
+            ctx.save();
+            ctx.translate(sx, sy);
+            ctx.scale(d.scale, d.scale);
+
+            if (theme.decorType === 'crystal') {
+                // 水晶碎片
+                ctx.fillStyle = theme.decorColor;
+                ctx.beginPath();
+                ctx.moveTo(0, -12);
+                ctx.lineTo(6, 0);
+                ctx.lineTo(3, 14);
+                ctx.lineTo(-3, 14);
+                ctx.lineTo(-6, 0);
+                ctx.closePath();
+                ctx.fill();
+                ctx.globalAlpha = 0.08;
+                ctx.shadowColor = theme.decorColor;
+                ctx.shadowBlur = 8;
+                ctx.fill();
+            } else if (theme.decorType === 'pillar') {
+                // 废墟石柱
+                ctx.fillStyle = theme.decorColor;
+                ctx.fillRect(-4, -16, 8, 28);
+                ctx.fillRect(-7, -18, 14, 4);
+                if (d.variant === 0) {
+                    // 断裂顶部
+                    ctx.fillRect(-5, -20, 4, 3);
+                }
+            } else if (theme.decorType === 'iceSpike') {
+                // 冰刺
+                ctx.fillStyle = theme.decorColor;
+                ctx.beginPath();
+                ctx.moveTo(0, -18);
+                ctx.lineTo(5, 8);
+                ctx.lineTo(-5, 8);
+                ctx.closePath();
+                ctx.fill();
+                ctx.globalAlpha = 0.06;
+                ctx.fillStyle = '#88ccff';
+                ctx.beginPath();
+                ctx.moveTo(0, -14);
+                ctx.lineTo(3, 4);
+                ctx.lineTo(-3, 4);
+                ctx.closePath();
+                ctx.fill();
+            } else if (theme.decorType === 'tree') {
+                // 腐化树
+                ctx.fillStyle = '#332211';
+                ctx.fillRect(-2, -4, 4, 18);
+                ctx.fillStyle = theme.decorColor;
+                ctx.globalAlpha = 0.12 + 0.04 * Math.sin(gt + d.rot * 2);
+                ctx.beginPath();
+                ctx.arc(0, -8, 10, 0, Math.PI * 2);
+                ctx.fill();
+                // 腐化粒子
+                ctx.fillStyle = '#88ff44';
+                ctx.globalAlpha = 0.2 * Math.abs(Math.sin(gt * 2 + d.rot));
+                ctx.beginPath();
+                ctx.arc(4 * Math.sin(gt + d.rot), -12 + 3 * Math.cos(gt * 0.7), 1.5, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.restore();
+        }
+        ctx.restore();
     }
 
     // === 升级选择 ===
@@ -1254,14 +1669,28 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
                 this._victoryGold = MetaProgress.recordRun(this.player, this.waveManager.gameTime);
                 MetaProgress.checkAchievements(this.player, this.waveManager.gameTime);
             }
+            // 每日挑战提交成绩
+            if (this.gameMode === 'daily' && this.dailySeed) {
+                const score = DailyLeaderboard.calcScore(this.waveManager.gameTime, this.player.kills, this.player.level);
+                this._dailyRank = DailyLeaderboard.submitScore(this.dailySeed, {
+                    score, time: this.waveManager.gameTime, kills: this.player.kills,
+                    level: this.player.level, character: this.player.def.id, timestamp: Date.now()
+                });
+            }
         }
 
-        const back = this.ui.renderVictoryScreen(this.player, this.waveManager.gameTime, this._victoryGold);
+        const dailyInfo = this.gameMode === 'daily' ? {
+            seed: this.dailySeed, rank: this._dailyRank || 0,
+            leaderboard: DailyLeaderboard.getLeaderboard(this.dailySeed),
+            modifiers: this.dailyModifiers,
+        } : null;
+        const back = this.ui.renderVictoryScreen(this.player, this.waveManager.gameTime, this._victoryGold, this.battleStats, dailyInfo);
         if (back) {
             this.state = 'menu';
             this.particles.clear();
             this._victoryRecorded = false;
             this._victoryGold = 0;
+            this._dailyRank = 0;
         }
     }
 
@@ -1278,14 +1707,28 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
                 this._goldEarned = MetaProgress.recordRun(this.player, this.waveManager.gameTime);
                 MetaProgress.checkAchievements(this.player, this.waveManager.gameTime);
             }
+            // 每日挑战提交成绩
+            if (this.gameMode === 'daily' && this.dailySeed) {
+                const score = DailyLeaderboard.calcScore(this.waveManager.gameTime, this.player.kills, this.player.level);
+                this._dailyRank = DailyLeaderboard.submitScore(this.dailySeed, {
+                    score, time: this.waveManager.gameTime, kills: this.player.kills,
+                    level: this.player.level, character: this.player.def.id, timestamp: Date.now()
+                });
+            }
         }
 
-        const restart = this.ui.renderDeathScreen(this.player, this.waveManager.gameTime, this._goldEarned);
+        const dailyInfo = this.gameMode === 'daily' ? {
+            seed: this.dailySeed, rank: this._dailyRank || 0,
+            leaderboard: DailyLeaderboard.getLeaderboard(this.dailySeed),
+            modifiers: this.dailyModifiers,
+        } : null;
+        const restart = this.ui.renderDeathScreen(this.player, this.waveManager.gameTime, this._goldEarned, this.battleStats, dailyInfo);
         if (restart) {
             this.state = 'menu';
             this.particles.clear();
             this._deathRecorded = false;
             this._goldEarned = 0;
+            this._dailyRank = 0;
         }
     }
 
@@ -1310,13 +1753,15 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
             // 拖尾
             this.particles.addTrail(bx, by, this.player.def.color, 4, 0.15);
 
-            // 碰撞敌人
-            for (const enemy of this.enemies) {
+            // 碰撞敌人（空间哈希加速）
+            const nearbyBlade = this._enemySpatialHash ? this._enemySpatialHash.query(bx, by, 12 + 30) : this.enemies;
+            for (const enemy of nearbyBlade) {
                 if (!enemy.alive) continue;
                 if (Utils.circleCollision(bx, by, 12, enemy.x, enemy.y, enemy.radius)) {
                     if (!enemy._orbitalHitCD || enemy._orbitalHitCD <= 0) {
                         const knockAngle = Utils.angle(this.player.x, this.player.y, enemy.x, enemy.y);
-                        enemy.takeDamage(damage, this.particles, knockAngle, 5);
+                        const oDied = enemy.takeDamage(damage, this.particles, knockAngle, 5);
+                        this.combatLog.record('轨道刃', damage, false, oDied);
                         this.particles.addDamageText(enemy.x, enemy.y, Math.floor(damage), false, this.player.def.color);
                         enemy._orbitalHitCD = 0.3; // 0.3秒命中冷却
                         if (!enemy.alive) this.weapons._onKill(enemy);
@@ -1356,12 +1801,14 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
                 continue;
             }
 
-            // 伤害敌人（每0.5秒一次通过模运算简化）
+            // 伤害敌人（每0.5秒一次通过模运算简化，使用空间哈希加速）
             if (Math.floor((fire.maxLife - fire.life) * 4) > Math.floor((fire.maxLife - fire.life - dt) * 4)) {
-                for (const enemy of this.enemies) {
+                const nearbyFire = this._enemySpatialHash ? this._enemySpatialHash.query(fire.x, fire.y, 20) : this.enemies;
+                for (const enemy of nearbyFire) {
                     if (!enemy.alive) continue;
                     if (Utils.dist(fire.x, fire.y, enemy.x, enemy.y) < 20) {
-                        enemy.takeDamage(fireDamage, this.particles, 0, 0);
+                        const fDied = enemy.takeDamage(fireDamage, this.particles, 0, 0);
+                        this.combatLog.record('火焰尾迹', fireDamage, false, fDied);
                         if (!enemy.alive) this.weapons._onKill(enemy);
                     }
                 }
@@ -1405,11 +1852,13 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
         // 每0.5秒对范围内敌人造成一次火焰伤害
         if (this.burnAuraTimer >= 0.5) {
             this.burnAuraTimer = 0;
-            for (const enemy of this.enemies) {
+            const nearbyBurn = this._enemySpatialHash ? this._enemySpatialHash.query(this.player.x, this.player.y, burnRange) : this.enemies;
+            for (const enemy of nearbyBurn) {
                 if (!enemy.alive) continue;
                 const dist = Utils.dist(this.player.x, this.player.y, enemy.x, enemy.y);
                 if (dist < burnRange) {
-                    enemy.takeDamage(burnDamage, this.particles, 0, 0);
+                    const bDied = enemy.takeDamage(burnDamage, this.particles, 0, 0);
+                    this.combatLog.record('火焰光环', burnDamage, false, bDied);
                     if (!enemy.alive) this.weapons._onKill(enemy);
                 }
             }
@@ -1431,7 +1880,8 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
         this.frostTimer += dt;
         const frostRange = 150;
 
-        for (const enemy of this.enemies) {
+        const nearbyFrost = this._enemySpatialHash ? this._enemySpatialHash.query(this.player.x, this.player.y, frostRange) : this.enemies;
+        for (const enemy of nearbyFrost) {
             if (!enemy.alive) continue;
             const dist = Utils.dist(this.player.x, this.player.y, enemy.x, enemy.y);
             if (dist < frostRange) {
@@ -1486,7 +1936,8 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
                     if (!e.alive) continue;
                     if (Utils.dist(r.x, r.y, e.x, e.y) < range + e.radius) {
                         const a = Utils.angle(r.x, r.y, e.x, e.y);
-                        e.takeDamage(r.damage, this.particles, a, 8);
+                        const sDied = e.takeDamage(r.damage, this.particles, a, 8);
+                        this.combatLog.record('召唤物', r.damage, false, sDied);
                         this.particles.addDamageText(e.x, e.y, Math.floor(r.damage), false, '#88ffdd');
                         if (!e.alive) this.weapons._onKill(e);
                     }
@@ -1579,6 +2030,91 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
         }
     }
 
+    // --- 环境交互物更新 ---
+    _updateEnvObjects(dt) {
+        // 定时生成新的环境交互物
+        this._envSpawnTimer += dt;
+        if (this._envSpawnTimer >= this._envSpawnInterval && this.envObjects.length < 8) {
+            this._envSpawnTimer = 0;
+            this._envSpawnInterval = Utils.rand(25, 45);
+            this._spawnEnvObject();
+        }
+
+        // 更新现有对象
+        for (let i = this.envObjects.length - 1; i >= 0; i--) {
+            const eo = this.envObjects[i];
+            const result = eo.update(dt, this.player, this.particles);
+
+            if (!eo.alive) {
+                this.envObjects.splice(i, 1);
+                continue;
+            }
+
+            if (!result) continue;
+
+            switch (result.type) {
+                case 'portal':
+                    // 传送玩家
+                    this.player.x = result.destX;
+                    this.player.y = result.destY;
+                    // 立即更新相机避免撕裂
+                    this.camera.x = this.player.x - this.logicWidth / 2;
+                    this.camera.y = this.player.y - this.logicHeight / 2;
+                    this.combatLog.addEntry('🌀 传送门激活！', '#aa66ff');
+                    SFX.pickup();
+                    break;
+                case 'trap':
+                    if (result.damage > 0) {
+                        const trapResult = this.player.takeDamage(result.damage, this.particles);
+                        this.combatLog.record('陷阱', result.damage, false, false);
+                        if (trapResult === 'dead') {
+                            this.state = 'dead';
+                            this.particles.superExplode(this.player.x, this.player.y, this.player.def.colors, 60);
+                            return;
+                        }
+                    }
+                    break;
+                // speed: 效果已在 EnvObject.update 中直接应用到 player
+            }
+        }
+    }
+
+    _spawnEnvObject() {
+        const px = this.player.x;
+        const py = this.player.y;
+        const minDist = 300;
+        const maxDist = 800;
+
+        // 随机选择类型（加权：speed 40%, trap 35%, portal 25%）
+        const roll = Math.random();
+        let type;
+        if (roll < 0.4) type = 'speed';
+        else if (roll < 0.75) type = 'trap';
+        else type = 'portal';
+
+        // 随机位置（在玩家附近但不太近）
+        const angle = Math.random() * Math.PI * 2;
+        const dist = minDist + Math.random() * (maxDist - minDist);
+        const x = px + Math.cos(angle) * dist;
+        const y = py + Math.sin(angle) * dist;
+
+        if (type === 'portal') {
+            // 传送门成对生成
+            const angle2 = angle + Math.PI * (0.5 + Math.random());
+            const dist2 = minDist + Math.random() * (maxDist - minDist);
+            const x2 = px + Math.cos(angle2) * dist2;
+            const y2 = py + Math.sin(angle2) * dist2;
+
+            const portal1 = new EnvObject(x, y, 'portal');
+            const portal2 = new EnvObject(x2, y2, 'portal');
+            portal1.linkedPortal = portal2;
+            portal2.linkedPortal = portal1;
+            this.envObjects.push(portal1, portal2);
+        } else {
+            this.envObjects.push(new EnvObject(x, y, type));
+        }
+    }
+
     // --- 遗物掉落更新 ---
     _updateRelicDrops(dt) {
         for (let i = this.relicDrops.length - 1; i >= 0; i--) {
@@ -1599,6 +2135,7 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
                 if (relic) {
                     this.achievementPopup = { name: relic.name, desc: relic.desc };
                     this.achievementTimer = 3.0;
+                    this.combatLog.addEntry(`🔮 获得遗物: ${relic.name}`, '#ffaa00');
                 }
                 this.relicDrops.splice(i, 1);
             } else if (!rd.alive) {
@@ -1646,5 +2183,141 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
                 this.achievementPopup = null;
             }
         }
+    }
+
+    // =============================================
+    // === 地图软边界系统 ===
+    // =============================================
+    _updateMapBoundary(dt) {
+        const distFromOrigin = Utils.dist(0, 0, this.player.x, this.player.y);
+        const boundary = this.mapBoundary;
+        const warningZone = boundary * 0.85; // 85%处开始警告
+
+        if (distFromOrigin > warningZone) {
+            const overRatio = (distFromOrigin - warningZone) / (boundary - warningZone);
+            const clampedRatio = Math.min(1, overRatio);
+
+            // 视觉警告：屏幕边缘红色脉冲
+            if (!this._boundaryVignette) this._boundaryVignette = 0;
+            this._boundaryVignette = clampedRatio * 0.4 * (0.7 + Math.sin(Date.now() * 0.006) * 0.3);
+
+            // 超过边界造成持续伤害
+            if (distFromOrigin > boundary) {
+                this._boundaryDamageTimer += dt;
+                if (this._boundaryDamageTimer >= 0.5) {
+                    this._boundaryDamageTimer = 0;
+                    const dmg = Math.ceil(this.player.getMaxHp() * 0.05 * clampedRatio);
+                    const result = this.player.takeDamage(dmg, this.particles);
+                    SFX.boundaryWarn();
+                    if (result === 'dead') {
+                        this.state = 'dead';
+                        this.particles.superExplode(this.player.x, this.player.y, this.player.def.colors, 60);
+                        return;
+                    }
+                }
+                // 推回力
+                const pushAngle = Utils.angle(this.player.x, this.player.y, 0, 0);
+                this.player.x += Math.cos(pushAngle) * 2 * clampedRatio;
+                this.player.y += Math.sin(pushAngle) * 2 * clampedRatio;
+            }
+        } else {
+            this._boundaryVignette = 0;
+            this._boundaryDamageTimer = 0;
+        }
+    }
+
+    // =============================================
+    // === 事件/挑战系统 ===
+    // =============================================
+    _updateGameEvent(dt) {
+        // 事件冷却
+        if (!this.activeEvent) {
+            this._eventTimer += dt;
+            if (this._eventTimer >= this.eventCooldown && this.waveManager.gameTime > 60) {
+                // 触发随机事件
+                const eventType = Utils.randPick(GameEvents.types);
+                this.activeEvent = {
+                    ...eventType,
+                    timer: eventType.duration,
+                    started: true,
+                };
+                this._eventTimer = 0;
+                this.eventCooldown = Utils.rand(45, 90); // 下次事件间隔
+                this.combatLog.addEntry(`⚡ 事件: ${eventType.name}`, '#ff88ff');
+                SFX.eventStart();
+
+                // 显示事件通知
+                this.achievementPopup = { name: eventType.name, desc: eventType.desc };
+                this.achievementTimer = 3.0;
+
+                // 应用事件效果
+                if (eventType.id === 'speed_frenzy') {
+                    for (const e of this.enemies) {
+                        if (e.alive && !e._eventSpeedBuff) {
+                            e._eventSpeedBuff = true;
+                            e._preEventSpeed = e.speed;
+                            e.speed *= 2;
+                        }
+                    }
+                }
+            }
+        } else {
+            this.activeEvent.timer -= dt;
+
+            // 金色狂潮：经验加成
+            if (this.activeEvent.id === 'gold_rush') {
+                this.player._expMultEvent = 2.0;
+            }
+
+            // 事件结束
+            if (this.activeEvent.timer <= 0) {
+                // 清理事件效果
+                if (this.activeEvent.id === 'speed_frenzy') {
+                    for (const e of this.enemies) {
+                        if (e._eventSpeedBuff && e._preEventSpeed) {
+                            e.speed = e._preEventSpeed;
+                            e._eventSpeedBuff = false;
+                        }
+                    }
+                }
+                if (this.activeEvent.id === 'gold_rush') {
+                    this.player._expMultEvent = 1.0;
+                }
+                this.activeEvent = null;
+            }
+        }
+    }
+
+    // =============================================
+    // === 遗物掉落加权 ===
+    // =============================================
+    _spawnRelicDropWeighted(enemy) {
+        if (typeof RelicDefs === 'undefined') return;
+        const relicIds = Object.keys(RelicDefs);
+        const available = relicIds.filter(id => !this.player.relics.includes(id));
+        if (available.length === 0) return;
+
+        // 根据玩家build倾向加权
+        const weights = available.map(id => {
+            const relic = RelicDefs[id];
+            let weight = relic.rarity === 'legendary' ? 1 : relic.rarity === 'epic' ? 2 : 3;
+            // 攻击型build倾向攻击遗物
+            if (this.player.bonuses.attackMult > 0.3 && relic.desc.includes('攻击')) weight *= 1.5;
+            // 防御型build倾向防御遗物
+            if (this.player.bonuses.armorBonus > 5 && relic.desc.includes('护甲')) weight *= 1.5;
+            return weight;
+        });
+
+        // 加权随机选择
+        const totalWeight = weights.reduce((a, b) => a + b, 0);
+        let r = Math.random() * totalWeight;
+        for (let i = 0; i < available.length; i++) {
+            r -= weights[i];
+            if (r <= 0) {
+                this.relicDrops.push(new RelicDrop(enemy.x, enemy.y, available[i]));
+                return;
+            }
+        }
+        this.relicDrops.push(new RelicDrop(enemy.x, enemy.y, available[0]));
     }
 }

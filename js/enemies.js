@@ -672,7 +672,11 @@ class Enemy {
 
 // --- 怪物波次管理 ---
 class WaveManager {
-    constructor() {
+    constructor(rng) {
+        this.rng = rng || null; // 可选的种子随机数生成器（每日挑战模式）
+        this.eliteChanceMult = 1;  // 每日修饰符：精英概率倍率
+        this.enemySpeedMult = 1;   // 每日修饰符：敌人移速倍率
+        this.bossHpMult = 1;       // 每日修饰符：Boss血量倍率
         this.wave = 0;
         this.timer = 0;
         this.spawnTimer = 0;
@@ -680,28 +684,32 @@ class WaveManager {
         this.difficulty = 1;
         this.difficultyMultiplier = 1.0; // 由设置界面控制: easy=0.6, normal=1.0, hard=1.5
 
-        // 波次配置（10阶段渐进式难度）
+        // 波次配置（12阶段渐进式难度，开局更快节奏）
         this.waveConfigs = [
-            // 阶段1 (0~40s)：入门 - 只有骷髅
-            { time: 0,   types: ['skeleton'], spawnRate: 2.0, count: 2, mult: 0.8 },
-            // 阶段2 (40~90s)：加入蝙蝠
-            { time: 40,  types: ['skeleton', 'bat'], spawnRate: 1.6, count: 3, mult: 0.9 },
-            // 阶段3 (90~150s)：加入史莱姆，开始出精英
-            { time: 90,  types: ['skeleton', 'bat', 'slime'], spawnRate: 1.3, count: 4, mult: 1.0, elite: 'eliteSkeleton', eliteChance: 0.01 },
-            // 阶段4 (150~240s)：加入骷髅法师，精英频率提升
-            { time: 150, types: ['skeleton', 'bat', 'slime', 'skeleton', 'bat'], spawnRate: 1.0, count: 5, mult: 1.2, elite: 'eliteSkeleton', eliteChance: 0.03, rangedType: 'skeletonMage', rangedChance: 0.10 },
-            // 阶段5 (240~360s)：数量激增，更多远程
-            { time: 240, types: ['skeleton', 'bat', 'slime', 'skeleton', 'bat'], spawnRate: 0.8, count: 8, mult: 1.6, elite: 'eliteSkeleton', eliteChance: 0.05, rangedType: 'skeletonMage', rangedChance: 0.12 },
-            // 阶段6 (360~480s)：加入暗影狼和石像鬼
-            { time: 360, types: ['skeleton', 'bat', 'slime', 'shadowWolf', 'gargoyle'], spawnRate: 0.6, count: 12, mult: 2.2, elite: 'eliteSkeleton', eliteChance: 0.08, rangedType: 'skeletonMage', rangedChance: 0.15 },
-            // 阶段7 (480~600s)：加入恶魔术士，精英多样化
-            { time: 480, types: ['shadowWolf', 'bat', 'slime', 'gargoyle', 'skeleton'], spawnRate: 0.5, count: 15, mult: 3.0, elite: 'eliteDemon', eliteChance: 0.10, rangedType: 'demonCaster', rangedChance: 0.18 },
-            // 阶段8 (600~750s)：加入爆破虫，全面强敌
-            { time: 600, types: ['shadowWolf', 'gargoyle', 'exploder', 'slime', 'bat'], spawnRate: 0.4, count: 18, mult: 4.0, elite: 'eliteDemon', eliteChance: 0.12, rangedType: 'demonCaster', rangedChance: 0.20 },
-            // 阶段9 (750~900s)：地狱级密度
-            { time: 750, types: ['shadowWolf', 'gargoyle', 'exploder', 'demonCaster', 'slime'], spawnRate: 0.35, count: 22, mult: 5.5, elite: 'eliteDemon', eliteChance: 0.15, rangedType: 'demonCaster', rangedChance: 0.22 },
-            // 阶段10 (900s+)：无尽噩梦
-            { time: 900, types: ['shadowWolf', 'gargoyle', 'exploder', 'demonCaster', 'slime', 'skeleton'], spawnRate: 0.3, count: 28, mult: 7.0, elite: 'eliteDemon', eliteChance: 0.18, rangedType: 'demonCaster', rangedChance: 0.25 },
+            // 阶段1 (0~25s)：快速入门 - 骷髅密集出现让玩家快速升级
+            { time: 0,   types: ['skeleton'], spawnRate: 1.5, count: 3, mult: 0.7 },
+            // 阶段2 (25~60s)：加入蝙蝠，节奏加快
+            { time: 25,  types: ['skeleton', 'bat'], spawnRate: 1.2, count: 4, mult: 0.85 },
+            // 阶段3 (60~120s)：加入史莱姆，开始出精英
+            { time: 60,  types: ['skeleton', 'bat', 'slime'], spawnRate: 1.0, count: 5, mult: 1.0, elite: 'eliteSkeleton', eliteChance: 0.02 },
+            // 阶段4 (120~200s)：加入骷髅法师，精英频率提升
+            { time: 120, types: ['skeleton', 'bat', 'slime', 'skeleton', 'bat'], spawnRate: 0.9, count: 6, mult: 1.3, elite: 'eliteSkeleton', eliteChance: 0.04, rangedType: 'skeletonMage', rangedChance: 0.10 },
+            // 阶段5 (200~300s)：数量激增，更多远程
+            { time: 200, types: ['skeleton', 'bat', 'slime', 'skeleton', 'bat'], spawnRate: 0.75, count: 9, mult: 1.7, elite: 'eliteSkeleton', eliteChance: 0.06, rangedType: 'skeletonMage', rangedChance: 0.12 },
+            // 阶段6 (300~400s)：加入暗影狼和石像鬼
+            { time: 300, types: ['skeleton', 'bat', 'slime', 'shadowWolf', 'gargoyle'], spawnRate: 0.6, count: 12, mult: 2.2, elite: 'eliteSkeleton', eliteChance: 0.08, rangedType: 'skeletonMage', rangedChance: 0.15 },
+            // 阶段7 (400~500s)：加入恶魔术士，精英多样化
+            { time: 400, types: ['shadowWolf', 'bat', 'slime', 'gargoyle', 'skeleton'], spawnRate: 0.5, count: 15, mult: 3.0, elite: 'eliteDemon', eliteChance: 0.10, rangedType: 'demonCaster', rangedChance: 0.18 },
+            // 阶段8 (500~620s)：加入爆破虫，全面强敌
+            { time: 500, types: ['shadowWolf', 'gargoyle', 'exploder', 'slime', 'bat'], spawnRate: 0.4, count: 18, mult: 4.0, elite: 'eliteDemon', eliteChance: 0.12, rangedType: 'demonCaster', rangedChance: 0.20 },
+            // 阶段9 (620~750s)：地狱级密度
+            { time: 620, types: ['shadowWolf', 'gargoyle', 'exploder', 'demonCaster', 'slime'], spawnRate: 0.35, count: 22, mult: 5.5, elite: 'eliteDemon', eliteChance: 0.15, rangedType: 'demonCaster', rangedChance: 0.22 },
+            // 阶段10 (750~900s)：无尽噩梦
+            { time: 750, types: ['shadowWolf', 'gargoyle', 'exploder', 'demonCaster', 'slime', 'skeleton'], spawnRate: 0.3, count: 26, mult: 6.5, elite: 'eliteDemon', eliteChance: 0.18, rangedType: 'demonCaster', rangedChance: 0.25 },
+            // 阶段11 (900~1080s)：终极考验
+            { time: 900, types: ['shadowWolf', 'gargoyle', 'exploder', 'demonCaster', 'slime'], spawnRate: 0.25, count: 32, mult: 8.0, elite: 'eliteDemon', eliteChance: 0.22, rangedType: 'demonCaster', rangedChance: 0.28 },
+            // 阶段12 (1080s+)：真·无尽
+            { time: 1080, types: ['shadowWolf', 'gargoyle', 'exploder', 'demonCaster', 'slime', 'skeleton'], spawnRate: 0.2, count: 40, mult: 10.0, elite: 'eliteDemon', eliteChance: 0.25, rangedType: 'demonCaster', rangedChance: 0.30 },
         ];
 
         // 阶段Boss：首次210秒，之后逐步缩短间隔（最短90秒）
@@ -709,6 +717,10 @@ class WaveManager {
         this.nextStageBossTime = this.stageBossInterval;
         this.stageBossCount = 0;
         this.activeStageBoss = null; // 当前存活的阶段Boss引用
+
+        // 精英围攻波次：首次120秒，之后每100秒一次
+        this.nextSiegeTime = 120;
+        this.siegeCount = 0;
     }
 
     update(dt, playerX, playerY, enemies, particles) {
@@ -742,17 +754,27 @@ class WaveManager {
             const count = config.count + Math.floor(this.gameTime / 60);
             for (let i = 0; i < count; i++) {
                 // 远程怪独立低概率生成，不再混入普通池
+                const _rnd = this.rng ? this.rng() : Math.random();
                 let type;
-                if (config.rangedType && Math.random() < (config.rangedChance || 0)) {
+                if (config.rangedType && _rnd < (config.rangedChance || 0)) {
                     type = config.rangedType;
                 } else {
-                    type = Utils.randPick(config.types);
+                    // 种子模式用rng挑选类型
+                    if (this.rng) {
+                        type = config.types[Math.floor(this.rng() * config.types.length)];
+                    } else {
+                        type = Utils.randPick(config.types);
+                    }
                 }
                 const pos = this._getSpawnPos(playerX, playerY);
-                enemies.push(new Enemy(type, pos.x, pos.y, config.mult * this.difficulty * this.difficultyMultiplier));
+                const newEnemy = new Enemy(type, pos.x, pos.y, config.mult * this.difficulty * this.difficultyMultiplier);
+                // 每日修饰符：敌人移速加成
+                if (this.enemySpeedMult > 1) newEnemy.speed *= this.enemySpeedMult;
+                enemies.push(newEnemy);
 
-                // 精英怪概率（附带随机词缀）
-                if (config.elite && Math.random() < (config.eliteChance || 0)) {
+                // 精英怪概率（附带随机词缀，受每日修饰符影响）
+                const _eRnd = this.rng ? this.rng() : Math.random();
+                if (config.elite && _eRnd < (config.eliteChance || 0) * this.eliteChanceMult) {
                     const elitePos = this._getSpawnPos(playerX, playerY);
                     const elite = new Enemy(config.elite, elitePos.x, elitePos.y, config.mult * this.difficulty * this.difficultyMultiplier);
                     elite.applyRandomAffix();
@@ -772,12 +794,39 @@ class WaveManager {
             const boss = new Enemy('boss', pos.x, pos.y, bossMultiplier * this.difficulty);
             boss._isStageBoss = true;
             boss.applyBossVariant(this.stageBossCount - 1); // 每次不同变体
+            // 每日修饰符：Boss血量加成
+            if (this.bossHpMult > 1) {
+                boss.maxHp = Math.floor(boss.maxHp * this.bossHpMult);
+                boss.hp = boss.maxHp;
+            }
             enemies.push(boss);
             this.activeStageBoss = boss;
             // Boss间隔逐步缩短：210s → 180s → 150s → 120s → 90s（最短）
             this.stageBossInterval = Math.max(90, 210 - this.stageBossCount * 30);
             this.nextStageBossTime = this.gameTime + this.stageBossInterval;
             Utils.shake(10);
+        }
+
+        // 精英围攻波次：环形生成一圈精英怪
+        if (this.gameTime >= this.nextSiegeTime) {
+            this.siegeCount++;
+            const siegeEliteCount = Math.min(6 + this.siegeCount * 2, 20);
+            const siegeRadius = 400;
+            const eliteTypes = ['eliteSkeleton', 'eliteDemon'];
+            const eliteType = this.siegeCount >= 3 ? 'eliteDemon' : 'eliteSkeleton';
+            for (let i = 0; i < siegeEliteCount; i++) {
+                const angle = (Math.PI * 2 / siegeEliteCount) * i + Math.random() * 0.3;
+                const ex = playerX + Math.cos(angle) * siegeRadius;
+                const ey = playerY + Math.sin(angle) * siegeRadius;
+                const mult = config.mult * this.difficulty * this.difficultyMultiplier * (1 + this.siegeCount * 0.15);
+                const elite = new Enemy(eliteType, ex, ey, mult);
+                elite.applyRandomAffix();
+                elite._isSiegeElite = true;
+                enemies.push(elite);
+            }
+            this.nextSiegeTime = this.gameTime + Math.max(60, 100 - this.siegeCount * 5);
+            Utils.shake(8);
+            return { type: 'siegeWave', count: siegeEliteCount };
         }
 
         // 检测阶段Boss是否被击败（返回信号让 game.js 处理奖励）
@@ -791,8 +840,8 @@ class WaveManager {
     }
 
     _getSpawnPos(playerX, playerY) {
-        const angle = Utils.rand(0, Math.PI * 2);
-        const dist = Utils.rand(500, 700);
+        const angle = this.rng ? this.rng() * Math.PI * 2 : Utils.rand(0, Math.PI * 2);
+        const dist = this.rng ? 500 + this.rng() * 200 : Utils.rand(500, 700);
         return {
             x: playerX + Math.cos(angle) * dist,
             y: playerY + Math.sin(angle) * dist,
@@ -1087,6 +1136,153 @@ class MapHazard {
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.fillText(this.icon, sx, sy);
+        ctx.restore();
+    }
+}
+
+// ============================================
+// 环境交互物（加速区 / 传送门 / 陷阱）
+// ============================================
+class EnvObject {
+    constructor(x, y, type, linkedPortal) {
+        this.x = x;
+        this.y = y;
+        this.type = type;      // 'speed' | 'portal' | 'trap'
+        this.alive = true;
+        this.timer = 0;
+        this.linkedPortal = linkedPortal || null; // 传送门配对
+
+        const defs = {
+            speed:  { radius: 70, life: 25, color: '#44ffaa', glowColor: '#88ffdd', icon: '⚡' },
+            portal: { radius: 30, life: 60, color: '#aa66ff', glowColor: '#cc88ff', icon: '🌀' },
+            trap:   { radius: 55, life: 20, color: '#ff4466', glowColor: '#ff6688', icon: '⚠' },
+        };
+        const def = defs[type] || defs.speed;
+        this.radius = def.radius;
+        this.life = def.life;
+        this.maxLife = def.life;
+        this.color = def.color;
+        this.glowColor = def.glowColor;
+        this.icon = def.icon;
+
+        // 传送门冷却
+        this.teleportCD = 0;
+        // 陷阱伤害计时
+        this.damageTimer = 0;
+    }
+
+    update(dt, player, particles) {
+        this.timer += dt;
+        this.life -= dt;
+        if (this.life <= 0) { this.alive = false; return null; }
+        if (this.teleportCD > 0) this.teleportCD -= dt;
+
+        const dist = Utils.dist(this.x, this.y, player.x, player.y);
+
+        switch (this.type) {
+            case 'speed':
+                // 在范围内加速
+                if (dist < this.radius + player.radius) {
+                    player._envSpeedBuff = 1.5; // 50%加速
+                    return { type: 'speed' };
+                }
+                return null;
+
+            case 'portal':
+                // 进入传送门范围
+                if (dist < this.radius + player.radius && this.linkedPortal && this.linkedPortal.alive && this.teleportCD <= 0) {
+                    this.teleportCD = 3.0;            // 3秒冷却
+                    this.linkedPortal.teleportCD = 3.0;
+                    // 传送粒子
+                    if (particles) {
+                        particles.addShockwave(this.x, this.y, this.color, 60, 0.3);
+                        particles.addShockwave(this.linkedPortal.x, this.linkedPortal.y, this.color, 60, 0.3);
+                    }
+                    return { type: 'portal', destX: this.linkedPortal.x, destY: this.linkedPortal.y };
+                }
+                return null;
+
+            case 'trap':
+                // 在范围内：减速 + 伤害
+                if (dist < this.radius + player.radius) {
+                    player._envTrapSlow = 0.6; // 40%减速
+                    this.damageTimer += dt;
+                    if (this.damageTimer >= 0.8) { // 每0.8秒伤害
+                        this.damageTimer = 0;
+                        return { type: 'trap', damage: Math.ceil(player.getMaxHp() * 0.03) };
+                    }
+                }
+                return null;
+        }
+        return null;
+    }
+
+    render(ctx, camera) {
+        const sx = this.x - camera.x;
+        const sy = this.y - camera.y;
+
+        const fadeAlpha = this.life < 4 ? this.life / 4 : 1;
+        const pulse = 1 + Math.sin(this.timer * 3) * 0.1;
+        const cdAlpha = this.teleportCD > 0 ? 0.3 : 1;
+
+        ctx.save();
+
+        // 外发光
+        ctx.globalAlpha = 0.1 * fadeAlpha * cdAlpha;
+        ctx.fillStyle = this.glowColor;
+        ctx.beginPath();
+        ctx.arc(sx, sy, this.radius * pulse + 12, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 主区域
+        ctx.globalAlpha = 0.2 * fadeAlpha * cdAlpha;
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(sx, sy, this.radius * pulse, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 边框（虚线动画）
+        ctx.globalAlpha = 0.4 * fadeAlpha * cdAlpha;
+        ctx.strokeStyle = this.color;
+        ctx.lineWidth = 2;
+        ctx.setLineDash([8, 5]);
+        ctx.lineDashOffset = -this.timer * 30;
+        ctx.beginPath();
+        ctx.arc(sx, sy, this.radius * pulse, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // 传送门：额外旋转光线
+        if (this.type === 'portal' && this.teleportCD <= 0) {
+            ctx.globalAlpha = 0.25 * fadeAlpha;
+            ctx.strokeStyle = this.glowColor;
+            ctx.lineWidth = 2;
+            for (let i = 0; i < 4; i++) {
+                const a = this.timer * 2 + i * Math.PI / 2;
+                const r1 = this.radius * 0.4;
+                const r2 = this.radius * 0.9;
+                ctx.beginPath();
+                ctx.moveTo(sx + Math.cos(a) * r1, sy + Math.sin(a) * r1);
+                ctx.lineTo(sx + Math.cos(a) * r2, sy + Math.sin(a) * r2);
+                ctx.stroke();
+            }
+        }
+
+        // 图标
+        ctx.globalAlpha = 0.7 * fadeAlpha * cdAlpha;
+        ctx.font = '18px serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(this.icon, sx, sy);
+
+        // 传送门冷却提示
+        if (this.type === 'portal' && this.teleportCD > 0) {
+            ctx.globalAlpha = 0.6;
+            ctx.font = '12px sans-serif';
+            ctx.fillStyle = '#aaa';
+            ctx.fillText(this.teleportCD.toFixed(1) + 's', sx, sy + this.radius + 14);
+        }
+
         ctx.restore();
     }
 }

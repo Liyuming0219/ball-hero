@@ -439,11 +439,11 @@ class UISystem {
         ctx.fillStyle = '#feca57';
         ctx.fillText(`💰 ${gold} 金币`, W / 2, btnAreaY - 14 * S);
 
-        // === 按钮区域：开始战斗 + 天赋商店 ===
-        const btnW = Math.round(180 * S);
+        // === 按钮区域：开始战斗 + 每日挑战 + 天赋商店 ===
+        const btnW = Math.round(150 * S);
         const btnH = Math.round(50 * S);
-        const btnGap = Math.round(24 * S);
-        const totalBtnW = btnW * 2 + btnGap;
+        const btnGap = Math.round(16 * S);
+        const totalBtnW = btnW * 3 + btnGap * 2;
         const btnStartX = (W - totalBtnW) / 2;
         const btnY = btnAreaY;
 
@@ -466,13 +466,56 @@ class UISystem {
             ctx.shadowBlur = 0;
         }
 
-        ctx.font = this._font('bold', 20);
+        ctx.font = this._font('bold', 18);
         ctx.fillStyle = '#fff';
         ctx.textAlign = 'center';
         ctx.fillText('开始战斗', startBtnX + btnW / 2, btnY + btnH / 2 + 1);
 
+        // --- 每日挑战按钮（橙色渐变风格） ---
+        const dailyBtnX = startBtnX + btnW + btnGap;
+        const dailyHover = this.mouseX >= dailyBtnX && this.mouseX <= dailyBtnX + btnW && this.mouseY >= btnY && this.mouseY <= btnY + btnH;
+
+        const dailyGrad = ctx.createLinearGradient(dailyBtnX, btnY, dailyBtnX + btnW, btnY + btnH);
+        dailyGrad.addColorStop(0, dailyHover ? '#ffaa44' : '#ff9f43');
+        dailyGrad.addColorStop(1, dailyHover ? '#ff7733' : '#ee5a24');
+        ctx.fillStyle = dailyGrad;
+        this._roundRect(ctx, dailyBtnX, btnY, btnW, btnH, 25 * S);
+        ctx.fill();
+
+        if (dailyHover) {
+            ctx.shadowColor = '#ff9f43';
+            ctx.shadowBlur = 15;
+            this._roundRect(ctx, dailyBtnX, btnY, btnW, btnH, 25 * S);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        }
+
+        ctx.font = this._font('bold', 18);
+        ctx.fillStyle = '#fff';
+        ctx.textAlign = 'center';
+        ctx.fillText('每日挑战', dailyBtnX + btnW / 2, btnY + btnH / 2 + 1);
+
+        // 每日挑战信息提示（hover时显示今日角色和修饰）
+        if (dailyHover && typeof DailyLeaderboard !== 'undefined') {
+            const seed = DailyLeaderboard.getSeed();
+            const charId = DailyLeaderboard.getDailyCharacter(seed);
+            const charDef = CharacterDefs[charId];
+            const mods = DailyLeaderboard.getDailyModifiers(seed);
+            const tipY = btnY + btnH + 8 * S;
+            ctx.font = this._font(null, 12);
+            ctx.fillStyle = '#ffcc88';
+            ctx.textAlign = 'center';
+            const modText = mods.map(m => m.name).join(' + ');
+            ctx.fillText(`今日角色: ${charDef ? charDef.name : charId}  |  ${modText}`, W / 2, tipY);
+            const played = DailyLeaderboard.hasPlayedToday();
+            if (played) {
+                ctx.fillStyle = 'rgba(255,200,100,0.5)';
+                ctx.fillText('(今日已挑战过，可继续刷新记录)', W / 2, tipY + 16 * S);
+            }
+        }
+
         // --- 天赋商店按钮（描边透明风格，与封面"游戏设置"同款） ---
-        const shopBtnX = startBtnX + btnW + btnGap;
+        const shopBtnX = dailyBtnX + btnW + btnGap;
         const shopHover = this.mouseX >= shopBtnX && this.mouseX <= shopBtnX + btnW && this.mouseY >= btnY && this.mouseY <= btnY + btnH;
 
         ctx.fillStyle = shopHover ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.06)';
@@ -483,7 +526,7 @@ class UISystem {
         this._roundRect(ctx, shopBtnX, btnY, btnW, btnH, 25 * S);
         ctx.stroke();
 
-        ctx.font = this._font('bold', 20);
+        ctx.font = this._font('bold', 18);
         ctx.fillStyle = shopHover ? '#feca57' : 'rgba(255,255,255,0.7)';
         ctx.textAlign = 'center';
         ctx.fillText('天赋商店', shopBtnX + btnW / 2, btnY + btnH / 2 + 1);
@@ -496,10 +539,13 @@ class UISystem {
         const hintText = isMobile
             ? '触屏拖拽移动 · 自动攻击 · 双指点击暂停'
             : 'WASD / 方向键移动 · 自动攻击 · 升级后选择强化';
-        ctx.fillText(hintText, W / 2, btnY + btnH + 24 * S);
+        ctx.fillText(hintText, W / 2, btnY + btnH + 46 * S);
 
         if (startHover && this.consumeClick()) {
             return this.characterList[this.selectedCharacter];
+        }
+        if (dailyHover && this.consumeClick()) {
+            return '__daily__';
         }
         if (shopHover && this.consumeClick()) {
             this._shopOpen = true;
@@ -554,23 +600,29 @@ class UISystem {
         ctx.fillStyle = '#ffcc44';
         ctx.fillText(`💰 ${gold} 金币`, W / 2, H * 0.14);
 
-        // 升级项定义
+        // 升级项定义（2排×5列）
         const upgrades = [
-            { id: 'maxHp', name: '生命强化', icon: '❤️', desc: '每级 +5 最大生命', color: '#44ff44', baseCost: 50, maxLv: 10 },
-            { id: 'attack', name: '攻击强化', icon: '⚔️', desc: '每级 +3% 攻击力', color: '#ff6644', baseCost: 80, maxLv: 10 },
-            { id: 'moveSpeed', name: '疾步', icon: '💨', desc: '每级 +2% 移速', color: '#44aaff', baseCost: 60, maxLv: 8 },
-            { id: 'pickupRange', name: '磁力', icon: '🧲', desc: '每级 +10 拾取范围', color: '#ffaa44', baseCost: 40, maxLv: 8 },
-            { id: 'expGain', name: '悟性', icon: '📖', desc: '每级 +5% 经验获取', color: '#aa88ff', baseCost: 70, maxLv: 8 },
+            { id: 'maxHp', name: '生命强化', icon: '❤️', desc: '+5 最大生命/级', color: '#44ff44', baseCost: 50, maxLv: 10 },
+            { id: 'attack', name: '攻击强化', icon: '⚔️', desc: '+3% 攻击力/级', color: '#ff6644', baseCost: 80, maxLv: 10 },
+            { id: 'moveSpeed', name: '疾步', icon: '💨', desc: '+2% 移速/级', color: '#44aaff', baseCost: 60, maxLv: 8 },
+            { id: 'pickupRange', name: '磁力', icon: '🧲', desc: '+10 拾取范围/级', color: '#ffaa44', baseCost: 40, maxLv: 8 },
+            { id: 'expGain', name: '悟性', icon: '📖', desc: '+5% 经验获取/级', color: '#aa88ff', baseCost: 70, maxLv: 8 },
+            { id: 'critRate', name: '锐眼', icon: '👁️', desc: '+2% 暴击率/级', color: '#ff44aa', baseCost: 90, maxLv: 6 },
+            { id: 'armor', name: '铁壁', icon: '🛡️', desc: '+1 护甲/级', color: '#8899bb', baseCost: 60, maxLv: 8 },
+            { id: 'hpRegen', name: '再生', icon: '💚', desc: '+0.5 回复/秒/级', color: '#44ff88', baseCost: 50, maxLv: 8 },
+            { id: 'cooldown', name: '疾风', icon: '⚡', desc: '+3% 攻速/级', color: '#ffdd44', baseCost: 100, maxLv: 5 },
+            { id: 'startBuff', name: '天赋觉醒', icon: '🌟', desc: '每级解锁起始技能', color: '#ff8800', baseCost: 200, maxLv: 5 },
         ];
 
-        // 卡片布局
-        const cols = upgrades.length;
-        const cardW = Math.min(Math.round(200 * S), Math.floor((W - 60 * S) / cols - 16 * S));
-        const cardH = Math.round(280 * S);
-        const gap = Math.round(16 * S);
+        // 卡片布局（2行5列）
+        const cols = 5;
+        const rows = Math.ceil(upgrades.length / cols);
+        const cardW = Math.min(Math.round(160 * S), Math.floor((W - 60 * S) / cols - 12 * S));
+        const cardH = Math.round(230 * S);
+        const gap = Math.round(12 * S);
         const totalW = cols * cardW + (cols - 1) * gap;
         const startX = (W - totalW) / 2;
-        const cardY = H * 0.20;
+        const cardY = H * 0.18;
 
         for (let i = 0; i < upgrades.length; i++) {
             const upg = upgrades[i];
@@ -579,8 +631,11 @@ class UISystem {
             const isMax = currentLv >= upg.maxLv;
             const canBuy = !isMax && gold >= cost;
 
-            const cx = startX + i * (cardW + gap);
-            const isHover = this.mouseX >= cx && this.mouseX <= cx + cardW && this.mouseY >= cardY && this.mouseY <= cardY + cardH;
+            const col = i % cols;
+            const row = Math.floor(i / cols);
+            const cx = startX + col * (cardW + gap);
+            const cy = cardY + row * (cardH + gap);
+            const isHover = this.mouseX >= cx && this.mouseX <= cx + cardW && this.mouseY >= cy && this.mouseY <= cy + cardH;
 
             // 卡片背景
             ctx.save();
@@ -591,31 +646,29 @@ class UISystem {
             ctx.fillStyle = isHover ? '#1a1a2a' : '#101020';
             ctx.strokeStyle = isMax ? '#333355' : (canBuy ? upg.color : '#333355');
             ctx.lineWidth = isMax ? 1 : (canBuy ? 2 : 1);
-            this._roundRect(ctx, cx, cardY, cardW, cardH, 12 * S);
+            this._roundRect(ctx, cx, cy, cardW, cardH, 12 * S);
             ctx.fill();
             ctx.stroke();
             ctx.restore();
 
-            // 图标
-            ctx.font = this._font(null, 36, 'serif');
-            ctx.textAlign = 'center';
-            ctx.fillText(upg.icon, cx + cardW / 2, cardY + 44 * S);
+            // 图标（统一风格圆形徽章）
+            this._drawSkillIcon(ctx, upg.icon, cx + cardW / 2, cy + 30 * S, 18 * S, 'rare', upg.color);
 
             // 名称
-            ctx.font = this._font('bold', 17);
+            ctx.font = this._font('bold', 14);
             ctx.fillStyle = upg.color;
-            ctx.fillText(upg.name, cx + cardW / 2, cardY + 78 * S);
+            ctx.fillText(upg.name, cx + cardW / 2, cy + 58 * S);
 
             // 描述
-            ctx.font = this._font(null, 12);
+            ctx.font = this._font(null, 10);
             ctx.fillStyle = '#8899aa';
-            ctx.fillText(upg.desc, cx + cardW / 2, cardY + 102 * S);
+            ctx.fillText(upg.desc, cx + cardW / 2, cy + 76 * S);
 
             // 等级进度条
-            const barW = cardW - 30 * S;
-            const barH = 10 * S;
-            const barX = cx + 15 * S;
-            const barY = cardY + 120 * S;
+            const barW = cardW - 24 * S;
+            const barH = 8 * S;
+            const barX = cx + 12 * S;
+            const barY = cy + 90 * S;
             ctx.fillStyle = '#1a1a2a';
             this._roundRect(ctx, barX, barY, barW, barH, 4 * S);
             ctx.fill();
@@ -633,24 +686,25 @@ class UISystem {
             ctx.font = this._font('bold', 13);
             ctx.fillStyle = isMax ? '#88ffaa' : '#aabbcc';
             ctx.textAlign = 'center';
-            ctx.fillText(isMax ? 'MAX' : `Lv.${currentLv} / ${upg.maxLv}`, cx + cardW / 2, cardY + 155 * S);
+            ctx.fillText(isMax ? 'MAX' : `Lv.${currentLv}/${upg.maxLv}`, cx + cardW / 2, cy + 118 * S);
 
             // 效果数值
-            ctx.font = this._font(null, 12);
+            ctx.font = this._font(null, 10);
             ctx.fillStyle = '#667788';
-            let effectText = '';
-            if (upg.id === 'maxHp') effectText = `当前: +${currentLv * 5} HP`;
-            else if (upg.id === 'attack') effectText = `当前: +${currentLv * 3}% 攻击`;
-            else if (upg.id === 'moveSpeed') effectText = `当前: +${currentLv * 2}% 移速`;
-            else if (upg.id === 'pickupRange') effectText = `当前: +${currentLv * 10} 范围`;
-            else if (upg.id === 'expGain') effectText = `当前: +${currentLv * 5}% 经验`;
-            ctx.fillText(effectText, cx + cardW / 2, cardY + 176 * S);
+            const effectMap = {
+                maxHp: `+${currentLv * 5} HP`, attack: `+${currentLv * 3}%攻击`,
+                moveSpeed: `+${currentLv * 2}%移速`, pickupRange: `+${currentLv * 10}范围`,
+                expGain: `+${currentLv * 5}%经验`, critRate: `+${currentLv * 2}%暴击`,
+                armor: `+${currentLv}护甲`, hpRegen: `+${(currentLv * 0.5).toFixed(1)}/秒`,
+                cooldown: `+${currentLv * 3}%攻速`, startBuff: `${currentLv}个起始技能`,
+            };
+            ctx.fillText(effectMap[upg.id] || '', cx + cardW / 2, cy + 136 * S);
 
             // 购买按钮区域
-            const buyBtnW = cardW - 30 * S;
-            const buyBtnH = 36 * S;
-            const buyBtnX = cx + 15 * S;
-            const buyBtnY = cardY + cardH - 56 * S;
+            const buyBtnW = cardW - 24 * S;
+            const buyBtnH = 30 * S;
+            const buyBtnX = cx + 12 * S;
+            const buyBtnY = cy + cardH - 46 * S;
             const buyHover = isHover && this.mouseY >= buyBtnY && this.mouseY <= buyBtnY + buyBtnH;
 
             ctx.save();
@@ -694,7 +748,7 @@ class UISystem {
         const backW = Math.round(140 * S);
         const backH = Math.round(44 * S);
         const backX = (W - backW) / 2;
-        const backY = H - 80 * S;
+        const backY = Math.min(H - 60 * S, cardY + rows * (cardH + gap) + 20 * S);
         const backHover = this.mouseX >= backX && this.mouseX <= backX + backW && this.mouseY >= backY && this.mouseY <= backY + backH;
 
         ctx.save();
@@ -741,13 +795,31 @@ class UISystem {
     }
 
     // --- 游戏HUD ---
-    renderHUD(player, waveManager) {
+    renderHUD(player, waveManager, gameMode) {
         const ctx = this.ctx;
         const W = this.W;
         const H = this.H;
         const S = this.scale;
 
         ctx.save();
+
+        // 每日挑战模式标识（右上角）
+        if (gameMode === 'daily') {
+            const tagW = 100 * S;
+            const tagH = 28 * S;
+            const tagX = W - tagW - 12 * S;
+            const tagY = 10 * S;
+            const tagGrad = ctx.createLinearGradient(tagX, tagY, tagX + tagW, tagY);
+            tagGrad.addColorStop(0, 'rgba(255,159,67,0.85)');
+            tagGrad.addColorStop(1, 'rgba(238,90,36,0.85)');
+            ctx.fillStyle = tagGrad;
+            this._roundRect(ctx, tagX, tagY, tagW, tagH, 14 * S);
+            ctx.fill();
+            ctx.font = this._font('bold', 13);
+            ctx.fillStyle = '#fff';
+            ctx.textAlign = 'center';
+            ctx.fillText('每日挑战', tagX + tagW / 2, tagY + tagH / 2 + 1);
+        }
 
         // ---- 左上区域：血条 + 经验条 + 等级信息 ----
         const pad = Math.round(16 * S);
@@ -927,6 +999,139 @@ class UISystem {
             ctx.fillText('x' + player.getComboMultiplier().toFixed(2) + ' DMG', comboX, comboY + 20 * S);
             ctx.globalAlpha = 1;
         }
+
+        ctx.restore();
+    }
+
+    // --- 战斗日志 / DPS 统计面板 (按 L 键切换) ---
+    renderCombatLog(combatLog, gameTime) {
+        const ctx = this.ctx;
+        const W = this.W;
+        const H = this.H;
+        const S = this.scale;
+
+        const panelW = Math.round(Math.min(280 * S, W * 0.28));
+        const panelH = Math.round(Math.min(360 * S, H * 0.55));
+        const panelX = W - panelW - Math.round(12 * S);
+        const panelY = Math.round(H * 0.25);
+        const lineH = Math.round(18 * S);
+        const pad = Math.round(10 * S);
+
+        ctx.save();
+
+        // 半透明背景
+        ctx.fillStyle = 'rgba(0,0,0,0.72)';
+        this._roundRect(ctx, panelX, panelY, panelW, panelH, 10 * S);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+        ctx.lineWidth = 1;
+        this._roundRect(ctx, panelX, panelY, panelW, panelH, 10 * S);
+        ctx.stroke();
+
+        let y = panelY + pad;
+
+        // 标题行：DPS 统计
+        ctx.font = this._font('bold', 13);
+        ctx.textAlign = 'left';
+        ctx.fillStyle = '#ffcc44';
+        ctx.fillText('⚔ DPS 统计', panelX + pad, y + 4);
+
+        // 实时 DPS & 峰值 DPS
+        ctx.textAlign = 'right';
+        ctx.font = this._font('bold', 13);
+        ctx.fillStyle = '#44ff88';
+        ctx.fillText(Utils.formatNumber(Math.floor(combatLog.currentDPS)) + ' DPS', panelX + panelW - pad, y + 4);
+        y += lineH;
+
+        ctx.font = this._font(null, 11);
+        ctx.textAlign = 'left';
+        ctx.fillStyle = '#aaa';
+        ctx.fillText('峰值: ' + Utils.formatNumber(Math.floor(combatLog.peakDPS)), panelX + pad, y + 2);
+        ctx.textAlign = 'right';
+        ctx.fillText('总伤: ' + Utils.formatNumber(Math.floor(combatLog.getTotalDamage())), panelX + panelW - pad, y + 2);
+        y += lineH + Math.round(4 * S);
+
+        // 分割线
+        ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+        ctx.beginPath();
+        ctx.moveTo(panelX + pad, y);
+        ctx.lineTo(panelX + panelW - pad, y);
+        ctx.stroke();
+        y += Math.round(6 * S);
+
+        // 伤害来源排行
+        ctx.font = this._font('bold', 11);
+        ctx.textAlign = 'left';
+        ctx.fillStyle = '#ccc';
+        ctx.fillText('伤害来源', panelX + pad, y + 2);
+        ctx.textAlign = 'right';
+        ctx.fillText('占比', panelX + panelW - pad, y + 2);
+        y += lineH;
+
+        const sorted = combatLog.getSorted();
+        const totalDmg = combatLog.getTotalDamage() || 1;
+        const maxSources = Math.min(sorted.length, 8);
+        const barColors = ['#ff6644', '#ffaa44', '#44aaff', '#44ff88', '#cc66ff', '#ff44aa', '#88ffcc', '#aabbff'];
+
+        for (let i = 0; i < maxSources; i++) {
+            const src = sorted[i];
+            const pct = src.total / totalDmg;
+            const barW = Math.round((panelW - pad * 2 - 4) * pct);
+
+            // 伤害条
+            ctx.fillStyle = barColors[i % barColors.length];
+            ctx.globalAlpha = 0.25;
+            this._roundRect(ctx, panelX + pad, y - Math.round(6 * S), barW, lineH - 2, 3 * S);
+            ctx.fill();
+            ctx.globalAlpha = 1;
+
+            // 名称
+            ctx.font = this._font(null, 11);
+            ctx.textAlign = 'left';
+            ctx.fillStyle = barColors[i % barColors.length];
+            ctx.fillText(src.name, panelX + pad + 4, y + 2);
+
+            // 数值
+            ctx.textAlign = 'right';
+            ctx.fillStyle = '#ddd';
+            const pctText = (pct * 100).toFixed(1) + '%';
+            ctx.fillText(Utils.formatNumber(Math.floor(src.total)) + '  ' + pctText, panelX + panelW - pad, y + 2);
+
+            y += lineH;
+            if (y > panelY + panelH - lineH * 3) break;
+        }
+
+        // 分割线
+        y += Math.round(4 * S);
+        ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+        ctx.beginPath();
+        ctx.moveTo(panelX + pad, y);
+        ctx.lineTo(panelX + panelW - pad, y);
+        ctx.stroke();
+        y += Math.round(8 * S);
+
+        // 最近事件日志
+        ctx.font = this._font(null, 10);
+        const now = performance.now();
+        const visibleEntries = combatLog.entries.filter(e => now - e.time < 8000);
+        const maxEntries = Math.min(visibleEntries.length, 5);
+        for (let i = visibleEntries.length - maxEntries; i < visibleEntries.length; i++) {
+            const entry = visibleEntries[i];
+            const age = (now - entry.time) / 1000;
+            ctx.globalAlpha = Math.max(0.3, 1 - age / 8);
+            ctx.textAlign = 'left';
+            ctx.fillStyle = entry.color;
+            ctx.fillText(entry.text, panelX + pad, y + 2);
+            y += Math.round(14 * S);
+            if (y > panelY + panelH - pad) break;
+        }
+        ctx.globalAlpha = 1;
+
+        // 底部提示
+        ctx.font = this._font(null, 9);
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#666';
+        ctx.fillText('按 L 关闭', panelX + panelW / 2, panelY + panelH - Math.round(6 * S));
 
         ctx.restore();
     }
@@ -1207,14 +1412,13 @@ class UISystem {
                 ctx.restore();
             }
 
-            // 图标
-            ctx.font = this._font(null, 40, 'serif');
-            ctx.textAlign = 'center';
-            ctx.fillText(choice.icon, cx + cardW / 2, cardY + 65 * S);
+            // 图标（统一风格圆形徽章）
+            this._drawSkillIcon(ctx, choice.icon, cx + cardW / 2, cardY + 58 * S, 26 * S, choice.rarity, rarity.border);
 
             // 名称
             ctx.font = this._font('bold', 19);
             ctx.fillStyle = rarity.text;
+            ctx.textAlign = 'center';
             ctx.fillText(choice.name, cx + cardW / 2, cardY + 105 * S);
 
             // 描述
@@ -1238,54 +1442,103 @@ class UISystem {
         return result;
     }
 
-    // --- 死亡画面 ---
-    renderDeathScreen(player, gameTime, goldEarned) {
+    // --- 死亡画面（含战斗总结）---
+    renderDeathScreen(player, gameTime, goldEarned, battleStats, dailyInfo) {
         const ctx = this.ctx;
         const W = this.W;
         const H = this.H;
         const S = this.scale;
 
-        ctx.fillStyle = 'rgba(10, 0, 0, 0.8)';
+        ctx.fillStyle = 'rgba(10, 0, 0, 0.85)';
         ctx.fillRect(0, 0, W, H);
 
         ctx.save();
         ctx.shadowColor = '#ff2222';
         ctx.shadowBlur = 30 * S;
-        ctx.font = this._font('bold', 52);
+        ctx.font = this._font('bold', 48);
         ctx.textAlign = 'center';
         ctx.fillStyle = '#ff4444';
-        ctx.fillText('灵魂消散...', W / 2, H * 0.22);
+        ctx.fillText(dailyInfo ? '每日挑战结束' : '灵魂消散...', W / 2, H * 0.10);
         ctx.restore();
 
-        // 统计
-        ctx.font = this._font(null, 24);
+        // 每日挑战排名横幅
+        if (dailyInfo) {
+            ctx.font = this._font('bold', 24);
+            ctx.fillStyle = '#ffcc44';
+            ctx.textAlign = 'center';
+            const score = typeof DailyLeaderboard !== 'undefined' ? DailyLeaderboard.calcScore(gameTime, player.kills, player.level) : 0;
+            ctx.fillText(`综合分: ${score}  |  排名: #${dailyInfo.rank}`, W / 2, H * 0.17);
+            // 修饰符标签
+            ctx.font = this._font(null, 13);
+            ctx.fillStyle = '#ff9f43';
+            const modText = dailyInfo.modifiers.map(m => `[${m.name}]`).join('  ');
+            ctx.fillText(modText, W / 2, H * 0.21);
+        }
+
+        // 核心统计
+        const statsStartY = dailyInfo ? H * 0.25 : H * 0.22;
+        ctx.font = this._font(null, 18);
         ctx.fillStyle = '#aabbcc';
         ctx.textAlign = 'center';
 
         const stats = [
             `存活时间: ${Utils.formatTime(gameTime)}`,
-            `等级: ${player.level}`,
-            `击杀: ${Utils.formatNumber(player.kills)}`,
-            `武器等级: Lv.${player.weaponLevel}`,
+            `等级: ${player.level}  |  武器: Lv.${player.weaponLevel}${player.weaponEvolved ? ' ★进化' : ''}`,
+            `总击杀: ${Utils.formatNumber(player.kills)}`,
         ];
 
+        // 战斗总结（如果有battleStats）
+        if (battleStats) {
+            stats.push(`最高连杀: ${battleStats.maxCombo}  |  Boss击杀: ${battleStats.bossKills}`);
+            stats.push(`道具收集: ${battleStats.itemsCollected}  |  受伤: ${Utils.formatNumber(battleStats.damageTaken)}`);
+        }
+
+        // 获得遗物
+        if (player.relics && player.relics.length > 0) {
+            const relicNames = player.relics.map(id => {
+                const r = typeof RelicDefs !== 'undefined' ? RelicDefs[id] : null;
+                return r ? r.icon + r.name : id;
+            }).join(' ');
+            stats.push(`遗物: ${relicNames}`);
+        }
+
         stats.forEach((text, i) => {
-            ctx.fillText(text, W / 2, H * 0.36 + i * 36 * S);
+            ctx.fillText(text, W / 2, statsStartY + i * 26 * S);
         });
 
         // 获得金币
         if (goldEarned > 0) {
-            const goldY = H * 0.36 + stats.length * 36 * S + 16 * S;
-            ctx.font = this._font('bold', 22);
+            const goldY = statsStartY + stats.length * 26 * S + 10 * S;
+            ctx.font = this._font('bold', 20);
             ctx.fillStyle = '#ffcc44';
             ctx.fillText(`💰 +${goldEarned} 金币`, W / 2, goldY);
+        }
+
+        // 每日排行榜（在stats下方展示前5名）
+        if (dailyInfo && dailyInfo.leaderboard && dailyInfo.leaderboard.length > 0) {
+            const lbY = statsStartY + (stats.length + 1) * 26 * S + 30 * S;
+            ctx.font = this._font('bold', 16);
+            ctx.fillStyle = '#ff9f43';
+            ctx.textAlign = 'center';
+            ctx.fillText('── 今日排行榜 ──', W / 2, lbY);
+
+            const top5 = dailyInfo.leaderboard.slice(0, 5);
+            ctx.font = this._font(null, 14);
+            top5.forEach((entry, i) => {
+                const y = lbY + 22 * S + i * 20 * S;
+                const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`;
+                const charDef = typeof CharacterDefs !== 'undefined' ? CharacterDefs[entry.character] : null;
+                const charName = charDef ? charDef.name : entry.character;
+                ctx.fillStyle = i < 3 ? '#ffcc88' : '#8899aa';
+                ctx.fillText(`${medal}  ${entry.score}分  ${charName}  ${Utils.formatTime(entry.time)}  ${entry.kills}杀`, W / 2, y);
+            });
         }
 
         // 重新开始按钮
         const btnW = Math.round(220 * S);
         const btnH = Math.round(54 * S);
         const btnX = (W - btnW) / 2;
-        const btnY = H * 0.72;
+        const btnY = H * 0.88;
         const btnHover = this.mouseX >= btnX && this.mouseX <= btnX + btnW && this.mouseY >= btnY && this.mouseY <= btnY + btnH;
 
         ctx.save();
@@ -1312,7 +1565,7 @@ class UISystem {
     }
 
     // --- 提前结束（胜利撤退）画面 ---
-    renderVictoryScreen(player, gameTime, goldEarned) {
+    renderVictoryScreen(player, gameTime, goldEarned, battleStats, dailyInfo) {
         const ctx = this.ctx;
         const W = this.W;
         const H = this.H;
@@ -1328,43 +1581,91 @@ class UISystem {
         ctx.font = this._font('bold', 48);
         ctx.textAlign = 'center';
         ctx.fillStyle = '#ffcc44';
-        ctx.fillText('⚔ 战术撤退', W / 2, H * 0.2);
+        ctx.fillText(dailyInfo ? '每日挑战结束' : '⚔ 战术撤退', W / 2, H * 0.10);
         ctx.restore();
 
-        ctx.font = this._font(null, 18);
-        ctx.fillStyle = '#8899aa';
-        ctx.textAlign = 'center';
-        ctx.fillText('你选择结束战斗，本次成果已记录', W / 2, H * 0.27);
+        // 每日挑战排名横幅
+        if (dailyInfo) {
+            ctx.font = this._font('bold', 24);
+            ctx.fillStyle = '#ffcc44';
+            ctx.textAlign = 'center';
+            const score = typeof DailyLeaderboard !== 'undefined' ? DailyLeaderboard.calcScore(gameTime, player.kills, player.level) : 0;
+            ctx.fillText(`综合分: ${score}  |  排名: #${dailyInfo.rank}`, W / 2, H * 0.17);
+            ctx.font = this._font(null, 13);
+            ctx.fillStyle = '#ff9f43';
+            const modText = dailyInfo.modifiers.map(m => `[${m.name}]`).join('  ');
+            ctx.fillText(modText, W / 2, H * 0.21);
+        } else {
+            ctx.font = this._font(null, 18);
+            ctx.fillStyle = '#8899aa';
+            ctx.textAlign = 'center';
+            ctx.fillText('你选择结束战斗，本次成果已记录', W / 2, H * 0.17);
+        }
 
         // 统计
-        ctx.font = this._font(null, 24);
+        const statsStartY = dailyInfo ? H * 0.25 : H * 0.24;
+        ctx.font = this._font(null, 18);
         ctx.fillStyle = '#aabbcc';
         ctx.textAlign = 'center';
 
         const stats = [
             `存活时间: ${Utils.formatTime(gameTime)}`,
-            `等级: ${player.level}`,
-            `击杀: ${Utils.formatNumber(player.kills)}`,
-            `武器等级: Lv.${player.weaponLevel}`,
+            `等级: ${player.level}  |  武器: Lv.${player.weaponLevel}${player.weaponEvolved ? ' ★进化' : ''}`,
+            `总击杀: ${Utils.formatNumber(player.kills)}`,
         ];
 
+        // 战斗总结
+        if (battleStats) {
+            stats.push(`最高连杀: ${battleStats.maxCombo}  |  Boss击杀: ${battleStats.bossKills}`);
+            stats.push(`道具收集: ${battleStats.itemsCollected}  |  受伤: ${Utils.formatNumber(battleStats.damageTaken)}`);
+        }
+
+        // 获得遗物
+        if (player.relics && player.relics.length > 0) {
+            const relicNames = player.relics.map(id => {
+                const r = typeof RelicDefs !== 'undefined' ? RelicDefs[id] : null;
+                return r ? r.icon + r.name : id;
+            }).join(' ');
+            stats.push(`遗物: ${relicNames}`);
+        }
+
         stats.forEach((text, i) => {
-            ctx.fillText(text, W / 2, H * 0.36 + i * 36 * S);
+            ctx.fillText(text, W / 2, statsStartY + i * 26 * S);
         });
 
         // 获得金币
         if (goldEarned > 0) {
-            const goldY = H * 0.36 + stats.length * 36 * S + 20 * S;
-            ctx.font = this._font('bold', 24);
+            const goldY = statsStartY + stats.length * 26 * S + 10 * S;
+            ctx.font = this._font('bold', 20);
             ctx.fillStyle = '#ffcc44';
             ctx.fillText(`💰 +${goldEarned} 金币`, W / 2, goldY);
+        }
+
+        // 每日排行榜
+        if (dailyInfo && dailyInfo.leaderboard && dailyInfo.leaderboard.length > 0) {
+            const lbY = statsStartY + (stats.length + 1) * 26 * S + 30 * S;
+            ctx.font = this._font('bold', 16);
+            ctx.fillStyle = '#ff9f43';
+            ctx.textAlign = 'center';
+            ctx.fillText('── 今日排行榜 ──', W / 2, lbY);
+
+            const top5 = dailyInfo.leaderboard.slice(0, 5);
+            ctx.font = this._font(null, 14);
+            top5.forEach((entry, i) => {
+                const y = lbY + 22 * S + i * 20 * S;
+                const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i + 1}.`;
+                const charDef = typeof CharacterDefs !== 'undefined' ? CharacterDefs[entry.character] : null;
+                const charName = charDef ? charDef.name : entry.character;
+                ctx.fillStyle = i < 3 ? '#ffcc88' : '#8899aa';
+                ctx.fillText(`${medal}  ${entry.score}分  ${charName}  ${Utils.formatTime(entry.time)}  ${entry.kills}杀`, W / 2, y);
+            });
         }
 
         // 返回按钮
         const btnW = Math.round(220 * S);
         const btnH = Math.round(54 * S);
         const btnX = (W - btnW) / 2;
-        const btnY = H * 0.72;
+        const btnY = H * 0.88;
         const btnHover = this.mouseX >= btnX && this.mouseX <= btnX + btnW && this.mouseY >= btnY && this.mouseY <= btnY + btnH;
 
         ctx.save();
@@ -1422,27 +1723,55 @@ class UISystem {
                 { label: '额外弹幕', value: `+${player.bonuses.projectileBonus}`, color: '#cc88ff' },
             ];
 
-            // 额外特殊buff
+            // 额外特殊buff（带图标+描述）
             const specials = [];
-            if (player.bonuses.orbitalBlades > 0) specials.push(`环绕刀刃 ×${player.bonuses.orbitalBlades}`);
-            if (player.bonuses.fireTrail) specials.push('火焰尾迹');
-            if (player.bonuses.chainLightning > 0) specials.push(`连锁闪电 ×${player.bonuses.chainLightning}`);
-            if (player.bonuses.thornAura) specials.push('荆棘光环');
-            if (player.bonuses.splitShot) specials.push('弹幕分裂');
-            if (player.bonuses.focusFire) specials.push('集火追踪');
-            else if (player.bonuses.homingShot) specials.push('追踪弹');
-            if (player.bonuses.explosiveKill) specials.push('爆杀');
-            if (player.bonuses.frostAura) specials.push('冰霜光环');
-            if (player.bonuses.vampiric > 0) specials.push(`吸血 ${(player.bonuses.vampiric * 100).toFixed(0)}%`);
-            if (player.bonuses.doubleStrike > 0) specials.push(`双击 ${(player.bonuses.doubleStrike * 100).toFixed(0)}%`);
+            if (player.bonuses.orbitalBlades > 0) specials.push({ name: `环绕刀刃 ×${player.bonuses.orbitalBlades}`, desc: '围绕玩家旋转的伤害刀刃', color: '#88ccff', icon: '🔪' });
+            if (player.bonuses.fireTrail) specials.push({ name: '火焰尾迹', desc: '移动时留下灼烧地面', color: '#ff6633', icon: '🔥' });
+            if (player.bonuses.chainLightning > 0) specials.push({ name: `连锁闪电 ×${player.bonuses.chainLightning}`, desc: '攻击跳跃至附近敌人', color: '#aaccff', icon: '⚡' });
+            if (player.bonuses.thornAura) specials.push({ name: '荆棘光环', desc: '受伤反弹伤害给攻击者', color: '#44ff88', icon: '🌿' });
+            if (player.bonuses.splitShot) specials.push({ name: '弹幕分裂', desc: '弹幕击中后分裂为2枚', color: '#cc88ff', icon: '💫' });
+            if (player.bonuses.focusFire) specials.push({ name: '集火追踪', desc: '弹幕集中瞄准最近敌人', color: '#ff88cc', icon: '🎯' });
+            else if (player.bonuses.homingShot) specials.push({ name: '追踪弹', desc: '弹幕自动追踪敌人', color: '#88ffaa', icon: '🏹' });
+            if (player.bonuses.explosiveKill) specials.push({ name: '爆杀', desc: '击杀敌人时产生爆炸', color: '#ff8844', icon: '💥' });
+            if (player.bonuses.frostAura) specials.push({ name: '冰霜光环', desc: '减速周围敌人移动', color: '#88ddff', icon: '❄️' });
+            if (player.bonuses.vampiric > 0) specials.push({ name: `吸血 ${(player.bonuses.vampiric * 100).toFixed(0)}%`, desc: '攻击回复生命值', color: '#ff4488', icon: '🩸' });
+            if (player.bonuses.doubleStrike > 0) specials.push({ name: `双击 ${(player.bonuses.doubleStrike * 100).toFixed(0)}%`, desc: '概率发射双倍弹幕', color: '#ffaa88', icon: '✨' });
+            if (player.bonuses.burnAura) specials.push({ name: '灼烧光环', desc: '持续灼烧近距离敌人', color: '#ff5533', icon: '☀️' });
+            if (player.bonuses.shield > 0) specials.push({ name: `护盾 ${player.bonuses.shield}`, desc: '吸收伤害的能量护盾', color: '#4488ff', icon: '🛡️' });
+
+            // 遗物列表
+            const relicItems = [];
+            if (player.relics && player.relics.length > 0) {
+                for (const rid of player.relics) {
+                    const rd = RelicDefs[rid];
+                    if (rd) relicItems.push({ name: rd.name, desc: rd.desc, color: rd.color, icon: rd.icon });
+                }
+            }
+
+            // 融合列表
+            const fusionItems = [];
+            if (player._activeFusions && player._activeFusions.length > 0) {
+                for (const fid of player._activeFusions) {
+                    const fd = FusionDefs[fid];
+                    if (fd) fusionItems.push({ name: fd.name, desc: fd.desc, color: '#ffaa00', icon: fd.icon });
+                }
+            }
+
+            // 武器信息
+            const weaponNames = { sword: '圣剑', fireball: '火球', dagger: '飞刀', hammer: '战锤', bow: '弓箭', necro: '亡灵' };
+            const weaponInfo = `${player.def.icon} ${weaponNames[player.def.weaponType] || player.def.weaponType} Lv.${player.weaponLevel}/${player.weaponMaxLevel}${player.weaponEvolved ? ' ★已进化' : ''}`;
 
             // 动态计算面板高度
             const lineH = Math.round(28 * S);
             const headerH = Math.round(72 * S);
             const statsH = stats.length * lineH;
-            const specialsH = specials.length > 0 ? (Math.round(6 * S) + Math.round(22 * S) + specials.length * Math.round(22 * S) + Math.round(10 * S)) : 0;
+            const skillLineH = Math.round(36 * S);  // 技能行高（含图标+描述）
+            const specialsH = specials.length > 0 ? (Math.round(6 * S) + Math.round(24 * S) + specials.length * skillLineH + Math.round(10 * S)) : 0;
+            const relicsH = relicItems.length > 0 ? (Math.round(6 * S) + Math.round(24 * S) + relicItems.length * skillLineH + Math.round(10 * S)) : 0;
+            const fusionsH = fusionItems.length > 0 ? (Math.round(6 * S) + Math.round(24 * S) + fusionItems.length * skillLineH + Math.round(10 * S)) : 0;
+            const weaponH = Math.round(40 * S);
             const bottomPad = Math.round(18 * S);
-            const panelH = headerH + statsH + specialsH + bottomPad;
+            const panelH = headerH + statsH + specialsH + relicsH + fusionsH + weaponH + bottomPad;
 
             // 面板居中
             const maxPy = H - panelH - Math.round(100 * S);
@@ -1489,26 +1818,109 @@ class UISystem {
                 sy += lineH;
             }
 
-            // 特殊buff区域
+            // 武器信息区域
+            sy += Math.round(4 * S);
+            ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+            ctx.beginPath();
+            ctx.moveTo(px + 20 * S, sy - Math.round(10 * S));
+            ctx.lineTo(px + panelW - 20 * S, sy - Math.round(10 * S));
+            ctx.stroke();
+
+            ctx.font = this._font('bold', 14);
+            ctx.textAlign = 'left';
+            ctx.fillStyle = player.weaponEvolved ? '#ffdd44' : '#8899aa';
+            ctx.fillText('武器', lx, sy);
+            ctx.textAlign = 'right';
+            ctx.fillStyle = player.weaponEvolved ? '#ffdd44' : '#ccddee';
+            ctx.fillText(weaponInfo, rx, sy);
+            sy += Math.round(26 * S);
+
+            // 特殊技能区域（带图标+描述）
             if (specials.length > 0) {
-                sy += Math.round(6 * S);
-                ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+                sy += Math.round(2 * S);
+                ctx.strokeStyle = 'rgba(255,255,255,0.08)';
                 ctx.beginPath();
-                ctx.moveTo(px + 20 * S, sy - Math.round(14 * S));
-                ctx.lineTo(px + panelW - 20 * S, sy - Math.round(14 * S));
+                ctx.moveTo(px + 20 * S, sy - Math.round(12 * S));
+                ctx.lineTo(px + panelW - 20 * S, sy - Math.round(12 * S));
                 ctx.stroke();
 
                 ctx.font = this._font('bold', 13);
                 ctx.textAlign = 'left';
                 ctx.fillStyle = '#ffaa44';
-                ctx.fillText('已激活技能', lx, sy);
+                ctx.fillText('⚔ 已激活技能', lx, sy);
                 sy += Math.round(22 * S);
 
-                ctx.font = this._font(null, 14);
-                ctx.fillStyle = '#ccddee';
                 for (const sp of specials) {
-                    ctx.fillText(`◆ ${sp}`, lx, sy);
-                    sy += Math.round(22 * S);
+                    // 图标
+                    ctx.font = this._font(null, 16);
+                    ctx.fillText(sp.icon, lx, sy);
+                    // 技能名
+                    ctx.font = this._font('bold', 13);
+                    ctx.fillStyle = sp.color;
+                    ctx.fillText(sp.name, lx + Math.round(24 * S), sy);
+                    // 描述
+                    ctx.font = this._font(null, 11);
+                    ctx.fillStyle = '#667788';
+                    ctx.fillText(sp.desc, lx + Math.round(24 * S), sy + Math.round(16 * S));
+                    sy += skillLineH;
+                }
+            }
+
+            // 遗物区域
+            if (relicItems.length > 0) {
+                sy += Math.round(2 * S);
+                ctx.strokeStyle = 'rgba(255,255,255,0.08)';
+                ctx.beginPath();
+                ctx.moveTo(px + 20 * S, sy - Math.round(12 * S));
+                ctx.lineTo(px + panelW - 20 * S, sy - Math.round(12 * S));
+                ctx.stroke();
+
+                ctx.font = this._font('bold', 13);
+                ctx.textAlign = 'left';
+                ctx.fillStyle = '#cc88ff';
+                ctx.fillText('🏆 已获得遗物', lx, sy);
+                sy += Math.round(22 * S);
+
+                for (const ri of relicItems) {
+                    ctx.font = this._font(null, 16);
+                    ctx.fillStyle = '#ccddee';
+                    ctx.fillText(ri.icon, lx, sy);
+                    ctx.font = this._font('bold', 13);
+                    ctx.fillStyle = ri.color;
+                    ctx.fillText(ri.name, lx + Math.round(24 * S), sy);
+                    ctx.font = this._font(null, 11);
+                    ctx.fillStyle = '#667788';
+                    ctx.fillText(ri.desc, lx + Math.round(24 * S), sy + Math.round(16 * S));
+                    sy += skillLineH;
+                }
+            }
+
+            // 融合区域
+            if (fusionItems.length > 0) {
+                sy += Math.round(2 * S);
+                ctx.strokeStyle = 'rgba(255,200,0,0.15)';
+                ctx.beginPath();
+                ctx.moveTo(px + 20 * S, sy - Math.round(12 * S));
+                ctx.lineTo(px + panelW - 20 * S, sy - Math.round(12 * S));
+                ctx.stroke();
+
+                ctx.font = this._font('bold', 13);
+                ctx.textAlign = 'left';
+                ctx.fillStyle = '#ffaa00';
+                ctx.fillText('🔮 已激活融合', lx, sy);
+                sy += Math.round(22 * S);
+
+                for (const fi of fusionItems) {
+                    ctx.font = this._font(null, 14);
+                    ctx.fillStyle = '#ccddee';
+                    ctx.fillText(fi.icon, lx, sy);
+                    ctx.font = this._font('bold', 13);
+                    ctx.fillStyle = fi.color;
+                    ctx.fillText(fi.name, lx + Math.round(28 * S), sy);
+                    ctx.font = this._font(null, 11);
+                    ctx.fillStyle = '#887744';
+                    ctx.fillText(fi.desc, lx + Math.round(28 * S), sy + Math.round(16 * S));
+                    sy += skillLineH;
                 }
             }
 
@@ -1617,6 +2029,74 @@ _roundRect(ctx, x, y, w, h, r) {
         ctx.lineTo(x, y + r);
         ctx.quadraticCurveTo(x, y, x + r, y);
         ctx.closePath();
+    }
+
+    // 辅助：绘制统一风格技能图标（替代emoji）
+    // x,y 为图标中心坐标，size 为半径
+    _drawSkillIcon(ctx, icon, x, y, size, rarity, color) {
+        const S = this.scale;
+        const r = size;
+
+        // 稀有度外发光
+        const glowColors = {
+            common: 'rgba(100,160,255,0.15)',
+            rare: 'rgba(80,200,160,0.25)',
+            epic: 'rgba(180,100,255,0.35)',
+            legendary: 'rgba(255,180,60,0.45)',
+        };
+        const borderColors = {
+            common: '#556677',
+            rare: '#44cc88',
+            epic: '#aa66ff',
+            legendary: '#ffaa33',
+        };
+        const rar = rarity || 'common';
+        const borderCol = color || borderColors[rar] || '#556677';
+
+        ctx.save();
+
+        // 发光底层
+        const glow = ctx.createRadialGradient(x, y, r * 0.3, x, y, r * 1.4);
+        glow.addColorStop(0, glowColors[rar] || 'rgba(100,160,255,0.15)');
+        glow.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.arc(x, y, r * 1.4, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 深色圆底
+        const bgGrad = ctx.createRadialGradient(x - r * 0.2, y - r * 0.3, 0, x, y, r);
+        bgGrad.addColorStop(0, '#2a2a3a');
+        bgGrad.addColorStop(1, '#111118');
+        ctx.fillStyle = bgGrad;
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 外框
+        ctx.strokeStyle = borderCol;
+        ctx.lineWidth = (rar === 'legendary' ? 2.5 : rar === 'epic' ? 2 : 1.5) * S;
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // 内部高光弧
+        ctx.globalAlpha = 0.2;
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.5 * S;
+        ctx.beginPath();
+        ctx.arc(x, y, r * 0.75, -Math.PI * 0.8, -Math.PI * 0.2);
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+
+        // 绘制emoji图标（已有图标，用居中绘制）
+        ctx.font = `${Math.round(r * 1.2)}px serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(icon, x, y + 1);
+
+        ctx.restore();
     }
 
     // 辅助：自动换行文字（支持最大行数限制）

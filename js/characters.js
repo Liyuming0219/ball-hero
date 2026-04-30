@@ -282,6 +282,9 @@ class Player {
 
         // 危险区域减速
         this._hazardSlow = 0;
+        // 环境交互物效果
+        this._envSpeedBuff = 1;
+        this._envTrapSlow = 0;
     }
 
     // 获取实际属性
@@ -469,11 +472,23 @@ class Player {
         this.comboCount++;
         this.comboTimer = this.comboDecay;
         this.maxCombo = Math.max(this.maxCombo, this.comboCount);
+        // 里程碑标记（由game.js检测并触发特效）
+        const milestones = [25, 50, 100, 200, 500];
+        this._comboMilestone = milestones.includes(this.comboCount) ? this.comboCount : 0;
     }
 
     getComboMultiplier() {
-        // 每10连杀+5%伤害，上限50%
-        return 1 + Math.min(0.5, Math.floor(this.comboCount / 10) * 0.05);
+        // 每10连杀+5%伤害，上限80%（提升上限鼓励高连杀）
+        return 1 + Math.min(0.8, Math.floor(this.comboCount / 10) * 0.05);
+    }
+
+    // 连杀等级颜色
+    getComboColor() {
+        if (this.comboCount >= 200) return '#ff2222'; // 传奇红
+        if (this.comboCount >= 100) return '#ff8800'; // 史诗橙
+        if (this.comboCount >= 50) return '#ffdd00';  // 稀有金
+        if (this.comboCount >= 25) return '#44aaff';  // 精良蓝
+        return '#ffffff';
     }
 
     // 拾取遗物
@@ -503,6 +518,15 @@ class Player {
                 speed *= this._hazardSlow;
                 this._hazardSlow = 0; // 每帧重置
             }
+            // 环境交互：加速区 & 陷阱减速
+            if (this._envSpeedBuff > 1) {
+                speed *= this._envSpeedBuff;
+                this._envSpeedBuff = 1;
+            }
+            if (this._envTrapSlow > 0 && this._envTrapSlow < 1) {
+                speed *= this._envTrapSlow;
+                this._envTrapSlow = 0;
+            }
             this.x += nx * speed * dt;
             this.y += ny * speed * dt;
             this.facingAngle = Math.atan2(ny, nx);
@@ -510,6 +534,8 @@ class Player {
         } else {
             this.isMoving = false;
             this._hazardSlow = 0;
+            this._envSpeedBuff = 1;
+            this._envTrapSlow = 0;
         }
 
         // 身体晃动
@@ -578,6 +604,21 @@ class Player {
         // 无敌闪烁
         if (this.invincibleTime > 0 && Math.floor(this.invincibleTime * 20) % 2 === 0) {
             ctx.globalAlpha = 0.4;
+        }
+
+        // 武器进化光环
+        if (this.weaponEvolved) {
+            const pulse = 0.3 + Math.sin(Date.now() * 0.004) * 0.15;
+            ctx.globalAlpha = pulse;
+            ctx.fillStyle = '#ffdd44';
+            ctx.beginPath();
+            ctx.arc(sx, sy + bob, this.radius + 20, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.globalAlpha = pulse * 0.5;
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(sx, sy + bob, this.radius + 12, 0, Math.PI * 2);
+            ctx.fill();
         }
 
         // 脚下光圈

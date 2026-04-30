@@ -286,12 +286,32 @@ const UpgradePool = {
             this._chosenIds.add(choice.id);
             this._chosenCounts[choice.id] = (this._chosenCounts[choice.id] || 0) + 1;
         }
+        // 检查武器融合
+        this._checkFusions(player);
+    },
+
+    // 武器融合检测：当满足所有requires时自动触发
+    _activatedFusions: new Set(),
+
+    _checkFusions(player) {
+        for (const [fid, fdef] of Object.entries(FusionDefs)) {
+            if (this._activatedFusions.has(fid)) continue;
+            const met = fdef.requires.every(rid => this._chosenIds.has(rid));
+            if (met) {
+                this._activatedFusions.add(fid);
+                fdef.apply(player);
+                // 标记融合已激活，供UI展示
+                if (!player._activeFusions) player._activeFusions = [];
+                player._activeFusions.push(fid);
+            }
+        }
     },
 
     // 重置已选记录（新游戏时调用）
     resetChoices() {
         this._chosenIds.clear();
         this._chosenCounts = {};
+        this._activatedFusions.clear();
     },
 
     _getWeaponRarity(level) {

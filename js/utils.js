@@ -156,6 +156,21 @@ const Utils = {
         const c1 = 1.70158;
         const c3 = c1 + 1;
         return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
+    },
+
+    // 每日挑战种子生成（基于日期的伪随机）
+    getDailySeed() {
+        const d = new Date();
+        return d.getFullYear() * 10000 + (d.getMonth() + 1) * 100 + d.getDate();
+    },
+
+    // 基于种子的伪随机数生成器
+    seededRandom(seed) {
+        let s = seed;
+        return function() {
+            s = (s * 1664525 + 1013904223) & 0xFFFFFFFF;
+            return (s >>> 0) / 4294967296;
+        };
     }
 };
 
@@ -250,6 +265,11 @@ const MetaProgress = {
                 moveSpeed: 0,   // 每级+2%移速
                 pickupRange: 0, // 每级+10拾取范围
                 expGain: 0,     // 每级+5%经验获取
+                critRate: 0,    // 每级+2%暴击率
+                armor: 0,       // 每级+1护甲
+                hpRegen: 0,     // 每级+0.5生命恢复
+                cooldown: 0,    // 每级+3%攻速
+                startBuff: 0,   // 每级解锁1个起始buff
             }
         };
     },
@@ -308,13 +328,34 @@ const MetaProgress = {
         player.bonuses.moveSpeedMult += p.moveSpeed * 0.02;
         player.bonuses.pickupRangeBonus += p.pickupRange * 10;
         player.bonuses.expMult += p.expGain * 0.05;
+        player.bonuses.critRateBonus += p.critRate * 0.02;
+        player.bonuses.armorBonus += p.armor * 1;
+        player.bonuses.hpRegenBonus += p.hpRegen * 0.5;
+        player.bonuses.attackSpeedMult += p.cooldown * 0.03;
+        // startBuff: 按等级解锁起始buff（由game.js在初始化时处理）
+    },
+
+    // 起始buff列表（按startBuff等级依次解锁）
+    startingBuffs: [
+        { id: 'homing', apply(p) { p.bonuses.homingShot = true; } },
+        { id: 'frost', apply(p) { p.bonuses.frostAura = true; } },
+        { id: 'vamp', apply(p) { p.bonuses.vampiric = 0.02; } },
+        { id: 'orbital', apply(p) { p.bonuses.orbitalBlades = 1; } },
+        { id: 'shield', apply(p) { p.bonuses.shield = 20; } },
+    ],
+
+    applyStartingBuffs(player) {
+        const level = this.data.permUpgrades.startBuff || 0;
+        for (let i = 0; i < Math.min(level, this.startingBuffs.length); i++) {
+            this.startingBuffs[i].apply(player);
+        }
     },
 
     // 购买永久升级
     buyUpgrade(type) {
         const d = this.data;
-        const costs = { maxHp: 50, attack: 80, moveSpeed: 60, pickupRange: 40, expGain: 70 };
-        const maxLevels = { maxHp: 10, attack: 10, moveSpeed: 8, pickupRange: 8, expGain: 8 };
+        const costs = { maxHp: 50, attack: 80, moveSpeed: 60, pickupRange: 40, expGain: 70, critRate: 90, armor: 60, hpRegen: 50, cooldown: 100, startBuff: 200 };
+        const maxLevels = { maxHp: 10, attack: 10, moveSpeed: 8, pickupRange: 8, expGain: 8, critRate: 6, armor: 8, hpRegen: 8, cooldown: 5, startBuff: 5 };
         const cost = (costs[type] || 100) * (1 + d.permUpgrades[type]);
         if (d.gold >= cost && d.permUpgrades[type] < (maxLevels[type] || 10)) {
             d.gold -= cost;
@@ -414,5 +455,451 @@ const RelicDefs = {
             p.bonuses.attackMult += 0.1; p.bonuses.attackSpeedMult += 0.1;
             p.bonuses.moveSpeedMult += 0.1; p.bonuses.areaMult += 0.2;
         }
+    },
+};
+
+// ============================================
+// 音效系统 - Web Audio API 程序化音效
+// ============================================
+const SFX = {
+    _ctx: null,
+    _enabled: true,
+    _volume: 0.3,
+
+    init() {
+        try {
+            this._ctx = new (window.AudioContext || window.webkitAudioContext)();
+        } catch (e) { this._enabled = false; }
+    },
+
+    _ensureCtx() {
+        if (!this._ctx) this.init();
+        if (this._ctx && this._ctx.state === 'suspended') this._ctx.resume();
+        return this._ctx && this._enabled;
+    },
+
+    setVolume(v) { this._volume = Utils.clamp(v, 0, 1); },
+    toggle(on) { this._enabled = on; },
+
+    // 击中音效
+    hit() {
+        if (!this._ensureCtx()) return;
+        const ctx = this._ctx;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(220, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(110, ctx.currentTime + 0.05);
+        gain.gain.setValueAtTime(this._volume * 0.2, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.08);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.08);
+    },
+
+    // 升级音效
+    levelUp() {
+        if (!this._ensureCtx()) return;
+        const ctx = this._ctx;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(440, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.15);
+        gain.gain.setValueAtTime(this._volume * 0.3, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.3);
+    },
+
+    // 选择buff音效
+    selectBuff() {
+        if (!this._ensureCtx()) return;
+        const ctx = this._ctx;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(523, ctx.currentTime);
+        osc.frequency.setValueAtTime(659, ctx.currentTime + 0.06);
+        osc.frequency.setValueAtTime(784, ctx.currentTime + 0.12);
+        gain.gain.setValueAtTime(this._volume * 0.25, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.25);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.25);
+    },
+
+    // 受伤音效
+    hurt() {
+        if (!this._ensureCtx()) return;
+        const ctx = this._ctx;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(150, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(60, ctx.currentTime + 0.12);
+        gain.gain.setValueAtTime(this._volume * 0.2, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.15);
+    },
+
+    // 击杀音效
+    kill() {
+        if (!this._ensureCtx()) return;
+        const ctx = this._ctx;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(300, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(600, ctx.currentTime + 0.04);
+        gain.gain.setValueAtTime(this._volume * 0.15, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.06);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.06);
+    },
+
+    // Boss出现
+    bossAlert() {
+        if (!this._ensureCtx()) return;
+        const ctx = this._ctx;
+        for (let i = 0; i < 3; i++) {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(100 + i * 30, ctx.currentTime + i * 0.15);
+            gain.gain.setValueAtTime(this._volume * 0.3, ctx.currentTime + i * 0.15);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.15 + 0.12);
+            osc.start(ctx.currentTime + i * 0.15);
+            osc.stop(ctx.currentTime + i * 0.15 + 0.12);
+        }
+    },
+
+    // 连杀里程碑
+    comboMilestone() {
+        if (!this._ensureCtx()) return;
+        const ctx = this._ctx;
+        const notes = [523, 659, 784, 1047];
+        notes.forEach((freq, i) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.06);
+            gain.gain.setValueAtTime(this._volume * 0.2, ctx.currentTime + i * 0.06);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.06 + 0.12);
+            osc.start(ctx.currentTime + i * 0.06);
+            osc.stop(ctx.currentTime + i * 0.06 + 0.12);
+        });
+    },
+
+    // 拾取道具
+    pickup() {
+        if (!this._ensureCtx()) return;
+        const ctx = this._ctx;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(800, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.05);
+        gain.gain.setValueAtTime(this._volume * 0.15, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.1);
+    },
+
+    // 事件开始提示音
+    eventStart() {
+        if (!this._ensureCtx()) return;
+        const ctx = this._ctx;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(660, ctx.currentTime);
+        osc.frequency.setValueAtTime(880, ctx.currentTime + 0.1);
+        osc.frequency.setValueAtTime(1100, ctx.currentTime + 0.2);
+        gain.gain.setValueAtTime(this._volume * 0.25, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.4);
+    },
+
+    // 边界警告
+    boundaryWarn() {
+        if (!this._ensureCtx()) return;
+        const ctx = this._ctx;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(80, ctx.currentTime);
+        gain.gain.setValueAtTime(this._volume * 0.1, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.2);
+    },
+};
+
+// ============================================
+// 武器融合系统定义
+// ============================================
+const FusionDefs = {
+    // 追踪术 + 分裂弹 → 裂变导弹
+    fission_missile: {
+        name: '裂变导弹',
+        desc: '分裂子弹也具有追踪能力',
+        icon: '🚀💥',
+        requires: ['homing', 'split'],
+        apply(p) { p.bonuses._fusionFission = true; },
+    },
+    // 连锁闪电 + 灼烧光环 → 雷火风暴
+    thunder_fire: {
+        name: '雷火风暴',
+        desc: '闪电造成额外灼烧DOT',
+        icon: '⚡🔥',
+        requires: ['chain1', 'burn_aura'],
+        apply(p) { p.bonuses._fusionThunderFire = true; },
+    },
+    // 冰霜光环 + 荆棘 → 冰晶护甲
+    ice_thorn: {
+        name: '冰晶护甲',
+        desc: '被攻击时冻结攻击者0.5秒',
+        icon: '❄️🌵',
+        requires: ['frost', 'thorn'],
+        apply(p) { p.bonuses._fusionIceThorn = true; },
+    },
+    // 吸血 + 狂战士之怒 → 血族狂怒
+    blood_rage: {
+        name: '血族狂怒',
+        desc: '低血量时吸血翻倍，击杀回血+10',
+        icon: '🧛😡',
+        requires: ['vamp1', 'rage1'],
+        apply(p) { p.bonuses._fusionBloodRage = true; p.bonuses.killHeal += 10; },
+    },
+    // 双重打击 + 爆裂击杀 → 连爆
+    chain_explosion: {
+        name: '连锁爆破',
+        desc: '双重打击触发时爆炸范围翻倍',
+        icon: '✨💣',
+        requires: ['double', 'explokill'],
+        apply(p) { p.bonuses._fusionChainExplosion = true; },
+    },
+};
+
+// ============================================
+// 事件/挑战系统定义
+// ============================================
+const GameEvents = {
+    types: [
+        {
+            id: 'elite_invasion',
+            name: '精英入侵',
+            desc: '20秒内击杀所有精英获得额外奖励',
+            duration: 20,
+            color: '#ff4444',
+        },
+        {
+            id: 'gold_rush',
+            name: '金色狂潮',
+            desc: '30秒内经验获取翻倍',
+            duration: 30,
+            color: '#ffcc44',
+        },
+        {
+            id: 'treasure_hunter',
+            name: '宝箱怪来袭',
+            desc: '击杀宝箱怪获得3选1额外buff',
+            duration: 25,
+            color: '#44ffaa',
+        },
+        {
+            id: 'speed_frenzy',
+            name: '疾速狂乱',
+            desc: '所有敌人速度翻倍，但经验+50%',
+            duration: 15,
+            color: '#44aaff',
+        },
+    ],
+};
+
+// ============================================
+// 地图主题系统
+// ============================================
+const MapThemes = [
+    {
+        id: 'void',
+        name: '虚空深渊',
+        timeRange: [0, 90],   // 0~1:30
+        bgGrad: ['#06060e', '#0a0a18', '#080814'],
+        glowA: 'rgba(40,20,80,0.12)',
+        glowB: 'rgba(15,40,60,0.10)',
+        gridColor: '#16162a',
+        dotColor: '#2a2a44',
+        starColor: '#8899bb',
+        fogColor: null,
+        decorType: 'crystal',  // 水晶碎片
+        decorColor: '#6644aa',
+    },
+    {
+        id: 'crimson',
+        name: '猩红荒原',
+        timeRange: [90, 210],  // 1:30~3:30
+        bgGrad: ['#100808', '#180a0a', '#140808'],
+        glowA: 'rgba(80,20,20,0.14)',
+        glowB: 'rgba(60,30,15,0.10)',
+        gridColor: '#2a1616',
+        dotColor: '#442a2a',
+        starColor: '#bb8877',
+        fogColor: 'rgba(60,10,10,0.04)',
+        decorType: 'pillar',   // 废墟石柱
+        decorColor: '#884433',
+    },
+    {
+        id: 'frost',
+        name: '冰封虚域',
+        timeRange: [210, 360], // 3:30~6:00
+        bgGrad: ['#060810', '#0a0e1a', '#080c16'],
+        glowA: 'rgba(20,40,80,0.14)',
+        glowB: 'rgba(15,60,80,0.12)',
+        gridColor: '#162a2a',
+        dotColor: '#2a3a44',
+        starColor: '#99bbdd',
+        fogColor: 'rgba(10,20,40,0.05)',
+        decorType: 'iceSpike',  // 冰刺
+        decorColor: '#4488aa',
+    },
+    {
+        id: 'corruption',
+        name: '腐化之地',
+        timeRange: [360, 99999], // 6:00+
+        bgGrad: ['#0a0810', '#0e0a18', '#0c0814'],
+        glowA: 'rgba(50,10,60,0.16)',
+        glowB: 'rgba(20,50,10,0.10)',
+        gridColor: '#221a2a',
+        dotColor: '#3a2a44',
+        starColor: '#aa88cc',
+        fogColor: 'rgba(30,10,40,0.05)',
+        decorType: 'tree',      // 腐化树
+        decorColor: '#66aa44',
+    },
+];
+
+// ============================================
+// 每日挑战排行榜 - localStorage 持久化
+// ============================================
+const DailyLeaderboard = {
+    _key: 'roguelike_survivor_daily',
+
+    // 获取今日种子
+    getSeed() {
+        return Utils.getDailySeed();
+    },
+
+    // 根据种子选出今日角色（6选1轮转）
+    getDailyCharacter(seed) {
+        const chars = ['swordsman', 'mage', 'assassin', 'paladin', 'archer', 'necromancer'];
+        return chars[seed % chars.length];
+    },
+
+    // 获取今日挑战描述（每日不同的特殊修饰词）
+    getDailyModifiers(seed) {
+        const rng = Utils.seededRandom(seed * 7919); // 用不同种子得到修饰
+        const modPool = [
+            { name: '精英横行', desc: '精英出现率+50%', key: 'eliteBoost', value: 1.5 },
+            { name: '贫瘠之地', desc: '经验获取-20%', key: 'expPenalty', value: 0.8 },
+            { name: '疾风骤雨', desc: '敌人移速+15%', key: 'enemySpeedBoost', value: 1.15 },
+            { name: '强化护甲', desc: '初始护甲+3', key: 'startArmor', value: 3 },
+            { name: '狂暴之夜', desc: '攻速+20% 但生命-15%', key: 'berserker', value: 1 },
+            { name: '宝石倾泻', desc: '经验宝石价值+30%', key: 'gemBoost', value: 1.3 },
+            { name: '铁壁试炼', desc: 'Boss血量+40%', key: 'bossHpBoost', value: 1.4 },
+            { name: '幸运星', desc: '遗物掉率+25%', key: 'relicBoost', value: 1.25 },
+        ];
+        // 每天选2个修饰
+        const shuffled = modPool.slice();
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(rng() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        return shuffled.slice(0, 2);
+    },
+
+    // 读取排行榜数据
+    _load() {
+        try {
+            const raw = localStorage.getItem(this._key);
+            return raw ? JSON.parse(raw) : {};
+        } catch (e) {
+            return {};
+        }
+    },
+
+    _save(data) {
+        try {
+            localStorage.setItem(this._key, JSON.stringify(data));
+        } catch (e) { /* ignore */ }
+    },
+
+    // 提交成绩，返回排名
+    submitScore(seed, score) {
+        const data = this._load();
+        const key = String(seed);
+        if (!data[key]) data[key] = [];
+        data[key].push({
+            score: score.score,           // 综合分 = 存活时间(秒) * 10 + 击杀数 * 2 + 等级 * 50
+            time: score.time,
+            kills: score.kills,
+            level: score.level,
+            character: score.character,
+            timestamp: Date.now(),
+        });
+        // 按综合分降序排列，只保留前10
+        data[key].sort((a, b) => b.score - a.score);
+        data[key] = data[key].slice(0, 10);
+        // 清理超过7天的旧数据
+        const now = Date.now();
+        for (const k in data) {
+            if (k !== key && data[k].length > 0 && now - data[k][0].timestamp > 7 * 86400 * 1000) {
+                delete data[k];
+            }
+        }
+        this._save(data);
+        // 返回本次排名
+        const rank = data[key].findIndex(e => e.timestamp === score.timestamp) + 1;
+        return rank || data[key].length;
+    },
+
+    // 获取今日排行榜
+    getLeaderboard(seed) {
+        const data = this._load();
+        return data[String(seed)] || [];
+    },
+
+    // 计算综合分
+    calcScore(time, kills, level) {
+        return Math.floor(time * 10 + kills * 2 + level * 50);
+    },
+
+    // 今日是否已完成挑战
+    hasPlayedToday() {
+        const seed = this.getSeed();
+        const data = this._load();
+        const entries = data[String(seed)];
+        return entries && entries.length > 0;
     },
 };

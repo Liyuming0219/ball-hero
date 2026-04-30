@@ -3,9 +3,10 @@
 // ============================================
 
 class WeaponSystem {
-    constructor(player, particles) {
+    constructor(player, particles, combatLog) {
         this.player = player;
         this.particles = particles;
+        this.combatLog = combatLog || null;
         this.projectiles = [];
         this.attackTimer = 0;
         this.slashAngle = 0;
@@ -21,10 +22,24 @@ class WeaponSystem {
             swingDir: 1,       // 左/右挥
             type: player.def.weaponType,
         };
+
+        // 武器/弹幕类型 → 中文名称映射
+        this._weaponNames = {
+            sword: '圣剑斩', fireball: '火球术', dagger: '影刃',
+            hammer: '圣锤', bow: '连射弓', necro: '亡灵术',
+            rain_arrow: '箭雨', wind_slash: '龙卷风', split: '分裂弹',
+            arrow: '箭矢', soul_bolt: '灵魂弹',
+        };
     }
 
-    update(dt, enemies, camera) {
+    // 记录伤害到战斗日志
+    _logDmg(source, amount, isCrit, died) {
+        if (this.combatLog) this.combatLog.record(source, amount, !!isCrit, !!died);
+    }
+
+    update(dt, enemies, camera, spatialHash) {
         this._lastEnemies = enemies; // 保存引用给连锁闪电/爆裂击杀用
+        this._spatialHash = spatialHash; // 空间哈希加速碰撞
         this.attackTimer += dt;
         const interval = 1 / this.player.getAttackSpeed();
 
@@ -122,8 +137,9 @@ class WeaponSystem {
                 continue;
             }
 
-            // 碰撞检测
-            for (const enemy of enemies) {
+            // 碰撞检测（使用空间哈希加速）
+            const nearby = spatialHash ? spatialHash.query(p.x, p.y, p.radius + 40) : enemies;
+            for (const enemy of nearby) {
                 if (!enemy.alive) continue;
                 if (p.hitEnemies && p.hitEnemies.has(enemy)) continue;
 
@@ -265,6 +281,7 @@ class WeaponSystem {
             if (Math.abs(angleDiff) <= arcWidth / 2) {
                 const { damage, isCrit } = this._calcDamage();
                 const died = enemy.takeDamage(damage, this.particles, enemyAngle, 8);
+                this._logDmg('圣剑斩', damage, isCrit, died);
                 this.particles.addDamageText(enemy.x, enemy.y, damage, isCrit);
                 hitCount++;
 
@@ -391,21 +408,23 @@ class WeaponSystem {
             const speed = (400 + level * 25) * (1 + this.player.bonuses.projectileSpeed);
             const size = (12 + level * 2) * this.player.bonuses.areaMult;
 
+            const evolved = this.player.weaponEvolved;
             this.projectiles.push({
                 x: px,
                 y: py,
                 vx: Math.cos(a) * speed,
                 vy: Math.sin(a) * speed,
-                radius: size,
+                radius: evolved ? size * 1.3 : size,
                 damage: 0, // 计算在碰撞时
-                color: '#ff6644',
-                colors: ['#ff6644', '#ffaa00', '#ffff44'],
+                color: evolved ? '#aa22ff' : '#ff6644',
+                colors: evolved ? ['#aa22ff', '#dd44ff', '#ffaaff'] : ['#ff6644', '#ffaa00', '#ffff44'],
                 alive: true,
                 life: 2.5,
                 pierce: 1 + Math.floor(level / 2),
                 trail: true,
-                trailSize: size * 0.6,
+                trailSize: (evolved ? size * 1.3 : size) * 0.6,
                 type: 'fireball',
+                evolved: evolved,
                 hitEnemies: new Set(),
                 update(dt) {
                     this.x += this.vx * dt;
@@ -417,7 +436,8 @@ class WeaponSystem {
         }
 
         // 发射闪光
-        this.particles.addFlash(px, py, '#ff6644', 25, 0.1);
+        const evoColor = this.player.weaponEvolved ? '#aa22ff' : '#ff6644';
+        this.particles.addFlash(px, py, evoColor, 25, 0.1);
     }
 
     // 火焰新星
@@ -451,6 +471,7 @@ class WeaponSystem {
                 const { damage, isCrit } = this._calcDamage((2.5 + this.player.level * 0.05) * blazeMult);
                 const angle = Utils.angle(px, py, enemy.x, enemy.y);
                 const died = enemy.takeDamage(damage, this.particles, angle, 15);
+                this._logDmg('火球术', damage, isCrit, died);
                 this.particles.addDamageText(enemy.x, enemy.y, damage, isCrit, '#ff6644');
                 // 灼烧效果 + 叠加烈焰印记
                 if (!died && enemy.alive) {
@@ -508,6 +529,7 @@ class WeaponSystem {
 
                 const { damage, isCrit } = this._calcDamage(backstabMult);
                 const died = enemy.takeDamage(damage, this.particles, enemyAngle, 6);
+                this._logDmg('影刃', damage, isCrit, died);
                 const textColor = isBackstab ? '#ff44ff' : '#cc66ff';
                 this.particles.addDamageText(enemy.x, enemy.y, damage, isCrit, textColor);
                 if (isBackstab) {
@@ -573,6 +595,7 @@ class WeaponSystem {
                 const { damage, isCrit } = this._calcDamage(3.0 * markMult);
                 const a = Utils.angle(blinkX, blinkY, enemy.x, enemy.y);
                 const died = enemy.takeDamage(damage, this.particles, a, 12);
+                this._logDmg('暗影步', damage, isCrit, died);
                 this.particles.addDamageText(enemy.x, enemy.y, damage, isCrit, '#ff44ff');
                 // 暗影步标记命中的敌人
                 if (!died && enemy.alive) {
@@ -614,6 +637,7 @@ class WeaponSystem {
             const a = Utils.angle(px, py, enemy.x, enemy.y);
             // 更强的击退
             const died = enemy.takeDamage(damage, this.particles, a, 15);
+            this._logDmg('圣锤', damage, isCrit, died);
             this.particles.addDamageText(enemy.x, enemy.y, damage, isCrit, '#ffcc44');
 
             if (this.player.bonuses.vampiric > 0) {
@@ -637,20 +661,22 @@ class WeaponSystem {
             const a = angle + (i - (numArrows - 1) / 2) * spreadAngle;
             const speed = (420 + level * 20 + Utils.rand(-30, 30)) * (1 + this.player.bonuses.projectileSpeed);
 
+            const evo = this.player.weaponEvolved;
             this.projectiles.push({
                 x: px + Utils.rand(-4, 4),
                 y: py + Utils.rand(-4, 4),
                 vx: Math.cos(a) * speed,
                 vy: Math.sin(a) * speed,
-                radius: 5 * this.player.bonuses.areaMult,
+                radius: (evo ? 7 : 5) * this.player.bonuses.areaMult,
                 angle: a,
-                color: '#44ddaa',
+                color: evo ? '#ffdd44' : '#44ddaa',
                 alive: true,
                 life: 2.0,
                 pierce: Math.floor(level / 3),
                 trail: true,
-                trailSize: 2,
+                trailSize: evo ? 3 : 2,
                 type: 'arrow',
+                evolved: evo,
                 hitEnemies: new Set(),
                 update(dt) {
                     this.x += this.vx * dt;
@@ -739,6 +765,7 @@ class WeaponSystem {
                 const { damage, isCrit } = this._calcDamage(2.0 + this.player.level * 0.03);
                 const a = Utils.angle(bestX, bestY, enemy.x, enemy.y);
                 const died = enemy.takeDamage(damage, this.particles, a, 8);
+                this._logDmg('箭雨', damage, isCrit, died);
                 this.particles.addDamageText(enemy.x, enemy.y, damage, isCrit, '#88ffcc');
                 if (died) this._onKill(enemy);
             }
@@ -828,6 +855,7 @@ class WeaponSystem {
                 const { damage, isCrit } = this._calcDamage(1.5);
                 const a = Utils.angle(px, py, enemy.x, enemy.y);
                 const died = enemy.takeDamage(damage, this.particles, a, 10);
+                this._logDmg('亡灵术', damage, isCrit, died);
                 this.particles.addDamageText(enemy.x, enemy.y, damage, isCrit, '#aaffee');
                 if (died) this._onKill(enemy);
             }
@@ -847,6 +875,7 @@ class WeaponSystem {
         const { damage, isCrit } = this._calcDamage(baseMult);
         const angle = Utils.angle(this.player.x, this.player.y, enemy.x, enemy.y);
         const died = enemy.takeDamage(damage, this.particles, angle, 5);
+        this._logDmg(this._weaponNames[projectile.type] || '弹幕', damage, isCrit, died);
         this.particles.addDamageText(enemy.x, enemy.y, damage, isCrit, projectile.color);
 
         // 火球爆炸溅射AOE
@@ -858,6 +887,7 @@ class WeaponSystem {
                 if (Utils.dist(projectile.x, projectile.y, e2.x, e2.y) < splashRadius + e2.radius) {
                     const splashAngle = Utils.angle(projectile.x, projectile.y, e2.x, e2.y);
                     const splashDied = e2.takeDamage(splashDamage, this.particles, splashAngle, 6);
+                    this._logDmg('火球溢射', splashDamage, false, splashDied);
                     this.particles.addDamageText(e2.x, e2.y, Math.floor(splashDamage), false, '#ffaa00');
                     if (splashDied) this._onKill(e2);
                 }
@@ -933,7 +963,8 @@ class WeaponSystem {
                 if (!e2.alive || e2 === enemy) continue;
                 if (Utils.dist(enemy.x, enemy.y, e2.x, e2.y) < explodeRange) {
                     const a = Utils.angle(enemy.x, enemy.y, e2.x, e2.y);
-                    e2.takeDamage(explodeDmg, this.particles, a, 8);
+                    const eDied = e2.takeDamage(explodeDmg, this.particles, a, 8);
+                    this._logDmg('爆裂击杀', explodeDmg, false, eDied);
                     this.particles.addDamageText(e2.x, e2.y, Math.floor(explodeDmg), false, '#ffaa00');
                 }
             }
@@ -970,6 +1001,7 @@ class WeaponSystem {
             // 造成伤害
             const angle = Utils.angle(current.x, current.y, nearest.x, nearest.y);
             const died = nearest.takeDamage(damage, this.particles, angle, 3);
+            this._logDmg('闪电链', damage, false, died);
             this.particles.addDamageText(nearest.x, nearest.y, Math.floor(damage), false, '#88aaff');
             if (died) this._onKill(nearest);
             current = nearest;
