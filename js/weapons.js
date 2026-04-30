@@ -75,16 +75,40 @@ class WeaponSystem {
                 }
             }
 
-            // 追踪弹
+            // 追踪弹 / 集火追踪
             if (this.player.bonuses.homingShot && enemies.length > 0 && p.type !== 'split') {
-                const nearest = this._findNearest(enemies, 300);
-                if (nearest) {
-                    const targetAngle = Utils.angle(p.x, p.y, nearest.x, nearest.y);
+                let target = null;
+                let turnSpeed = 2.0 * dt; // 默认微弱追踪
+
+                if (this.player.bonuses.focusFire) {
+                    // 集火追踪模式：锁定目标，目标死亡后转火
+                    // 如果投射物已命中过敌人（有穿透），不转火，保持原有微弱追踪
+                    const hasHit = p.hitEnemies && p.hitEnemies.size > 0;
+                    if (!hasHit) {
+                        // 检查当前锁定目标是否仍存活
+                        if (p._focusTarget && p._focusTarget.alive) {
+                            target = p._focusTarget;
+                        } else {
+                            // 锁定最近敌人（从投射物位置搜索）
+                            target = this._findNearestFrom(p.x, p.y, enemies, 600);
+                            p._focusTarget = target;
+                        }
+                        turnSpeed = 8.0 * dt; // 强力追踪
+                    } else {
+                        // 已穿透过的投射物：保持微弱追踪
+                        target = this._findNearestFrom(p.x, p.y, enemies, 300);
+                    }
+                } else {
+                    // 普通追踪模式
+                    target = this._findNearestFrom(p.x, p.y, enemies, 300);
+                }
+
+                if (target) {
+                    const targetAngle = Utils.angle(p.x, p.y, target.x, target.y);
                     const currentAngle = Math.atan2(p.vy, p.vx);
                     let diff = targetAngle - currentAngle;
                     while (diff > Math.PI) diff -= Math.PI * 2;
                     while (diff < -Math.PI) diff += Math.PI * 2;
-                    const turnSpeed = 2.0 * dt; // 微弱追踪
                     const newAngle = currentAngle + Utils.clamp(diff, -turnSpeed, turnSpeed);
                     const speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
                     p.vx = Math.cos(newAngle) * speed;
@@ -986,6 +1010,21 @@ class WeaponSystem {
         for (const enemy of enemies) {
             if (!enemy.alive) continue;
             const dist = Utils.dist(this.player.x, this.player.y, enemy.x, enemy.y);
+            if (dist < nearestDist) {
+                nearestDist = dist;
+                nearest = enemy;
+            }
+        }
+        return nearest;
+    }
+
+    // 从指定位置搜索最近敌人（用于投射物追踪）
+    _findNearestFrom(x, y, enemies, maxDist) {
+        let nearest = null;
+        let nearestDist = maxDist;
+        for (const enemy of enemies) {
+            if (!enemy.alive) continue;
+            const dist = Utils.dist(x, y, enemy.x, enemy.y);
             if (dist < nearestDist) {
                 nearestDist = dist;
                 nearest = enemy;

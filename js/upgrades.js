@@ -82,6 +82,7 @@ const UpgradePool = {
         { id: 'thorn', name: '荆棘护甲', desc: '受伤时反弹200%伤害给周围敌人，护甲+2', icon: '🌵', weight: 5, rarity: 'rare', maxCount: 1, classBonus: ['paladin'], apply(p) { p.bonuses.thornAura = true; p.bonuses.armorBonus += 2; } },
         { id: 'split', name: '分裂弹', desc: '投射物命中敌人后分裂为3个小弹', icon: '💥', weight: 4, rarity: 'epic', maxCount: 1, classBonus: ['mage', 'archer'], apply(p) { p.bonuses.splitShot = true; } },
         { id: 'homing', name: '追踪术', desc: '所有投射物获得微弱追踪能力', icon: '🎯', weight: 5, rarity: 'rare', maxCount: 1, classBonus: ['mage', 'archer'], apply(p) { p.bonuses.homingShot = true; } },
+{ id: 'focusfire', name: '集火追踪', desc: '投射物强力锁定最近敌人，目标死亡后自动转火新目标', icon: '🔥🎯', weight: 3, rarity: 'epic', maxCount: 1, requires: 'homing', classBonus: ['mage', 'archer'], apply(p) { p.bonuses.focusFire = true; } },
         { id: 'explokill', name: '爆裂击杀', desc: '击杀敌人时触发爆炸，对周围造成范围伤害', icon: '💣', weight: 4, rarity: 'epic', maxCount: 1, classBonus: ['assassin', 'swordsman'], apply(p) { p.bonuses.explosiveKill = true; } },
         { id: 'frost', name: '冰霜光环', desc: '周围敌人移动速度降低40%，护甲+1', icon: '❄️', weight: 5, rarity: 'rare', maxCount: 1, classBonus: ['paladin', 'archer'], apply(p) { p.bonuses.frostAura = true; p.bonuses.armorBonus += 1; } },
         { id: 'vamp1', name: '吸血之刃', desc: '攻击伤害的3%转化为生命恢复', icon: '🧛', weight: 5, rarity: 'rare', maxCount: 1, classBonus: ['assassin', 'necromancer'], apply(p) { p.bonuses.vampiric = 0.03; } },

@@ -1429,7 +1429,8 @@ class UISystem {
             if (player.bonuses.chainLightning > 0) specials.push(`连锁闪电 ×${player.bonuses.chainLightning}`);
             if (player.bonuses.thornAura) specials.push('荆棘光环');
             if (player.bonuses.splitShot) specials.push('弹幕分裂');
-            if (player.bonuses.homingShot) specials.push('追踪弹');
+            if (player.bonuses.focusFire) specials.push('集火追踪');
+            else if (player.bonuses.homingShot) specials.push('追踪弹');
             if (player.bonuses.explosiveKill) specials.push('爆杀');
             if (player.bonuses.frostAura) specials.push('冰霜光环');
             if (player.bonuses.vampiric > 0) specials.push(`吸血 ${(player.bonuses.vampiric * 100).toFixed(0)}%`);

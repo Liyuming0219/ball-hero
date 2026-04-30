@@ -235,6 +235,7 @@ class Player {
             thornAura: false,     // 荆棘光环，接触敌人受伤时反弹伤害
             splitShot: false,     // 投射物命中后分裂3个小弹
             homingShot: false,    // 投射物微弱追踪效果
+            focusFire: false,     // 集火追踪：投射物强力锁定最近敌人，目标死亡后转火
             explosiveKill: false, // 击杀敌人时触发爆炸
             frostAura: false,     // 冰霜光环，减缓周围敌人
             vampiric: 0,          // 攻击吸血比例
