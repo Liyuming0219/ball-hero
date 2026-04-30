@@ -57,8 +57,9 @@ class UISystem {
 
     _calcScale() {
         this.scale = Math.min(this.W / 1280, this.H / 720);
-        if (this.scale < 0.6) this.scale = 0.6;
-        // 判断是否为小屏设备（手机竖屏等）
+        // 保底：确保UI元素不会缩得过小
+        if (this.scale < 0.45) this.scale = 0.45;
+        // 判断是否为小屏设备（手机竖屏或窄窗口）
         this.isSmallScreen = this.W < 600;
     }
 
@@ -227,9 +228,9 @@ class UISystem {
         ctx.fillStyle = '#ccddef';
         ctx.fillText('— 选择你的球球 —', W / 2, cardAreaTop - 8 * S);
 
-        // === 角色卡片：小屏2列3行，大屏3列2行 ===
-        const cols = this.isSmallScreen ? 2 : 3;
-        const rows = this.isSmallScreen ? 3 : 2;
+        // === 角色卡片：根据窗口宽度自适应列数 ===
+        const cols = W < 750 ? 2 : 3;
+        const rows = W < 750 ? 3 : 2;
         const availH = cardAreaBottom - cardAreaTop;
         const gapX = Math.round((this.isSmallScreen ? 10 : 18) * S);
         const gapY = Math.round((this.isSmallScreen ? 8 : 16) * S);
