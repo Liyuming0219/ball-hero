@@ -280,6 +280,11 @@ class UISystem {
             ctx.stroke();
             ctx.restore();
 
+            // ── 卡片裁剪区域（防止文字溢出） ──
+            ctx.save();
+            this._roundRect(ctx, cx, cy, cardW, cardH, 18 * S);
+            ctx.clip();
+
             // ── 卡片内部垂直分区 ──
             // 球球展示区：上部 38% | 信息区：下部 62%
             const ballZoneH = cardH * 0.38;
@@ -383,13 +388,13 @@ class UISystem {
             ctx.fillStyle = 'rgba(255,255,255,0.75)';
             ctx.fillText(tags, textCX, tagY);
 
-            // 描述（字号提升 + 高对比度 + 阴影）
+            // 描述（字号提升 + 高对比度 + 阴影 + 限制最多2行）
             const descY = tagY + 15 * S;
             ctx.font = this._font(null, 12);
             ctx.fillStyle = 'rgba(0,0,0,0.4)';
-            this._wrapText(ctx, def.desc, textCX + 0.5, descY + 0.5, cardW - 20 * S, 15 * S);
+            this._wrapText(ctx, def.desc, textCX + 0.5, descY + 0.5, cardW - 20 * S, 15 * S, 2);
             ctx.fillStyle = 'rgba(255,255,255,0.9)';
-            const descEndY = this._wrapText(ctx, def.desc, textCX, descY, cardW - 20 * S, 15 * S);
+            const descEndY = this._wrapText(ctx, def.desc, textCX, descY, cardW - 20 * S, 15 * S, 2);
 
             // 分隔线（紧跟描述下方）
             ctx.strokeStyle = 'rgba(255,255,255,0.12)';
@@ -407,12 +412,15 @@ class UISystem {
             ctx.fillText('被动: ' + def.passive.name, textCX + 0.5, passiveY + 0.5);
             ctx.fillStyle = '#feca57';
             ctx.fillText('被动: ' + def.passive.name, textCX, passiveY);
-            // 被动描述（字号提升 + 高对比度）
+            // 被动描述（字号提升 + 高对比度 + 限制最多2行）
             ctx.font = this._font(null, 10);
             ctx.fillStyle = 'rgba(0,0,0,0.35)';
-            this._wrapText(ctx, def.passive.desc, textCX + 0.5, passiveY + 14 * S + 0.5, cardW - 18 * S, 13 * S);
+            this._wrapText(ctx, def.passive.desc, textCX + 0.5, passiveY + 14 * S + 0.5, cardW - 18 * S, 13 * S, 2);
             ctx.fillStyle = 'rgba(254,202,87,0.85)';
-            this._wrapText(ctx, def.passive.desc, textCX, passiveY + 14 * S, cardW - 18 * S, 13 * S);
+            this._wrapText(ctx, def.passive.desc, textCX, passiveY + 14 * S, cardW - 18 * S, 13 * S, 2);
+
+            // 关闭卡片裁剪
+            ctx.restore();
 
             // 点击选择
             if (isHover && this.consumeClick()) {
@@ -1519,18 +1527,26 @@ _roundRect(ctx, x, y, w, h, r) {
         ctx.closePath();
     }
 
-    // 辅助：自动换行文字
-    _wrapText(ctx, text, x, y, maxWidth, lineHeight) {
+    // 辅助：自动换行文字（支持最大行数限制）
+    _wrapText(ctx, text, x, y, maxWidth, lineHeight, maxLines) {
         const words = text.split('');
         let line = '';
         let lineY = y;
+        let lineCount = 1;
         for (let i = 0; i < words.length; i++) {
             const testLine = line + words[i];
             const metrics = ctx.measureText(testLine);
             if (metrics.width > maxWidth && line.length > 0) {
+                // 如果达到最大行数，截断并加省略号
+                if (maxLines && lineCount >= maxLines) {
+                    line = line.slice(0, -1) + '…';
+                    ctx.fillText(line, x, lineY);
+                    return lineY;
+                }
                 ctx.fillText(line, x, lineY);
                 line = words[i];
                 lineY += lineHeight;
+                lineCount++;
             } else {
                 line = testLine;
             }
