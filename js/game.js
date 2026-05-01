@@ -12,9 +12,9 @@ class Game {
         window.addEventListener('resize', () => this.resize());
 
         // 系统
-        this.particles = new ParticleSystem();
+        this.particles = new ParticleSystem(this.isMobile);
         this.ui = new UISystem(this.canvas, this.ctx);
-        this.ui.resize(this.logicWidth, this.logicHeight);
+        this.ui.resize(this.logicWidth, this.logicHeight, this.dpr, this.isMobile);
 
         // 同步音效音量到 SFX 系统
         if (typeof SFX !== 'undefined') {
@@ -71,10 +71,17 @@ class Game {
     }
 
     resize() {
-        const dpr = window.devicePixelRatio || 1;
-        this.dpr = dpr;
+        const rawDpr = window.devicePixelRatio || 1;
         const w = window.innerWidth;
         const h = window.innerHeight;
+
+        // 移动端检测：触摸设备 或 窄屏（<= 900px 且高度 > 宽度的竖屏设备）
+        this.isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0)
+            || (w <= 900 && h > w);
+
+        // 移动端限制 DPR 为 2，大幅减少渲染面积（3x DPR → 9x 面积降为 4x）
+        const dpr = this.isMobile ? Math.min(rawDpr, 2) : rawDpr;
+        this.dpr = dpr;
 
         // 物理像素 = 逻辑尺寸 × devicePixelRatio，提升渲染精度
         this.canvas.width = Math.round(w * dpr);
@@ -87,7 +94,7 @@ class Game {
 
         // 文字抗锯齿优化
         this.ctx.imageSmoothingEnabled = true;
-        this.ctx.imageSmoothingQuality = 'high';
+        this.ctx.imageSmoothingQuality = this.isMobile ? 'medium' : 'high';
         // 文字渲染质量提示
         this.ctx.textRendering = 'optimizeLegibility';
 
@@ -95,7 +102,7 @@ class Game {
         this.logicWidth = w;
         this.logicHeight = h;
 
-        if (this.ui) this.ui.resize(w, h, dpr);
+        if (this.ui) this.ui.resize(w, h, dpr, this.isMobile);
     }
 
     _setupInput() {
@@ -904,10 +911,11 @@ class Game {
 
     _separateEnemies() {
         // 优化：只处理玩家附近的敌人，且限制最大处理数
-        const MAX_SEP = 80; // 最多处琈80个敌人的互斥
+        // 移动端减少处理数量，O(n²)在低性能设备上很致命
+        const MAX_SEP = this.isMobile ? 30 : 80;
         const px = this.player.x;
         const py = this.player.y;
-        const sepRange = 400; // 只处理玩家400像素内的敌人
+        const sepRange = this.isMobile ? 300 : 400; // 移动端缩小检测范围
         const nearby = [];
         for (let i = 0; i < this.enemies.length && nearby.length < MAX_SEP; i++) {
             const e = this.enemies[i];
@@ -1405,6 +1413,7 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
         const W = this.logicWidth;
         const H = this.logicHeight;
         const gridSize = this.gridSize;
+        const mobile = this.isMobile;
         const startX = Math.floor(camera.x / gridSize) * gridSize;
         const startY = Math.floor(camera.y / gridSize) * gridSize;
         const endX = startX + W + gridSize;
@@ -1424,22 +1433,24 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
         ctx.fillStyle = this._bgGradCache;
         ctx.fillRect(0, 0, W, H);
 
-        // ── 角落色彩光晕（主题驱动） ──
-        const cx1 = W * 0.15 - (camera.x % W) * 0.02;
-        const cy1 = H * 0.2 - (camera.y % H) * 0.02;
-        const g1 = ctx.createRadialGradient(cx1, cy1, 0, cx1, cy1, H * 0.5);
-        g1.addColorStop(0, theme.glowA);
-        g1.addColorStop(1, 'rgba(0,0,0,0)');
-        ctx.fillStyle = g1;
-        ctx.fillRect(0, 0, W, H);
+        // ── 角落色彩光晕（主题驱动） —— 移动端跳过radialGradient以省GPU ──
+        if (!mobile) {
+            const cx1 = W * 0.15 - (camera.x % W) * 0.02;
+            const cy1 = H * 0.2 - (camera.y % H) * 0.02;
+            const g1 = ctx.createRadialGradient(cx1, cy1, 0, cx1, cy1, H * 0.5);
+            g1.addColorStop(0, theme.glowA);
+            g1.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.fillStyle = g1;
+            ctx.fillRect(0, 0, W, H);
 
-        const cx2 = W * 0.85 + (camera.x % W) * 0.015;
-        const cy2 = H * 0.8 + (camera.y % H) * 0.015;
-        const g2 = ctx.createRadialGradient(cx2, cy2, 0, cx2, cy2, H * 0.45);
-        g2.addColorStop(0, theme.glowB);
-        g2.addColorStop(1, 'rgba(0,0,0,0)');
-        ctx.fillStyle = g2;
-        ctx.fillRect(0, 0, W, H);
+            const cx2 = W * 0.85 + (camera.x % W) * 0.015;
+            const cy2 = H * 0.8 + (camera.y % H) * 0.015;
+            const g2 = ctx.createRadialGradient(cx2, cy2, 0, cx2, cy2, H * 0.45);
+            g2.addColorStop(0, theme.glowB);
+            g2.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.fillStyle = g2;
+            ctx.fillRect(0, 0, W, H);
+        }
 
         // ── 氛围雾气 ──
         if (theme.fogColor) {
@@ -1450,10 +1461,12 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
             ctx.globalAlpha = 1;
         }
 
-        // ── 星尘粒子（固定在世界坐标） ──
-        if (!this._bgStars) {
+        // ── 星尘粒子（固定在世界坐标）—— 移动端减少数量 ──
+        const starCount = mobile ? 40 : 120;
+        if (!this._bgStars || this._bgStars._count !== starCount) {
             this._bgStars = [];
-            for (let i = 0; i < 120; i++) {
+            this._bgStars._count = starCount;
+            for (let i = 0; i < starCount; i++) {
                 this._bgStars.push({
                     wx: Math.random() * 6000 - 1000,
                     wy: Math.random() * 6000 - 1000,
@@ -1465,49 +1478,68 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
             }
         }
         const gameTime = this.gameTime || 0;
-        for (const star of this._bgStars) {
-            const sx = star.wx - camera.x;
-            const sy = star.wy - camera.y;
-            if (sx < -10 || sx > W + 10 || sy < -10 || sy > H + 10) continue;
-            const alpha = star.a * (0.6 + 0.4 * Math.sin(gameTime * star.twinkleSpeed + star.twinklePhase));
-            ctx.globalAlpha = alpha;
+        // 移动端用简单方块替代 arc 绘制星尘，减少路径调用
+        if (mobile) {
             ctx.fillStyle = theme.starColor;
-            ctx.beginPath();
-            ctx.arc(sx, sy, star.r, 0, Math.PI * 2);
-            ctx.fill();
+            for (const star of this._bgStars) {
+                const sx = star.wx - camera.x;
+                const sy = star.wy - camera.y;
+                if (sx < -10 || sx > W + 10 || sy < -10 || sy > H + 10) continue;
+                const alpha = star.a * (0.6 + 0.4 * Math.sin(gameTime * star.twinkleSpeed + star.twinklePhase));
+                ctx.globalAlpha = alpha;
+                const r = star.r;
+                ctx.fillRect(sx - r, sy - r, r * 2, r * 2);
+            }
+        } else {
+            for (const star of this._bgStars) {
+                const sx = star.wx - camera.x;
+                const sy = star.wy - camera.y;
+                if (sx < -10 || sx > W + 10 || sy < -10 || sy > H + 10) continue;
+                const alpha = star.a * (0.6 + 0.4 * Math.sin(gameTime * star.twinkleSpeed + star.twinklePhase));
+                ctx.globalAlpha = alpha;
+                ctx.fillStyle = theme.starColor;
+                ctx.beginPath();
+                ctx.arc(sx, sy, star.r, 0, Math.PI * 2);
+                ctx.fill();
+            }
         }
         ctx.globalAlpha = 1;
 
-        // ── 网格线（主题颜色） ──
+        // ── 网格线（主题颜色）—— 移动端使用更大间隔 ──
+        const gridStep = mobile ? gridSize * 2 : gridSize;
         ctx.strokeStyle = theme.gridColor;
         ctx.lineWidth = 1;
         ctx.beginPath();
-        for (let x = startX; x <= endX; x += gridSize) {
+        for (let x = startX; x <= endX; x += gridStep) {
             const sx = x - camera.x;
             ctx.moveTo(sx, 0);
             ctx.lineTo(sx, H);
         }
-        for (let y = startY; y <= endY; y += gridSize) {
+        for (let y = startY; y <= endY; y += gridStep) {
             const sy = y - camera.y;
             ctx.moveTo(0, sy);
             ctx.lineTo(W, sy);
         }
         ctx.stroke();
 
-        // 交叉点发光小点
-        ctx.fillStyle = theme.dotColor;
-        for (let x = startX; x <= endX; x += gridSize) {
-            for (let y = startY; y <= endY; y += gridSize) {
-                const px = x - camera.x;
-                const py = y - camera.y;
-                ctx.fillRect(px - 1, py - 1, 2, 2);
+        // 交叉点发光小点 —— 移动端跳过
+        if (!mobile) {
+            ctx.fillStyle = theme.dotColor;
+            for (let x = startX; x <= endX; x += gridSize) {
+                for (let y = startY; y <= endY; y += gridSize) {
+                    const px = x - camera.x;
+                    const py = y - camera.y;
+                    ctx.fillRect(px - 1, py - 1, 2, 2);
+                }
             }
         }
 
-        // ── 环境装饰物（固定在世界坐标） ──
-        if (!this._mapDecors) {
+        // ── 环境装饰物（固定在世界坐标）—— 移动端减少数量 ──
+        const decorCount = mobile ? 12 : 40;
+        if (!this._mapDecors || this._mapDecors._count !== decorCount) {
             this._mapDecors = [];
-            for (let i = 0; i < 40; i++) {
+            this._mapDecors._count = decorCount;
+            for (let i = 0; i < decorCount; i++) {
                 this._mapDecors.push({
                     wx: Math.random() * 5000 - 500,
                     wy: Math.random() * 5000 - 500,
@@ -1543,10 +1575,12 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
                 ctx.lineTo(-6, 0);
                 ctx.closePath();
                 ctx.fill();
-                ctx.globalAlpha = 0.08;
-                ctx.shadowColor = theme.decorColor;
-                ctx.shadowBlur = 8;
-                ctx.fill();
+                if (!this.isMobile) {
+                    ctx.globalAlpha = 0.08;
+                    ctx.shadowColor = theme.decorColor;
+                    ctx.shadowBlur = 8;
+                    ctx.fill();
+                }
             } else if (theme.decorType === 'pillar') {
                 // 废墟石柱
                 ctx.fillStyle = theme.decorColor;

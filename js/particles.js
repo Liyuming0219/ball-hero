@@ -3,7 +3,8 @@
 // ============================================
 
 class ParticleSystem {
-    constructor() {
+    constructor(isMobile) {
+        this.isMobile = !!isMobile;
         this.particles = [];
         this.textParticles = [];
         this.flashEffects = [];
@@ -11,13 +12,22 @@ class ParticleSystem {
         this.shockwaves = [];
         this.lightnings = [];
 
-        // 性能上限
-        this.MAX_PARTICLES = 300;
-        this.MAX_TEXT = 50;
-        this.MAX_TRAIL = 100;
-        this.MAX_SHOCKWAVES = 15;
-        this.MAX_FLASH = 15;
-        this.MAX_LIGHTNING = 8;
+        // 性能上限 —— 移动端大幅削减
+        if (this.isMobile) {
+            this.MAX_PARTICLES = 100;
+            this.MAX_TEXT = 20;
+            this.MAX_TRAIL = 30;
+            this.MAX_SHOCKWAVES = 6;
+            this.MAX_FLASH = 6;
+            this.MAX_LIGHTNING = 3;
+        } else {
+            this.MAX_PARTICLES = 300;
+            this.MAX_TEXT = 50;
+            this.MAX_TRAIL = 100;
+            this.MAX_SHOCKWAVES = 15;
+            this.MAX_FLASH = 15;
+            this.MAX_LIGHTNING = 8;
+        }
     }
 
     // --- 基础粒子 ---

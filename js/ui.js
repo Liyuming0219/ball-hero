@@ -60,11 +60,19 @@ class UISystem {
     }
 
     _calcScale() {
-        this.scale = Math.min(this.W / 1280, this.H / 720);
+        // 判断是否为小屏/移动设备
+        this.isSmallScreen = this.W < 600 || this.isMobile;
+        const isPortrait = this.H > this.W;
+
+        if (isPortrait && this.isSmallScreen) {
+            // 竖屏手机：以宽度为基准，参考宽度720（而非1280）
+            // 这样在360px宽的手机上，scale = 0.5，不会过小
+            this.scale = Math.min(this.W / 720, this.H / 1280);
+        } else {
+            this.scale = Math.min(this.W / 1280, this.H / 720);
+        }
         // 保底：确保UI元素不会缩得过小
         if (this.scale < 0.45) this.scale = 0.45;
-        // 判断是否为小屏设备（手机竖屏或窄窗口）
-        this.isSmallScreen = this.W < 600;
     }
 
     _setupInput() {
@@ -117,19 +125,21 @@ class UISystem {
         return was;
     }
 
-    resize(w, h, dpr) {
+    resize(w, h, dpr, isMobile) {
         this.W = w;
         this.H = h;
         if (dpr !== undefined) this.dpr = dpr;
+        if (isMobile !== undefined) this.isMobile = isMobile;
         this._calcScale();
     }
 
     // 辅助：缩放字体大小（保留小数精度，让浏览器/DPR做亚像素渲染）
     _font(weight, sizePx, family) {
-        // 保留1位小数，避免过度取整导致小字号模糊
-        const s = Math.round(sizePx * this.scale * 10) / 10;
-        // 小屏设备最小字号提高到12px，保证可读性
-        const minSize = this.isSmallScreen ? 12 : 10;
+        // 移动端额外放大字体 1.15 倍，补偿竖屏 scale 偏小的问题
+        const mobileMult = this.isMobile ? 1.15 : 1;
+        const s = Math.round(sizePx * this.scale * mobileMult * 10) / 10;
+        // 小屏设备最小字号提高到 14px，保证在高 DPR 小屏上依然清晰可读
+        const minSize = this.isSmallScreen ? 14 : 10;
         const finalSize = Math.max(s, minSize);
         family = family || "'Microsoft YaHei', 'PingFang SC', 'Helvetica Neue', Arial, sans-serif";
         return weight ? `${weight} ${finalSize}px ${family}` : `${finalSize}px ${family}`;
