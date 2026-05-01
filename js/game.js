@@ -37,6 +37,9 @@ class Game {
         // 相机
         this.camera = { x: 0, y: 0 };
 
+        // 移动端缩放：竖屏时缩小游戏世界以扩大视野
+        this.gameZoom = 1;
+
         // 输入
         this.keys = {};
         this.inputDir = { x: 0, y: 0 };
@@ -101,6 +104,14 @@ class Game {
         // 逻辑尺寸（供游戏逻辑和UI使用）
         this.logicWidth = w;
         this.logicHeight = h;
+
+        // 移动端竖屏视野补偿：缩小游戏世界，让玩家看到更大范围
+        // 例如 393px 宽的手机，zoom=0.7 后等效视野宽度 = 393/0.7 = 561px
+        if (this.isMobile && h > w) {
+            this.gameZoom = Math.max(0.65, Math.min(0.85, w / 500));
+        } else {
+            this.gameZoom = 1;
+        }
 
         if (this.ui) this.ui.resize(w, h, dpr, this.isMobile);
     }
@@ -627,7 +638,7 @@ class Game {
                     this.combatLog.addEntry(`⭐ 精英击杀！${enemy.type}`, '#ffaa00');
                 }
 
-                this.enemies.splice(i, 1);
+                this.enemies[i] = this.enemies[this.enemies.length - 1]; this.enemies.pop();
                 continue;
             }
 
@@ -752,7 +763,7 @@ class Game {
             const bullet = this.enemyBullets[i];
             bullet.update(dt);
             if (!bullet.alive) {
-                this.enemyBullets.splice(i, 1);
+                this.enemyBullets[i] = this.enemyBullets[this.enemyBullets.length - 1]; this.enemyBullets.pop();
                 continue;
             }
             // 碰撞玩家
@@ -801,7 +812,7 @@ class Game {
             }
             // 清理合并掉的宝石
             for (let i = this.expGems.length - 1; i >= 0; i--) {
-                if (this.expGems[i]._merged) this.expGems.splice(i, 1);
+                if (this.expGems[i]._merged) { this.expGems[i] = this.expGems[this.expGems.length - 1]; this.expGems.pop(); }
             }
         }
 
@@ -831,7 +842,7 @@ class Game {
                 }
             }
             if (!gem.alive) {
-                this.expGems.splice(i, 1);
+                this.expGems[i] = this.expGems[this.expGems.length - 1]; this.expGems.pop();
             }
         }
 
@@ -845,7 +856,7 @@ class Game {
                 this.battleStats.itemsCollected++;
             }
             if (!item.alive) {
-                this.dropItems.splice(i, 1);
+                this.dropItems[i] = this.dropItems[this.dropItems.length - 1]; this.dropItems.pop();
             }
         }
 
@@ -899,7 +910,7 @@ class Game {
         if (this.damageVignette > 0) this.damageVignette -= dt * 1.5;
         for (let i = this.damageIndicators.length - 1; i >= 0; i--) {
             this.damageIndicators[i].life -= dt;
-            if (this.damageIndicators[i].life <= 0) this.damageIndicators.splice(i, 1);
+            if (this.damageIndicators[i].life <= 0) { this.damageIndicators[i] = this.damageIndicators[this.damageIndicators.length - 1]; this.damageIndicators.pop(); }
         }
 
         // 粒子更新
@@ -1051,10 +1062,22 @@ class Game {
 
     _render() {
         const ctx = this.ctx;
+        const zoom = this.gameZoom;
         const cam = {
             x: this.camera.x + Utils.screenShake.x,
             y: this.camera.y + Utils.screenShake.y,
         };
+
+        // 移动端竖屏：缩放游戏世界以扩大视野
+        if (zoom < 1) {
+            ctx.save();
+            ctx.scale(zoom, zoom);
+            // 缩放后逻辑视野变大，需要调整相机偏移使玩家保持居中
+            const zoomW = this.logicWidth / zoom;
+            const zoomH = this.logicHeight / zoom;
+            cam.x = this.camera.x + Utils.screenShake.x - (zoomW - this.logicWidth) / 2;
+            cam.y = this.camera.y + Utils.screenShake.y - (zoomH - this.logicHeight) / 2;
+        }
 
         // 背景
         this._renderBackground(ctx, cam);
@@ -1069,9 +1092,9 @@ class Game {
             gem.render(ctx, cam);
         }
 
-        // 怪物
-        const sw = this.logicWidth;
-        const sh = this.logicHeight;
+        // 怪物（缩放后可见区域变大，视口裁剪范围需要匹配）
+        const sw = zoom < 1 ? Math.ceil(this.logicWidth / zoom) : this.logicWidth;
+        const sh = zoom < 1 ? Math.ceil(this.logicHeight / zoom) : this.logicHeight;
         for (const enemy of this.enemies) {
             enemy.render(ctx, cam, sw, sh);
         }
@@ -1221,6 +1244,15 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
             de.renderDeath(ctx, cam, animDt);
         }
 
+        // 恢复缩放，HUD在屏幕坐标系下绘制（不受游戏世界缩放影响）
+        if (zoom < 1) {
+            ctx.restore();
+        }
+
+        // HUD及后续UI均使用实际屏幕尺寸
+        const screenW = this.logicWidth;
+        const screenH = this.logicHeight;
+
         // HUD
         this.ui.renderHUD(this.player, this.waveManager, this.gameMode);
 
@@ -1236,7 +1268,7 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
         this.ui.renderMinimap(this.player, this.enemies, cam);
 
         // 屏幕边缘警告
-        this.ui.renderEdgeWarnings(this.player, this.enemies, cam, sw, sh);
+        this.ui.renderEdgeWarnings(this.player, this.enemies, cam, screenW, screenH);
 
         // 屏幕闪光
         this.ui.renderScreenFlash(this.screenFlash.color, this.screenFlash.alpha);
@@ -1250,14 +1282,10 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
             ctx.save();
             ctx.globalAlpha = v * 0.4;
             ctx.fillStyle = '#ff0000';
-            // 上边
-            ctx.fillRect(0, 0, sw, 40 * v);
-            // 下边
-            ctx.fillRect(0, sh - 40 * v, sw, 40 * v);
-            // 左边
-            ctx.fillRect(0, 0, 40 * v, sh);
-            // 右边
-            ctx.fillRect(sw - 40 * v, 0, 40 * v, sh);
+            ctx.fillRect(0, 0, screenW, 40 * v);
+            ctx.fillRect(0, screenH - 40 * v, screenW, 40 * v);
+            ctx.fillRect(0, 0, 40 * v, screenH);
+            ctx.fillRect(screenW - 40 * v, 0, 40 * v, screenH);
             ctx.restore();
         }
 
@@ -1266,18 +1294,17 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
             ctx.save();
             ctx.globalAlpha = this._boundaryVignette;
             ctx.fillStyle = '#aa0044';
-            ctx.fillRect(0, 0, sw, 50);
-            ctx.fillRect(0, sh - 50, sw, 50);
-            ctx.fillRect(0, 0, 50, sh);
-            ctx.fillRect(sw - 50, 0, 50, sh);
+            ctx.fillRect(0, 0, screenW, 50);
+            ctx.fillRect(0, screenH - 50, screenW, 50);
+            ctx.fillRect(0, 0, 50, screenH);
+            ctx.fillRect(screenW - 50, 0, 50, screenH);
             ctx.restore();
-            // 边界文字提示
             ctx.save();
             ctx.globalAlpha = Math.min(1, this._boundaryVignette * 3);
             ctx.font = "bold 18px 'Microsoft YaHei','PingFang SC',Arial,sans-serif";
             ctx.fillStyle = '#ff4466';
             ctx.textAlign = 'center';
-            ctx.fillText('⚠ 已接近地图边界 ⚠', sw / 2, 36);
+            ctx.fillText('⚠ 已接近地图边界 ⚠', screenW / 2, 36);
             ctx.restore();
         }
 
@@ -1291,7 +1318,7 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
             ctx.textAlign = 'center';
             ctx.shadowColor = '#ff0000';
             ctx.shadowBlur = 20;
-            ctx.fillText('⚠ 精英围攻! ⚠', sw / 2, sw > 600 ? 60 : 50);
+            ctx.fillText('⚠ 精英围攻! ⚠', screenW / 2, screenW > 600 ? 60 : 50);
             ctx.restore();
         }
 
@@ -1299,7 +1326,7 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
         if (this.activeEvent) {
             const evW = 300;
             const evH = 28;
-            const evX = (sw - evW) / 2;
+            const evX = (screenW - evW) / 2;
             const evY = 70;
             const progress = Math.max(0, this.activeEvent.timer / this.activeEvent.duration);
             const evColor = this.activeEvent.color || '#ffcc44';
@@ -1326,15 +1353,15 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
             ctx.font = "bold 14px 'Microsoft YaHei','PingFang SC',Arial,sans-serif";
             ctx.fillStyle = '#ffffff';
             ctx.textAlign = 'center';
-            ctx.fillText(`${this.activeEvent.name} - ${Math.ceil(this.activeEvent.timer)}s`, sw / 2, evY + evH / 2 + 5);
+            ctx.fillText(`${this.activeEvent.name} - ${Math.ceil(this.activeEvent.timer)}s`, screenW / 2, evY + evH / 2 + 5);
             ctx.restore();
         }
 
         // 受伤方向指示器（屏幕中心指向伤害来源的箭头）
         if (this.damageIndicators.length > 0) {
-            const cx = sw / 2;
-            const cy = sh / 2;
-            const arrowDist = Math.min(sw, sh) * 0.3;
+            const cx = screenW / 2;
+            const cy = screenH / 2;
+            const arrowDist = Math.min(screenW, screenH) * 0.3;
             ctx.save();
             for (const ind of this.damageIndicators) {
                 const alpha = ind.life / 0.8;
@@ -1397,7 +1424,7 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
             ctx.font = '12px sans-serif';
             ctx.fillStyle = '#aaaacc';
             ctx.textAlign = 'center';
-            ctx.fillText('双指点击暂停', sw / 2, sh - 12);
+            ctx.fillText('双指点击暂停', screenW / 2, screenH - 12);
             ctx.restore();
         }
     }
@@ -1410,8 +1437,10 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
     }
 
     _renderBackground(ctx, camera) {
-        const W = this.logicWidth;
-        const H = this.logicHeight;
+        // 缩放后可见区域变大，背景需要覆盖整个缩放后的视口
+        const zoom = this.gameZoom;
+        const W = zoom < 1 ? Math.ceil(this.logicWidth / zoom) : this.logicWidth;
+        const H = zoom < 1 ? Math.ceil(this.logicHeight / zoom) : this.logicHeight;
         const gridSize = this.gridSize;
         const mobile = this.isMobile;
         const startX = Math.floor(camera.x / gridSize) * gridSize;
@@ -1843,7 +1872,7 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
             const fire = this.fireTrails[i];
             fire.life -= dt;
             if (fire.life <= 0) {
-                this.fireTrails.splice(i, 1);
+                this.fireTrails[i] = this.fireTrails[this.fireTrails.length - 1]; this.fireTrails.pop();
                 continue;
             }
 
@@ -2061,7 +2090,7 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
             const hz = this.mapHazards[i];
             const dmg = hz.update(dt, this.player);
             if (!hz.alive) {
-                this.mapHazards.splice(i, 1);
+                this.mapHazards[i] = this.mapHazards[this.mapHazards.length - 1]; this.mapHazards.pop();
                 continue;
             }
             // 对玩家造成伤害
@@ -2092,7 +2121,7 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
             const result = eo.update(dt, this.player, this.particles);
 
             if (!eo.alive) {
-                this.envObjects.splice(i, 1);
+                this.envObjects[i] = this.envObjects[this.envObjects.length - 1]; this.envObjects.pop();
                 continue;
             }
 
@@ -2183,9 +2212,9 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
                     this.achievementTimer = 3.0;
                     this.combatLog.addEntry(`🔮 获得遗物: ${relic.name}`, '#ffaa00');
                 }
-                this.relicDrops.splice(i, 1);
+                this.relicDrops[i] = this.relicDrops[this.relicDrops.length - 1]; this.relicDrops.pop();
             } else if (!rd.alive) {
-                this.relicDrops.splice(i, 1);
+                this.relicDrops[i] = this.relicDrops[this.relicDrops.length - 1]; this.relicDrops.pop();
             }
         }
     }
@@ -2208,7 +2237,7 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
         for (let i = this.deathAnimEnemies.length - 1; i >= 0; i--) {
             const de = this.deathAnimEnemies[i];
             if (!de.dying) {
-                this.deathAnimEnemies.splice(i, 1);
+                this.deathAnimEnemies[i] = this.deathAnimEnemies[this.deathAnimEnemies.length - 1]; this.deathAnimEnemies.pop();
             }
         }
     }

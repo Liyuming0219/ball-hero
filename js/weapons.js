@@ -133,7 +133,7 @@ class WeaponSystem {
             }
 
             if (!p.alive) {
-                this.projectiles.splice(i, 1);
+                this.projectiles[i] = this.projectiles[this.projectiles.length - 1]; this.projectiles.pop();
                 continue;
             }
 

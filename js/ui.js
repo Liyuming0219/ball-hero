@@ -388,58 +388,78 @@ class UISystem {
             ctx.globalAlpha = 1;
 
             // ── 信息区：名称 / 标签 / 描述 / 被动 ──
-            // 使用 infoTop 作为基准，所有文字相对于信息区顶部排布
+            // 所有间距基于实际渲染字号，而非固定 *S，避免移动端字号放大后文字重叠
             const textCX = cx + cardW / 2;
+            const infoH = cardH - ballZoneH;  // 信息区总高度
+            const pad = Math.max(4, 3 * S);   // 行间距
 
-            // 角色名（加粗 + 文字阴影增强清晰度）
-            const nameY = infoTop + 5 * S;
+            // 预计算各行实际字号（与 _font 逻辑一致）
+            const _actualSize = (sz) => {
+                const mobileMult = this.isMobile ? 1.15 : 1;
+                const s = Math.round(sz * S * mobileMult * 10) / 10;
+                const minSize = this.isSmallScreen ? 14 : 10;
+                return Math.max(s, minSize);
+            };
+            const nameFs = _actualSize(16);
+            const tagFs = _actualSize(11);
+            const descFs = _actualSize(12);
+            const passiveTitleFs = _actualSize(11);
+            const passiveDescFs = _actualSize(10);
+            const descLineH = descFs * 1.25;
+            const passiveLineH = passiveDescFs * 1.2;
+
+            // 从 infoTop 开始按实际字号逐项排布
+            let curY = infoTop + nameFs + pad;
+
+            // 角色名
             ctx.font = this._font('bold', 16);
             ctx.textAlign = 'center';
-            // 文字底部投影（增强可读性）
             ctx.fillStyle = 'rgba(0,0,0,0.5)';
-            ctx.fillText(def.name, textCX + 1, nameY + 1);
+            ctx.fillText(def.name, textCX + 1, curY + 1);
             ctx.fillStyle = '#ffffff';
-            ctx.fillText(def.name, textCX, nameY);
+            ctx.fillText(def.name, textCX, curY);
 
             // 属性标签
-            const tagY = nameY + 16 * S;
+            curY += tagFs + pad;
             ctx.font = this._font(null, 11);
             ctx.fillStyle = 'rgba(0,0,0,0.35)';
             const tags = this._getCharTags(def);
-            ctx.fillText(tags, textCX + 0.5, tagY + 0.5);
+            ctx.fillText(tags, textCX + 0.5, curY + 0.5);
             ctx.fillStyle = 'rgba(255,255,255,0.75)';
-            ctx.fillText(tags, textCX, tagY);
+            ctx.fillText(tags, textCX, curY);
 
-            // 描述（字号提升 + 高对比度 + 阴影 + 限制最多2行）
-            const descY = tagY + 15 * S;
+            // 描述（最多2行）
+            curY += descFs * 0.6 + pad;
             ctx.font = this._font(null, 12);
             ctx.fillStyle = 'rgba(0,0,0,0.4)';
-            this._wrapText(ctx, def.desc, textCX + 0.5, descY + 0.5, cardW - 20 * S, 15 * S, 2);
+            this._wrapText(ctx, def.desc, textCX + 0.5, curY + 0.5, cardW - 16 * S, descLineH, 2);
             ctx.fillStyle = 'rgba(255,255,255,0.9)';
-            const descEndY = this._wrapText(ctx, def.desc, textCX, descY, cardW - 20 * S, 15 * S, 2);
+            const descEndY = this._wrapText(ctx, def.desc, textCX, curY, cardW - 16 * S, descLineH, 2);
 
-            // 分隔线（紧跟描述下方）
+            // 分隔线
+            const sepY = descEndY + pad + 2;
             ctx.strokeStyle = 'rgba(255,255,255,0.12)';
             ctx.lineWidth = 1;
-            const sepY = descEndY + 10 * S;
             ctx.beginPath();
             ctx.moveTo(cx + 14 * S, sepY);
             ctx.lineTo(cx + cardW - 14 * S, sepY);
             ctx.stroke();
 
-            // 被动标题（加粗 + 阴影）
+            // 被动标题
+            curY = sepY + passiveTitleFs + pad;
             ctx.font = this._font('bold', 11);
-            const passiveY = sepY + 13 * S;
             ctx.fillStyle = 'rgba(0,0,0,0.4)';
-            ctx.fillText('被动: ' + def.passive.name, textCX + 0.5, passiveY + 0.5);
+            ctx.fillText('被动: ' + def.passive.name, textCX + 0.5, curY + 0.5);
             ctx.fillStyle = '#feca57';
-            ctx.fillText('被动: ' + def.passive.name, textCX, passiveY);
-            // 被动描述（字号提升 + 高对比度 + 限制最多2行）
+            ctx.fillText('被动: ' + def.passive.name, textCX, curY);
+
+            // 被动描述（最多2行）
+            curY += passiveDescFs * 0.5 + pad;
             ctx.font = this._font(null, 10);
             ctx.fillStyle = 'rgba(0,0,0,0.35)';
-            this._wrapText(ctx, def.passive.desc, textCX + 0.5, passiveY + 14 * S + 0.5, cardW - 18 * S, 13 * S, 2);
+            this._wrapText(ctx, def.passive.desc, textCX + 0.5, curY + 0.5, cardW - 16 * S, passiveLineH, 2);
             ctx.fillStyle = 'rgba(254,202,87,0.85)';
-            this._wrapText(ctx, def.passive.desc, textCX, passiveY + 14 * S, cardW - 18 * S, 13 * S, 2);
+            this._wrapText(ctx, def.passive.desc, textCX, curY, cardW - 16 * S, passiveLineH, 2);
 
             // 关闭卡片裁剪
             ctx.restore();

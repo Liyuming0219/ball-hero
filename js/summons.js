@@ -1055,7 +1055,7 @@ class SummonManager {
             const s = this.summons[i];
             s.update(dt, enemies, this.particles);
             if (!s.alive) {
-                this.summons.splice(i, 1);
+                this.summons[i] = this.summons[this.summons.length - 1]; this.summons.pop();
             }
         }
     }
