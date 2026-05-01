@@ -1,97 +1,136 @@
-# 《球球英雄 Ball Hero》AI视频生成文案
+# 《球球英雄 Ball Hero》AI视频生成 Prompt
 
-## 一、30秒短视频版（适合抖音/小红书/B站动态）
-
-### 画面描述提示词（中文）
-
-**镜头1（0-5秒）- 开场**
-深邃星空背景，数颗彩色发光球体缓缓浮动。镜头推进，巨大的渐变色标题"球球英雄"从星空中凝聚而出，文字带有彩虹渐变效果（红→金→青→蓝→绿），四周闪烁微光粒子。
-
-**镜头2（5-12秒）- 角色展示**
-六个可爱的圆形球球角色依次登场：蓝色剑客挥舞弧形刀光、红色法师发射追踪火球、紫色刺客闪现残影、金色圣骑士格挡闪光、绿色弓箭手万箭齐发、青色亡灵师身后跟随骷髅大军。每个角色有独特光晕和大眼萌表情。
-
-**镜头3（12-22秒）- 战斗高潮**
-俯视视角，玩家球球被密密麻麻的怪物包围。刀光、火焰、闪电、箭雨四面八方爆发。连杀数字"50 COMBO!"金色弹出。Boss出现——巨大的暗红色球体，血条显示在屏幕顶部。玩家释放技能，屏幕闪白，Boss爆炸，金色粒子漫天飞舞。
-
-**镜头4（22-30秒）- 结尾CTA**
-升级面板弹出，三张发光技能卡牌悬浮供选择。画面切回标题"球球英雄"，下方显示"免费游玩 · 浏览器直开"，网址"liyuming0219.github.io/ball-hero"淡入。
-
-### 英文提示词（适合Sora/Runway/Pika等AI视频工具）
-
-**Prompt:**
-A cute roguelike survivor game trailer. Opening: deep blue-purple starry sky with floating colorful glowing spheres (red, blue, purple, gold, green, cyan) with big cartoon eyes, drifting gently. Rainbow gradient title "Ball Hero" materializes with sparkle particles. Quick cuts showing each hero sphere in action: blue sphere slashing arc-shaped energy waves, red sphere shooting homing fireballs with explosion effects, purple sphere teleporting with afterimage trails, gold sphere blocking attacks with holy light shockwave, green sphere unleashing arrow rain covering the screen, cyan sphere commanding a skeleton army. Top-down action sequence: player sphere surrounded by hordes of enemies (skeletons, slimes, bats, wolves), combat effects everywhere — lightning chains, ice aura, fire trails, orbital blades spinning around player. "50 COMBO!" text pops up in gold. Giant boss enemy appears with health bar at top. Player defeats boss — screen flash white, massive particle explosion with golden sparkles. Upgrade panel slides in showing three glowing skill cards. Final frame: game title with tagline "Free to Play · Browser Game". Cute art style, vibrant neon colors on dark background, fast-paced energetic editing.
+> **重要原则：所有 Prompt 均不包含任何文字、字幕、标题、UI文字的生成指令。**
+> AI视频工具生成中文汉字几乎必出错别字，所有文字请在剪映/CapCut后期手动添加。
 
 ---
 
-## 二、60秒完整版（适合B站/YouTube）
+## 一、30秒版 · 逐镜头 Prompt（可灵/即梦/Vidu 中文版）
 
-### 分镜脚本
+### 镜头1（0-5秒）· 开场氛围
 
-| 时间 | 画面 | 音效/BGM |
-|------|------|----------|
-| 0-3s | 黑屏，一个小光点在中央出现，逐渐变大 | 低沉合成器渐入 |
-| 3-8s | 光点爆裂为六色碎片，汇聚成六个球球角色，各自展示标志动作：剑客的弧光、法师的火圈、刺客的残影、圣骑的盾光、弓手的箭雨、亡灵师的骷髅群 | 节奏加快的电子音乐 |
-| 8-10s | 文字浮现："在这个世界里，每个球球都是英雄" | 清脆音效 |
-| 10-18s | 游戏实况风格：玩家操作剑客在地图中移动，周围怪物逐渐增多。从稀疏的骷髅到密集的混合怪群。画面展现自动攻击的流畅感，刀光不断横扫 | 战斗BGM加速 |
-| 18-22s | 升级面板弹出，选择了"连锁闪电"技能。回到战场，攻击时蓝色闪电在怪物之间跳跃 | 闪电音效 |
-| 22-28s | 切换到法师角色。火球追踪飞向敌群，元素共鸣触发，火焰新星从玩家中心扩散，整个屏幕被橙红色火光照亮。COMBO数字疯狂跳动 | 爆炸音效连续 |
-| 28-35s | 切换到亡灵师。骷髅兵排列在前方挡怪，灵魂能量球飞出。收集灵魂后，巨大的灵魂巨兽被召唤，横扫战场 | 暗黑风BGM |
-| 35-42s | Boss战：屏幕顶部出现红色Boss血条，巨大的Boss敌人从画面外冲入。玩家闪避Boss攻击，弹幕密集飞过。最终一击——屏幕冻帧0.15秒，然后Boss爆炸，冲击波扩散，金色粒子雨落下，"Boss Defeated!"弹出 | 史诗击杀音效 |
-| 42-48s | 快速剪辑：天赋商店界面（升级永久属性）、每日挑战模式（橙色主题）、遗物掉落（发光物品飞向玩家）、小地图显示敌人分布 | 轻快过渡音 |
-| 48-55s | 游戏特色文字展示："6大英雄职业 · 40+种技能组合 · Boss挑战 · 每日排行 · Roguelike随机升级" 每个要点伴随对应画面快闪 | 节奏敲击 |
-| 55-60s | 标题"球球英雄 Ball Hero"居中，六个球球角色环绕飞过。底部文字："免费游玩 · 无需下载 · 浏览器直开"，网址淡入 | 音乐收尾 |
+深邃的深蓝紫色星空，繁星闪烁。六颗发光的彩色小球体缓缓漂浮在画面中——蓝色、橙红色、紫色、金黄色、翠绿色、青色——每颗球体带有可爱的大眼睛和小嘴巴表情，表面有柔和的高光和光晕。球体周围散落着微光粒子。画面风格：Q版卡通，深色背景霓虹配色。
 
-### AI视频生成英文完整Prompt
+### 镜头2（5-12秒）· 角色展示
 
-**Prompt (Scene-by-Scene):**
+快速剪辑，六个球球角色依次展示各自战斗能力：蓝色球球周围环绕弧形蓝色刀光能量波；橙红色球球发射多枚追踪火球，火球带橙色尾焰命中目标后爆炸；紫色球球高速移动留下紫色残影分身；金黄色球球身前展开金色圆形护盾，护盾碎裂时爆发圣光冲击波；翠绿色球球向上空发射箭矢，大量绿色光箭如雨点般落下覆盖地面；青色球球身后跟随一群小型白色骷髅兵。俯视视角，深色地面背景，粒子特效丰富。
 
-Scene 1 (0-8s): Black screen, a single point of light appears center frame, explodes into six colored fragments (blue, red, purple, gold, green, cyan). Each fragment transforms into an adorable sphere character with big cute eyes. Blue sphere swings a glowing arc blade, red sphere conjures a fire ring, purple sphere dashes leaving afterimages, gold sphere raises a golden holy shield, green sphere launches a rain of arrows upward, cyan sphere raises skeletal minions from the ground. Dark starfield background with floating particles.
+### 镜头3（12-22秒）· 战斗高潮
 
-Scene 2 (8-22s): Top-down gameplay footage style. A blue hero sphere moves through a dark tiled arena. Skeleton enemies and slime creatures approach from all sides. The sphere automatically swings energy blades in wide arcs, defeating enemies that burst into colorful particles. An upgrade panel appears — three glowing cards with icons. Player selects one, blue chain lightning now arcs between enemies on each hit. Enemy count intensifies, screen fills with combat effects.
+俯视视角，一个蓝色发光球球位于画面中央，四面八方涌来密密麻麻的敌人——灰绿色骷髅、绿色果冻状史莱姆、紫色蝙蝠、深灰色狼形生物。球球自动释放弧形蓝色刀光横扫，同时蓝色闪电在怪物之间跳跃连锁，冰霜光环从球体向外扩散冻住周围敌人，橙色火焰轨迹在地面燃烧。击杀的敌人爆裂成彩色粒子。一个巨大的暗红色球体（Boss）从画面边缘冲入，体型是普通敌人的三倍。最终Boss被击败，发生剧烈的金色粒子爆炸，金色冲击波环向外扩散。
 
-Scene 3 (22-35s): Switch to red mage sphere. Homing fireballs fly outward tracking enemies. A nova of flames expands from the player, burning everything nearby. Combo counter rapidly climbs: 25, 50, 100. Switch to cyan necromancer sphere commanding an army of small skeleton allies and a massive spirit beast that charges through enemy hordes.
+### 镜头4（22-30秒）· 战利品与升级
 
-Scene 4 (35-45s): Epic boss battle. Giant dark red enemy sphere enters with dramatic screen flash. Boss health bar appears at screen top. Intense dodging sequences, projectiles fill the screen. Final hit — brief freeze frame, then massive golden explosion with expanding shockwave rings and particle rain. Victory text appears.
-
-Scene 5 (45-60s): Quick montage of features: talent shop with upgrade cards, daily challenge mode, relic drops with golden glow, minimap showing enemy positions. Text overlays appear: "6 Hero Classes · 40+ Skills · Boss Fights · Daily Rankings · Roguelike Upgrades". Final frame: vibrant title "Ball Hero" with six spheres orbiting around it, tagline "Free to Play · No Download · Play in Browser". Cute cartoon art style throughout, neon colors on dark backgrounds, energetic pacing.
+战斗结束后，地面散落大量发光的蓝色和绿色宝石，宝石被玩家球球吸引飞过去。画面中央弹出三张发光的半透明卡牌悬浮在空中，每张卡牌有不同颜色的图标光效，等待选择。选择一张卡牌后，卡牌爆裂成光芒，球球身上出现新的环绕特效——金色旋转刀刃围绕球体旋转。画面回到战场，球球带着新装备继续冲向下一波更密集的怪群。
 
 ---
 
-## 三、游戏核心卖点（可用于文案配文）
+## 二、30秒版 · 英文 Prompt（Sora / Runway / Pika）
 
-**中文版：**
-> 🎮 《球球英雄》—— 一款可爱又硬核的Roguelike生存游戏！
-> 
-> 选择你的球球英雄，在无尽怪潮中杀出一条血路！6大职业、40+技能自由组合，每局都是全新体验。剑客刀光纵横、法师火焰漫天、刺客瞬移暗杀、圣骑无敌格挡、弓手万箭齐发、亡灵师骷髅成群——你pick谁？
-> 
-> ✨ 无需下载，浏览器打开即玩
-> ✨ 手机/电脑双端支持
-> ✨ 完全免费，无内购
-> 
-> 👉 立即体验：liyuming0219.github.io/ball-hero
+**重要：Do NOT generate any text, titles, subtitles, UI text, or written words in the video. Pure visual only.**
 
-**英文版：**
-> 🎮 Ball Hero — A cute yet hardcore Roguelike survivor!
-> 
-> Pick your hero sphere and survive endless waves of monsters! 6 unique classes, 40+ skill combos, every run is different. Swordsman, Mage, Assassin, Paladin, Archer, Necromancer — who's your pick?
-> 
-> ✨ No download needed — play instantly in browser
-> ✨ Mobile & Desktop supported  
-> ✨ 100% Free, no microtransactions
-> 
-> 👉 Play now: liyuming0219.github.io/ball-hero
+A 30-second animated game trailer in cute cartoon style with neon colors on dark backgrounds. No text or words anywhere in the video.
+
+**Shot 1 (0-5s):** Deep blue-purple starfield with twinkling stars. Six small glowing colorful spheres float gently — blue, orange-red, purple, golden-yellow, emerald-green, and cyan. Each sphere has adorable big cartoon eyes and a tiny smile. Soft highlights and colored halos surround each one. Tiny sparkle particles drift around them.
+
+**Shot 2 (5-12s):** Quick cuts showcasing each sphere's combat ability from a top-down view on a dark arena floor: Blue sphere surrounded by sweeping arc-shaped blue energy slashes. Orange-red sphere launching multiple homing fireballs with orange flame trails that explode on impact. Purple sphere dashing at high speed leaving purple afterimage clones behind. Golden-yellow sphere projecting a circular golden shield that shatters into a holy light shockwave. Emerald-green sphere firing arrows upward, then a rain of green glowing arrows falling from above covering a wide area. Cyan sphere followed by a small army of white skeletal minions marching behind it. Rich particle effects throughout.
+
+**Shot 3 (12-22s):** Top-down view, a blue glowing sphere at center of screen. Hordes of enemies rush in from all directions — grey-green skeletons, green jelly-like slimes, purple bats, dark grey wolf creatures. The sphere automatically releases arc-shaped blue energy waves that sweep through enemies. Blue chain lightning jumps between monsters. A frost aura expands outward freezing nearby enemies. Orange fire trails burn on the ground. Defeated enemies burst into colorful particles. A massive dark-red sphere (boss enemy), three times the size of normal enemies, charges in from screen edge. Intense battle, then the boss is defeated — a massive golden particle explosion with expanding golden shockwave rings.
+
+**Shot 4 (22-30s):** After battle, glowing blue and green gem crystals scatter on the ground, then get magnetically pulled toward the player sphere. Three semi-transparent glowing cards appear floating in center frame, each with different colored icon effects, awaiting selection. One card is chosen and shatters into light. The player sphere gains a new visual effect — golden rotating blades orbiting around it. Camera pulls back to show the sphere charging into the next, even denser wave of monsters. Cute cartoon art style, vibrant neon particle effects throughout.
 
 ---
 
-## 四、推荐的AI视频生成工具
+## 三、60秒完整版 · 逐镜头 Prompt（中文）
 
-| 工具 | 优势 | 建议用法 |
-|------|------|----------|
-| **可灵(Kling)** | 国产，中文理解好，生成质量高 | 用中文分镜描述，逐段生成后拼接 |
-| **Sora (OpenAI)** | 理解力强，画面一致性好 | 用英文完整Prompt，适合60s版 |
-| **Runway Gen-3** | 快速，支持图生视频 | 先截图/画概念图，再生成动态视频 |
-| **Pika** | 简单易用，短视频效果好 | 适合30s版，单场景生成 |
-| **Vidu** | 国产，效果好，多镜头理解优秀 | 中文Prompt友好 |
-| **即梦(Jimeng)** | 字节出品，中文prompt，风格化强 | 适合Q版卡通风格的宣传片 |
+### 镜头1（0-4秒）· 诞生
 
-**建议方案：** 用可灵或即梦按分镜逐段生成5-8个3-5秒片段，再用剪映拼接配乐。如果对英文prompt更熟练，Runway或Sora单段质量更高。
+纯黑画面，中央出现一个微弱的白色光点。光点逐渐变亮、变大，开始发出彩色光芒。
+
+### 镜头2（4-10秒）· 六英雄登场
+
+光点猛然爆裂，分裂为六道彩色光线（蓝、橙红、紫、金、绿、青），每道光线凝聚成一个有大眼睛和可爱表情的圆形球体角色。六个球球排成弧形阵列，各自做出标志性动作：蓝色球发出弧形蓝光斩、橙红球周围燃起火圈、紫色球瞬间消失又闪现留下残影、金色球展开金光护盾、绿色球射出扇形箭雨、青色球脚下钻出三个小骷髅。深色星空背景，粒子飞散。
+
+### 镜头3（10-18秒）· 初期战斗
+
+俯视视角，深蓝紫色的地面上有微弱的网格纹理和紫色水晶碎片装饰。一个蓝色球球在画面中移动，周围开始出现稀疏的灰绿色骷髅敌人。球球自动释放弧形蓝色能量斩击，骷髅被击中后爆裂成粒子。怪物越来越多——加入了绿色史莱姆、紫色蝙蝠、深灰色快速狼形生物。球球不停移动和攻击，画面上蓝色刀光不断横扫。
+
+### 镜头4（18-24秒）· 技能升级
+
+画面中央弹出三张半透明发光卡牌，悬浮在空中。玩家选择了其中一张，卡牌爆裂成蓝色闪电光芒。回到战场，球球的攻击现在额外产生蓝色闪电链在敌人之间跳跃。接着又触发升级，这次选择后出现了环绕球体旋转的火焰环。球球现在同时有刀光、闪电、火环三种攻击效果，画面特效更加华丽。
+
+### 镜头5（24-32秒）· 法师与亡灵师
+
+切换到橙红色法师球球。多枚橙色追踪火球飞出，自动追踪敌人并爆炸。球体中心突然爆发巨大的橙红色火焰新星，圆形火焰冲击波向外扩散，覆盖整个屏幕，照亮所有敌人。切换到青色亡灵师球球。身后跟随一队小型白色骷髅兵排成阵列挡在前方。球球收集击杀产生的幽绿色灵魂球，灵魂球汇聚后，一个巨大的半透明灵魂巨兽被召唤出来，横冲直撞碾过大片敌群。
+
+### 镜头6（32-42秒）· Boss战
+
+画面上方出现一个巨大的暗红色球体Boss，体型是玩家的三四倍，表面有暗红色脉动光纹。Boss向玩家冲撞，地面留下冲击裂纹。Boss发射密集的红色弹幕弹丸满屏飞舞。玩家球球灵活闪避弹幕，同时持续攻击Boss。最终一击——画面短暂定格约0.15秒，然后Boss剧烈爆炸：巨大的金色粒子爆炸、金色冲击波环层层扩散、金色光点如雨滴般洒落。
+
+### 镜头7（42-50秒）· 多样玩法展示
+
+快速蒙太奇剪辑：1）地图背景变化——从深蓝紫色（虚空）切换到暗红色（猩红荒原）再到冰蓝色（冰封虚域），展示不同地图主题。2）不同角色的技能组合——紫色刺客瞬移暗杀留下残影、金色圣骑士格挡后爆发圣光反击、绿色弓箭手万箭齐发铺天盖地。3）地面散落各种发光掉落物——蓝色经验宝石、红色血瓶、金色发光遗物。每个画面持续约1.5秒快速切换。
+
+### 镜头8（50-60秒）· 大场面收尾
+
+最终画面：俯视全景，一个装备齐全的球球角色站在中央，身上环绕着多层特效——旋转刀刃、闪电光环、火焰轨迹、冰霜光圈。四周是极其密集的怪物潮，数百个敌人从画面四面八方涌来。球球释放全屏大招，各种颜色的特效同时爆发——蓝色刀光、橙色火焰、蓝紫色闪电、白色冲击波——将周围所有敌人一扫而空，整个画面被华丽的粒子爆炸填满。随后画面缓缓拉远，六个球球角色在深蓝星空中排成一排，各自带着标志性光效缓缓漂浮。
+
+---
+
+## 四、60秒完整版 · 英文 Prompt（Sora / Runway）
+
+**CRITICAL: Do NOT generate any text, titles, subtitles, numbers, UI elements, health bars, or written words anywhere in the video. Pure visual animation only. All text will be added in post-production.**
+
+### Scene 1 (0-4s) — Birth of Light
+Pure black screen. A tiny white point of light appears at dead center. It gradually brightens and grows, beginning to emit rainbow-colored rays.
+
+### Scene 2 (4-10s) — Six Heroes Appear
+The light point bursts violently, splitting into six colored streaks (blue, orange-red, purple, gold, green, cyan). Each streak condenses into an adorable round sphere character with big cartoon eyes and a cute expression. The six spheres arrange in an arc formation, each performing a signature move: blue sphere emits arc-shaped blue energy slashes, orange-red sphere ignites a ring of fire around itself, purple sphere vanishes and reappears leaving purple afterimages, gold sphere deploys a golden circular shield, green sphere fires a fan-shaped rain of arrows, cyan sphere summons three small skeletons rising from below. Dark starfield background with scattered particles.
+
+### Scene 3 (10-18s) — Early Combat
+Top-down view. Dark blue-purple ground with faint grid lines and scattered purple crystal shard decorations. A blue sphere moves across the arena. Grey-green skeleton enemies begin appearing sparsely. The sphere automatically releases arc-shaped blue energy slashes, skeletons burst into particles on hit. Enemy count increases — green jelly slimes join, then purple bats, then fast dark-grey wolf creatures. The sphere keeps moving and attacking, blue energy arcs sweeping constantly across the screen.
+
+### Scene 4 (18-24s) — Power Upgrades
+Three semi-transparent glowing cards appear floating at center frame. One card is selected and shatters into blue lightning sparks. Back to the battlefield — the sphere's attacks now also produce blue chain lightning that jumps between enemies. Another upgrade triggers: this time the selection produces a ring of flame orbiting the sphere. The sphere now has three simultaneous attack effects — energy slashes, chain lightning, and fire ring — making the visual effects much more spectacular.
+
+### Scene 5 (24-32s) — Mage and Necromancer
+Cut to the orange-red mage sphere. Multiple orange homing fireballs fly outward, auto-tracking enemies and exploding on impact with bright orange flashes. The sphere's center suddenly erupts with a massive orange-red flame nova — a circular fire shockwave expanding outward across the entire screen, illuminating everything. Cut to the cyan necromancer sphere. A squad of small white skeletal minions follows behind in formation, blocking enemies. The sphere collects ghostly green soul orbs from kills. The soul orbs converge, and a huge semi-transparent spectral beast is summoned, charging through and crushing large groups of enemies.
+
+### Scene 6 (32-42s) — Boss Battle
+A massive dark-red sphere boss enters from the top of frame, three to four times the player's size, with pulsing dark-red energy veins on its surface. The boss charges at the player, leaving impact cracks on the ground. The boss fires dense volleys of red bullet projectiles filling the screen. The player sphere nimbly dodges through the bullet patterns while continuously attacking. The final hit — screen briefly freezes for a split second, then the boss violently explodes: massive golden particle burst, layered golden shockwave rings expanding outward, golden light specks raining down like confetti.
+
+### Scene 7 (42-50s) — Variety Montage
+Quick montage cuts, ~1.5 seconds each: 1) Map background transitions — from deep blue-purple (void theme) to dark crimson red (wasteland theme) to icy blue (frost theme), showing different environments. 2) Different character combat — purple sphere teleporting and leaving afterimage clones, gold sphere blocking then counter-attacking with holy light burst, green sphere unleashing a massive rain of green arrows covering the entire ground. 3) Glowing loot items scattered on the ground — blue gem crystals, red health vials, golden glowing relics being magnetically pulled toward the player.
+
+### Scene 8 (50-60s) — Grand Finale
+Final shot: top-down panoramic view. A fully-equipped sphere character at center, surrounded by multiple layers of visual effects — rotating golden blades, lightning aura, fire trails, frost rings all orbiting simultaneously. An extremely dense monster horde of hundreds of enemies rushes in from all directions. The sphere unleashes a full-screen ultimate attack — blue energy slashes, orange flames, blue-purple lightning, white shockwaves all erupting simultaneously — wiping out every enemy on screen. The entire frame fills with spectacular layered particle explosions. The camera slowly pulls back to reveal the six hero spheres floating in a row against the deep blue starry sky, each glowing with their signature colored aura, drifting peacefully.
+
+---
+
+## 五、后期添加文字建议
+
+以下文字请在剪映/CapCut中手动添加，不要让AI生成：
+
+| 时间点 | 建议文字 | 字体风格 |
+|--------|----------|----------|
+| 0-3秒 | 球球英雄 Ball Hero | 彩虹渐变粗体，带发光效果 |
+| 8-10秒 | "每个球球都是英雄" | 白色细体，淡入淡出 |
+| 22秒 | BOSS | 红色粗体，抖动效果 |
+| 42秒 | 6大职业 · 40+技能 | 白色，逐字弹出 |
+| 50-55秒 | 免费游玩 · 浏览器直开 | 白色柔和体 |
+| 55-60秒 | liyuming0219.github.io/ball-hero | 浅蓝色等宽字体 |
+
+---
+
+## 六、推荐工具与使用建议
+
+| 工具 | 建议 |
+|------|------|
+| **可灵(Kling)** | 用中文逐镜头生成3-5秒片段，最适合Q版卡通风格 |
+| **即梦(Jimeng)** | 字节出品，中文prompt友好，风格化强 |
+| **Vidu** | 国产，多镜头理解好，适合中文描述 |
+| **Sora** | 英文prompt，画面一致性最好，适合长镜头 |
+| **Runway Gen-3** | 支持图生视频，可先截游戏画面作为参考图 |
+| **Pika** | 简单快速，适合单镜头效果测试 |
+
+**最佳方案：** 按镜头逐段生成3-5秒片段 → 剪映拼接排序 → 手动添加文字/字幕 → 配乐。建议用游戏截图作为参考图输入AI，画面会更贴近实际游戏。
