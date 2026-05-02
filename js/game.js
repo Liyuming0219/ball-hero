@@ -370,6 +370,7 @@ class Game {
         this.enemyBullets = [];
         this.dropItems = [];
         this.waveManager = new WaveManager(this.gameMode === 'daily' ? this.dailyRng : null);
+        this.waveManager._isMobile = this.isMobile;
         // 应用难度设置（每日挑战固定normal难度）
         const diffSetting = this.gameMode === 'daily' ? 'normal' : this.ui.settings.difficulty;
         this.waveManager.difficultyMultiplier = diffSetting === 'easy' ? 0.4 : diffSetting === 'hard' ? 1.2 : 0.75;
@@ -566,8 +567,19 @@ class Game {
         this.weapons.update(dt, this.enemies, this.camera, this._enemySpatialHash);
 
         // 更新怪物
+        const RECYCLE_DIST_SQ = 1500 * 1500; // 超过1500px回收
         for (let i = this.enemies.length - 1; i >= 0; i--) {
             const enemy = this.enemies[i];
+
+            // 超远距离敌人回收（Boss不回收）
+            if (!enemy.isBoss) {
+                const rdx = enemy.x - this.player.x, rdy = enemy.y - this.player.y;
+                if (rdx * rdx + rdy * rdy > RECYCLE_DIST_SQ) {
+                    this.enemies[i] = this.enemies[this.enemies.length - 1]; this.enemies.pop();
+                    continue;
+                }
+            }
+
             const bossEvent = enemy.update(dt, this.player.x, this.player.y);
 
             // Boss AI事件处理
@@ -1317,8 +1329,12 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
             ctx.font = "bold 28px 'Microsoft YaHei','PingFang SC',Arial,sans-serif";
             ctx.fillStyle = '#ff2222';
             ctx.textAlign = 'center';
-            ctx.shadowColor = '#ff0000';
-            ctx.shadowBlur = 20;
+            // 用半透明文字模拟发光效果，替代昂贵的shadowBlur
+            ctx.globalAlpha = siegeAlpha * 0.25;
+            ctx.fillStyle = '#ff0000';
+            ctx.fillText('⚠ 精英围攻! ⚠', screenW / 2 + 1, (screenW > 600 ? 60 : 50) + 1);
+            ctx.globalAlpha = siegeAlpha * 0.6;
+            ctx.fillStyle = '#ff2222';
             ctx.fillText('⚠ 精英围攻! ⚠', screenW / 2, screenW > 600 ? 60 : 50);
             ctx.restore();
         }
@@ -1606,9 +1622,16 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
                 ctx.closePath();
                 ctx.fill();
                 if (!this.isMobile) {
+                    // 用半透明扩大圆代替shadowBlur发光
                     ctx.globalAlpha = 0.08;
-                    ctx.shadowColor = theme.decorColor;
-                    ctx.shadowBlur = 8;
+                    ctx.fillStyle = theme.decorColor;
+                    ctx.beginPath();
+                    ctx.moveTo(0, -16);
+                    ctx.lineTo(9, 0);
+                    ctx.lineTo(5, 18);
+                    ctx.lineTo(-5, 18);
+                    ctx.lineTo(-9, 0);
+                    ctx.closePath();
                     ctx.fill();
                 }
             } else if (theme.decorType === 'pillar') {

@@ -482,12 +482,44 @@ class Enemy {
         const margin = this.radius + 40;
         if (sx < -margin || sx > screenW + margin || sy < -margin || sy > screenH + margin) return;
 
-        const bob = Math.sin(this.bodyBob) * 2;
+        // === LOD分级渲染：根据离屏幕中心的距离简化绘制 ===
+        // 屏幕边缘的敌人只画身体圆，大幅减少draw call
+        const cx = screenW * 0.5, cy = screenH * 0.5;
+        const distSq = (sx - cx) * (sx - cx) + (sy - cy) * (sy - cy);
+        const LOD_MID = screenW * 0.38;   // 中等细节阈值
+        const LOD_LOW = screenW * 0.48;   // 低细节阈值
+        const lodMidSq = LOD_MID * LOD_MID;
+        const lodLowSq = LOD_LOW * LOD_LOW;
+        // Boss和精英始终用最高细节
+        const lod = (this.isBoss || this.isElite) ? 0 : (distSq < lodMidSq ? 0 : (distSq < lodLowSq ? 1 : 2));
+
+        const bob = lod < 2 ? Math.sin(this.bodyBob) * 2 : 0; // 低LOD不算bob
+
+        // === LOD 2: 最简渲染 —— 仅一个圆 ===
+        if (lod === 2) {
+            ctx.fillStyle = this.damageFlash > 0 ? '#ffffff' : this.color;
+            ctx.beginPath();
+            ctx.arc(sx, sy, this.radius, 0, Math.PI * 2);
+            ctx.fill();
+            // 受伤血条仍然显示（玩家需要反馈）
+            if (this.hp < this.maxHp) {
+                const barW = this.radius * 2.5, barH = 4;
+                const barY = sy - this.radius - 8;
+                ctx.fillStyle = 'rgba(0,0,0,0.6)';
+                ctx.fillRect(sx - barW / 2, barY, barW, barH);
+                const ratio = this.hp / this.maxHp;
+                ctx.fillStyle = ratio > 0.5 ? '#44ff44' : (ratio > 0.25 ? '#ffaa00' : '#ff4444');
+                ctx.fillRect(sx - barW / 2, barY, barW * ratio, barH);
+            }
+            return;
+        }
 
         ctx.save();
 
-        // 精英词缀光圈
-        if (this.affixColor) {
+        // === LOD 0~1: 中高细节渲染 ===
+
+        // 精英词缀光圈（仅LOD 0）
+        if (lod === 0 && this.affixColor) {
             ctx.globalAlpha = 0.25 + Math.sin(this.bodyBob * 3) * 0.1;
             ctx.fillStyle = this.affixColor;
             ctx.beginPath();
@@ -518,8 +550,8 @@ class Enemy {
             ctx.globalAlpha = 1;
         }
 
-        // 精英护盾视觉
-        if (this._shielded && this._shieldHp > 0) {
+        // 精英护盾视觉（仅LOD 0）
+        if (lod === 0 && this._shielded && this._shieldHp > 0) {
             ctx.globalAlpha = 0.3;
             ctx.strokeStyle = '#8888ff';
             ctx.lineWidth = 3;
@@ -529,8 +561,8 @@ class Enemy {
             ctx.globalAlpha = 1;
         }
 
-        // 远程蓄力预警
-        if (this.ranged && this._chargeRatio > 0) {
+        // 远程蓄力预警（仅LOD 0）
+        if (lod === 0 && this.ranged && this._chargeRatio > 0) {
             const cr = this._chargeRatio;
             ctx.globalAlpha = cr * (0.4 + Math.sin(this.bodyBob * 10) * 0.2);
             ctx.strokeStyle = '#ff2244';
@@ -546,8 +578,8 @@ class Enemy {
             ctx.globalAlpha = 1;
         }
 
-        // 近战攻击冷却指示
-        if (!this.ranged && this.attackCooldown > 0.3) {
+        // 近战攻击冷却指示（仅LOD 0）
+        if (lod === 0 && !this.ranged && this.attackCooldown > 0.3) {
             ctx.globalAlpha = 0.3;
             ctx.fillStyle = '#ff4444';
             ctx.beginPath();
@@ -562,8 +594,8 @@ class Enemy {
         ctx.arc(sx, sy + bob, this.radius, 0, Math.PI * 2);
         ctx.fill();
 
-        // 受伤闪白外圈
-        if (this.damageFlash > 0) {
+        // 受伤闪白外圈（仅LOD 0）
+        if (lod === 0 && this.damageFlash > 0) {
             ctx.globalAlpha = 0.4;
             ctx.fillStyle = '#ffffff';
             ctx.beginPath();
@@ -572,8 +604,8 @@ class Enemy {
             ctx.globalAlpha = 1;
         }
 
-        // 灼烧效果
-        if (this._burnTimer > 0) {
+        // 灼烧效果（仅LOD 0）
+        if (lod === 0 && this._burnTimer > 0) {
             ctx.globalAlpha = 0.3 + Math.sin(this.bodyBob * 6) * 0.15;
             ctx.fillStyle = '#ff4422';
             ctx.beginPath();
@@ -582,15 +614,17 @@ class Enemy {
             ctx.globalAlpha = 1;
         }
 
-        // 高光
-        ctx.fillStyle = '#fff';
-        ctx.globalAlpha = 0.2;
-        ctx.beginPath();
-        ctx.arc(sx - this.radius * 0.2, sy - this.radius * 0.2 + bob, this.radius * 0.5, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.globalAlpha = 1;
+        // 高光（仅LOD 0）
+        if (lod === 0) {
+            ctx.fillStyle = '#fff';
+            ctx.globalAlpha = 0.2;
+            ctx.beginPath();
+            ctx.arc(sx - this.radius * 0.2, sy - this.radius * 0.2 + bob, this.radius * 0.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.globalAlpha = 1;
+        }
 
-        // 眼睛
+        // 眼睛（LOD 0~1都画，是敌人辨识的关键）
         ctx.fillStyle = this.isBoss ? '#ffaa00' : '#ff4444';
         const eyeSize = this.radius * 0.2;
         ctx.beginPath();
@@ -613,8 +647,8 @@ class Enemy {
             ctx.fillRect(sx - barWidth / 2, barY, barWidth * ratio, barHeight);
         }
 
-        // Boss/精英名字
-        if (this.isBoss || this.affixName) {
+        // Boss/精英名字（仅LOD 0）
+        if (lod === 0 && (this.isBoss || this.affixName)) {
             ctx.font = "bold 14px 'Microsoft YaHei','PingFang SC','Helvetica Neue',Arial,sans-serif";
             ctx.fillStyle = this.isBoss ? '#ff4444' : (this.affixColor || '#ffaa00');
             ctx.textAlign = 'center';
@@ -753,11 +787,22 @@ class WaveManager {
             }
         }
 
-        // 生成怪物
-        if (this.spawnTimer >= config.spawnRate) {
+        // 生成怪物（设置总数上限，防止低端设备帧率崩溃）
+        // 移动端150，桌面端300；接近上限时逐步减少生成量（软上限）
+        const ENEMY_CAP = this._isMobile ? 150 : 300;
+        const ENEMY_SOFT_CAP = ENEMY_CAP * 0.75; // 达到75%上限时开始减少生成
+
+        if (this.spawnTimer >= config.spawnRate && enemies.length < ENEMY_CAP) {
             this.spawnTimer = 0;
-            const count = config.count + Math.floor(this.gameTime / 90);
-            for (let i = 0; i < count; i++) {
+            let count = config.count + Math.floor(this.gameTime / 90);
+
+            // 软上限：接近上限时按比例减少生成数量
+            if (enemies.length > ENEMY_SOFT_CAP) {
+                const throttle = 1 - (enemies.length - ENEMY_SOFT_CAP) / (ENEMY_CAP - ENEMY_SOFT_CAP);
+                count = Math.max(1, Math.ceil(count * throttle));
+            }
+
+            for (let i = 0; i < count && enemies.length < ENEMY_CAP; i++) {
                 // 远程怪独立低概率生成，不再混入普通池
                 const _rnd = this.rng ? this.rng() : Math.random();
                 let type;
@@ -778,12 +823,14 @@ class WaveManager {
                 enemies.push(newEnemy);
 
                 // 精英怪概率（附带随机词缀，受每日修饰符影响）
-                const _eRnd = this.rng ? this.rng() : Math.random();
-                if (config.elite && _eRnd < (config.eliteChance || 0) * this.eliteChanceMult) {
-                    const elitePos = this._getSpawnPos(playerX, playerY);
-                    const elite = new Enemy(config.elite, elitePos.x, elitePos.y, config.mult * this.difficulty * this.difficultyMultiplier);
-                    elite.applyRandomAffix();
-                    enemies.push(elite);
+                if (enemies.length < ENEMY_CAP) {
+                    const _eRnd = this.rng ? this.rng() : Math.random();
+                    if (config.elite && _eRnd < (config.eliteChance || 0) * this.eliteChanceMult) {
+                        const elitePos = this._getSpawnPos(playerX, playerY);
+                        const elite = new Enemy(config.elite, elitePos.x, elitePos.y, config.mult * this.difficulty * this.difficultyMultiplier);
+                        elite.applyRandomAffix();
+                        enemies.push(elite);
+                    }
                 }
             }
         }
@@ -812,10 +859,11 @@ class WaveManager {
             Utils.shake(10);
         }
 
-        // 精英围攻波次：环形生成一圈精英怪
-        if (this.gameTime >= this.nextSiegeTime) {
+        // 精英围攻波次：环形生成一圈精英怪（受上限约束）
+        if (this.gameTime >= this.nextSiegeTime && enemies.length < ENEMY_CAP) {
             this.siegeCount++;
-            const siegeEliteCount = Math.min(6 + this.siegeCount * 2, 20);
+            const maxSiege = Math.min(6 + this.siegeCount * 2, 20, ENEMY_CAP - enemies.length);
+            const siegeEliteCount = Math.max(1, maxSiege);
             const siegeRadius = 400;
             const eliteTypes = ['eliteSkeleton', 'eliteDemon'];
             const eliteType = this.siegeCount >= 3 ? 'eliteDemon' : 'eliteSkeleton';
