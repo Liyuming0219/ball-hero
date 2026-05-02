@@ -361,17 +361,19 @@ class Enemy {
             }
             const dx = tx - this.x;
             const dy = ty - this.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist > 0) {
+            const distSq = dx * dx + dy * dy;
+            if (distSq > 1) { // > 1px² 避免除零
                 const stopDist = this.ranged ? 200 : (this.bossPattern === 'bulletHell' ? 250 : 0);
-                if (dist > stopDist) {
+                if (distSq > stopDist * stopDist) {
                     if (this.slowTimer > 0) {
                         this.slowTimer -= dt;
                         if (this.slowTimer <= 0) this.slowMult = 1;
                     }
                     const spd = this.speed * this.slowMult;
-                    this.x += (dx / dist) * spd * dt;
-                    this.y += (dy / dist) * spd * dt;
+                    // 只在需要移动时才算 sqrt（已过停止距离检查）
+                    const invDist = 1 / Math.sqrt(distSq);
+                    this.x += dx * invDist * spd * dt;
+                    this.y += dy * invDist * spd * dt;
                 }
             }
         } else {
@@ -483,24 +485,23 @@ class Enemy {
         if (sx < -margin || sx > screenW + margin || sy < -margin || sy > screenH + margin) return;
 
         // === LOD分级渲染：根据离屏幕中心的距离简化绘制 ===
-        // 屏幕边缘的敌人只画身体圆，大幅减少draw call
+        // 使用 screenW+screenH 对角线比例，移动端缩放后 screenW/H 较大时阈值自动扩大
         const cx = screenW * 0.5, cy = screenH * 0.5;
         const distSq = (sx - cx) * (sx - cx) + (sy - cy) * (sy - cy);
-        const LOD_MID = screenW * 0.38;   // 中等细节阈值
-        const LOD_LOW = screenW * 0.48;   // 低细节阈值
-        const lodMidSq = LOD_MID * LOD_MID;
-        const lodLowSq = LOD_LOW * LOD_LOW;
+        // 用 distSq vs (screenW*screenH) 的比例避免 sqrt
+        const diagHalfSq = cx * cx + cy * cy; // 半对角线的平方
+        const lodMidSq = diagHalfSq * 0.2025; // (0.45)^2
+        const lodLowSq = diagHalfSq * 0.3844; // (0.62)^2
         // Boss和精英始终用最高细节
         const lod = (this.isBoss || this.isElite) ? 0 : (distSq < lodMidSq ? 0 : (distSq < lodLowSq ? 1 : 2));
 
         const bob = lod < 2 ? Math.sin(this.bodyBob) * 2 : 0; // 低LOD不算bob
 
-        // === LOD 2: 最简渲染 —— fillRect 替代 arc，零路径调用 ===
+        // === LOD 2: 最简渲染 —— 纯 fillRect，零路径调用 ===
         if (lod === 2) {
             ctx.fillStyle = this.damageFlash > 0 ? '#ffffff' : this.color;
             const r = this.radius;
             ctx.fillRect(sx - r, sy - r, r * 2, r * 2);
-            // 受伤血条仍然显示（玩家需要反馈）
             if (this.hp < this.maxHp) {
                 const barW = r * 2.5, barH = 4;
                 const barY = sy - r - 8;
@@ -513,12 +514,106 @@ class Enemy {
             return;
         }
 
+        // === LOD 1: 身体fillRect + 眼睛fillRect + 血条，无save/restore ===
+        if (lod === 1) {
+            const r = this.radius;
+            // 精英/Boss光圈
+            if ((this.isElite && !this.affixColor) || this.isBoss) {
+                ctx.globalAlpha = 0.25;
+                ctx.fillStyle = this.isBoss ? '#ff4444' : '#ffaa00';
+                const gr = r + 8;
+                ctx.fillRect(sx - gr, sy + bob - gr, gr * 2, gr * 2);
+                ctx.globalAlpha = 1;
+            }
+            // 身体
+            ctx.fillStyle = this.damageFlash > 0 ? '#ffffff' : this.color;
+            ctx.beginPath();
+            ctx.arc(sx, sy + bob, r, 0, Math.PI * 2);
+            ctx.fill();
+            // 眼睛用 fillRect
+            ctx.fillStyle = this.isBoss ? '#ffaa00' : '#ff4444';
+            const es = r * 0.2;
+            const ey = sy - r * 0.1 + bob;
+            ctx.fillRect(sx - r * 0.25 - es, ey - es, es * 2, es * 2);
+            ctx.fillRect(sx + r * 0.25 - es, ey - es, es * 2, es * 2);
+            // 血条
+            if (this.hp < this.maxHp && !this.isBoss) {
+                const barW = r * 2.5, barH = 4;
+                const barY = sy - r - 10 + bob;
+                ctx.fillStyle = 'rgba(0,0,0,0.6)';
+                ctx.fillRect(sx - barW / 2, barY, barW, barH);
+                const ratio = this.hp / this.maxHp;
+                ctx.fillStyle = ratio > 0.5 ? '#44ff44' : (ratio > 0.25 ? '#ffaa00' : '#ff4444');
+                ctx.fillRect(sx - barW / 2, barY, barW * ratio, barH);
+            }
+            return;
+        }
+
+        // === LOD 0: 完整细节渲染 ===
+        // 普通敌人快速路径：无精英/Boss/护盾/灼烧/蓄力等特效时，跳过 save/restore
+        const hasSpecial = this.isBoss || this.isElite || this.affixColor
+            || (this._shielded && this._shieldHp > 0)
+            || (this.ranged && this._chargeRatio > 0)
+            || this._burnTimer > 0
+            || this.bossCharging;
+        if (!hasSpecial) {
+            // — 身体 —
+            ctx.fillStyle = this.damageFlash > 0 ? '#ffffff' : this.color;
+            ctx.beginPath();
+            ctx.arc(sx, sy + bob, this.radius, 0, Math.PI * 2);
+            ctx.fill();
+            // 受伤闪白
+            if (this.damageFlash > 0) {
+                ctx.globalAlpha = 0.4;
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(sx, sy + bob, this.radius + 4, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            }
+            // — 近战冷却指示 —
+            if (!this.ranged && this.attackCooldown > 0.3) {
+                ctx.globalAlpha = 0.3;
+                ctx.fillStyle = '#ff4444';
+                ctx.beginPath();
+                ctx.arc(sx, sy + bob, this.radius + 6, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            }
+            // — 高光 —
+            ctx.fillStyle = '#fff';
+            ctx.globalAlpha = 0.2;
+            ctx.beginPath();
+            ctx.arc(sx - this.radius * 0.2, sy - this.radius * 0.2 + bob, this.radius * 0.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.globalAlpha = 1;
+            // — 眼睛 —
+            ctx.fillStyle = '#ff4444';
+            const eyeS = this.radius * 0.2;
+            ctx.beginPath();
+            ctx.arc(sx - this.radius * 0.25, sy - this.radius * 0.1 + bob, eyeS, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(sx + this.radius * 0.25, sy - this.radius * 0.1 + bob, eyeS, 0, Math.PI * 2);
+            ctx.fill();
+            // — 血条 —
+            if (this.hp < this.maxHp) {
+                const barW = this.radius * 2.5, barH = 4;
+                const barY = sy - this.radius - 10 + bob;
+                ctx.fillStyle = 'rgba(0,0,0,0.6)';
+                ctx.fillRect(sx - barW / 2, barY, barW, barH);
+                const ratio = this.hp / this.maxHp;
+                ctx.fillStyle = ratio > 0.5 ? '#44ff44' : (ratio > 0.25 ? '#ffaa00' : '#ff4444');
+                ctx.fillRect(sx - barW / 2, barY, barW * ratio, barH);
+            }
+            return;
+        }
+
+        // === LOD 0 完整路径（精英/Boss/特效敌人） ===
         ctx.save();
 
-        // === LOD 0~1: 中高细节渲染 ===
-
-        // 精英词缀光圈（仅LOD 0）
-        if (lod === 0 && this.affixColor) {
+        // 精英词缀光圈
+        if (this.affixColor) {
             ctx.globalAlpha = 0.25 + Math.sin(this.bodyBob * 3) * 0.1;
             ctx.fillStyle = this.affixColor;
             ctx.beginPath();
@@ -549,8 +644,8 @@ class Enemy {
             ctx.globalAlpha = 1;
         }
 
-        // 精英护盾视觉（仅LOD 0）
-        if (lod === 0 && this._shielded && this._shieldHp > 0) {
+        // 精英护盾视觉
+        if (this._shielded && this._shieldHp > 0) {
             ctx.globalAlpha = 0.3;
             ctx.strokeStyle = '#8888ff';
             ctx.lineWidth = 3;
@@ -560,8 +655,8 @@ class Enemy {
             ctx.globalAlpha = 1;
         }
 
-        // 远程蓄力预警（仅LOD 0）
-        if (lod === 0 && this.ranged && this._chargeRatio > 0) {
+        // 远程蓄力预警
+        if (this.ranged && this._chargeRatio > 0) {
             const cr = this._chargeRatio;
             ctx.globalAlpha = cr * (0.4 + Math.sin(this.bodyBob * 10) * 0.2);
             ctx.strokeStyle = '#ff2244';
@@ -577,8 +672,8 @@ class Enemy {
             ctx.globalAlpha = 1;
         }
 
-        // 近战攻击冷却指示（仅LOD 0）
-        if (lod === 0 && !this.ranged && this.attackCooldown > 0.3) {
+        // 近战攻击冷却指示
+        if (!this.ranged && this.attackCooldown > 0.3) {
             ctx.globalAlpha = 0.3;
             ctx.fillStyle = '#ff4444';
             ctx.beginPath();
@@ -593,8 +688,8 @@ class Enemy {
         ctx.arc(sx, sy + bob, this.radius, 0, Math.PI * 2);
         ctx.fill();
 
-        // 受伤闪白外圈（仅LOD 0）
-        if (lod === 0 && this.damageFlash > 0) {
+        // 受伤闪白外圈
+        if (this.damageFlash > 0) {
             ctx.globalAlpha = 0.4;
             ctx.fillStyle = '#ffffff';
             ctx.beginPath();
@@ -603,8 +698,8 @@ class Enemy {
             ctx.globalAlpha = 1;
         }
 
-        // 灼烧效果（仅LOD 0）
-        if (lod === 0 && this._burnTimer > 0) {
+        // 灼烧效果
+        if (this._burnTimer > 0) {
             ctx.globalAlpha = 0.3 + Math.sin(this.bodyBob * 6) * 0.15;
             ctx.fillStyle = '#ff4422';
             ctx.beginPath();
@@ -613,17 +708,15 @@ class Enemy {
             ctx.globalAlpha = 1;
         }
 
-        // 高光（仅LOD 0）
-        if (lod === 0) {
-            ctx.fillStyle = '#fff';
-            ctx.globalAlpha = 0.2;
-            ctx.beginPath();
-            ctx.arc(sx - this.radius * 0.2, sy - this.radius * 0.2 + bob, this.radius * 0.5, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.globalAlpha = 1;
-        }
+        // 高光
+        ctx.fillStyle = '#fff';
+        ctx.globalAlpha = 0.2;
+        ctx.beginPath();
+        ctx.arc(sx - this.radius * 0.2, sy - this.radius * 0.2 + bob, this.radius * 0.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
 
-        // 眼睛（LOD 0~1都画，是敌人辨识的关键）
+        // 眼睛
         ctx.fillStyle = this.isBoss ? '#ffaa00' : '#ff4444';
         const eyeSize = this.radius * 0.2;
         ctx.beginPath();
@@ -646,8 +739,8 @@ class Enemy {
             ctx.fillRect(sx - barWidth / 2, barY, barWidth * ratio, barHeight);
         }
 
-        // Boss/精英名字（仅LOD 0）
-        if (lod === 0 && (this.isBoss || this.affixName)) {
+        // Boss/精英名字
+        if (this.isBoss || this.affixName) {
             ctx.font = "bold 14px 'Microsoft YaHei','PingFang SC','Helvetica Neue',Arial,sans-serif";
             ctx.fillStyle = this.isBoss ? '#ff4444' : (this.affixColor || '#ffaa00');
             ctx.textAlign = 'center';
@@ -1445,14 +1538,19 @@ class EnemyBullet {
         this.alive = true;
         this.life = 3;
         this.age = 0;
-        // 拖尾历史
-        this.trail = [];
+        // 拖尾历史 — 环形缓冲（避免shift()的数组搬移开销）
+        this._trailBuf = new Float32Array(12); // 6个点 × 2(x,y)
+        this._trailHead = 0;
+        this._trailLen = 0;
     }
 
     update(dt) {
-        // 记录拖尾
-        this.trail.push({ x: this.x, y: this.y });
-        if (this.trail.length > 6) this.trail.shift();
+        // 记录拖尾到环形缓冲
+        const idx = this._trailHead * 2;
+        this._trailBuf[idx] = this.x;
+        this._trailBuf[idx + 1] = this.y;
+        this._trailHead = (this._trailHead + 1) % 6;
+        if (this._trailLen < 6) this._trailLen++;
 
         this.x += this.vx * dt;
         this.y += this.vy * dt;
@@ -1465,16 +1563,19 @@ class EnemyBullet {
         const sx = this.x - camera.x;
         const sy = this.y - camera.y;
         ctx.save();
-        // 拖尾
-        for (let i = 0; i < this.trail.length; i++) {
-            const t = this.trail[i];
-            const tx = t.x - camera.x;
-            const ty = t.y - camera.y;
-            const alpha = (i / this.trail.length) * 0.3;
+        // 拖尾 — 从环形缓冲读取，最旧的先画
+        const len = this._trailLen;
+        const buf = this._trailBuf;
+        const start = (this._trailHead - len + 6) % 6;
+        ctx.fillStyle = this.color;
+        for (let i = 0; i < len; i++) {
+            const slot = ((start + i) % 6) * 2;
+            const tx = buf[slot] - camera.x;
+            const ty = buf[slot + 1] - camera.y;
+            const alpha = (i / len) * 0.3;
             ctx.globalAlpha = alpha;
-            ctx.fillStyle = this.color;
             ctx.beginPath();
-            ctx.arc(tx, ty, this.radius * (0.3 + 0.7 * i / this.trail.length), 0, Math.PI * 2);
+            ctx.arc(tx, ty, this.radius * (0.3 + 0.7 * i / len), 0, Math.PI * 2);
             ctx.fill();
         }
         // 脉动外光——更大更明显

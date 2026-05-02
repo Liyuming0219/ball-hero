@@ -267,7 +267,10 @@ class Game {
             this.fpsTimer = 0;
         }
 
-        this.ctx.clearRect(0, 0, this.logicWidth, this.logicHeight);
+        // alpha:false 模式下背景会完全覆盖，playing 状态无需 clearRect
+        if (this.state !== 'playing') {
+            this.ctx.clearRect(0, 0, this.logicWidth, this.logicHeight);
+        }
 
         // 冻帧处理：仍然渲染但不更新逻辑
         if (this.freezeTimer > 0) {
@@ -2046,8 +2049,8 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
             this.summonManager.maxSummons = baseMax + levelBonus + upgradeBonus;
         }
 
-        // 更新召唤物AI和位置
-        this.summonManager.update(dt, this.enemies);
+        // 更新召唤物AI和位置（传入空间哈希加速目标搜索和火焰伤害检测）
+        this.summonManager.update(dt, this.enemies, this._enemySpatialHash);
         this.summonManager.updateCollisionCD(dt);
 
         // 召唤物与敌人的碰撞伤害

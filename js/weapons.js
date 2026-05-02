@@ -1339,27 +1339,50 @@ class WeaponSystem {
             const sy = p.y - camera.y;
             if (sx < -margin || sx > screenW + margin || sy < -margin || sy > screenH + margin) continue;
 
-            ctx.save();
-
             if (p.type === 'fireball') {
-                // 外光
+                // 火球 — 无需 save/restore（无坐标变换）
                 ctx.globalAlpha = 0.5;
                 ctx.fillStyle = '#ffaa00';
                 ctx.beginPath();
                 ctx.arc(sx, sy, p.radius * 1.8, 0, Math.PI * 2);
                 ctx.fill();
-                // 火球
                 ctx.globalAlpha = 1;
                 ctx.fillStyle = '#ff6644';
                 ctx.beginPath();
                 ctx.arc(sx, sy, p.radius, 0, Math.PI * 2);
                 ctx.fill();
-                // 内核
                 ctx.fillStyle = '#ffff44';
                 ctx.beginPath();
                 ctx.arc(sx, sy, p.radius * 0.4, 0, Math.PI * 2);
                 ctx.fill();
-            } else if (p.type === 'arrow' || p.type === 'rain_arrow') {
+                continue;
+            }
+
+            if (p.type === 'necro_bolt') {
+                // 灵魂弹 — 无需 save/restore（无坐标变换）
+                ctx.globalAlpha = 0.5;
+                ctx.fillStyle = '#66eedd';
+                ctx.beginPath();
+                ctx.arc(sx, sy, p.radius * 1.8, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+                ctx.fillStyle = '#44ccaa';
+                ctx.beginPath();
+                ctx.arc(sx, sy, p.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = '#ffffff';
+                ctx.globalAlpha = 0.6;
+                ctx.beginPath();
+                ctx.arc(sx, sy, p.radius * 0.35, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+                continue;
+            }
+
+            // 需要坐标变换的类型才用 save/restore
+            ctx.save();
+
+            if (p.type === 'arrow' || p.type === 'rain_arrow') {
                 ctx.translate(sx, sy);
                 ctx.rotate(p.angle || Math.atan2(p.vy, p.vx));
                 ctx.fillStyle = p.color;
@@ -1542,25 +1565,6 @@ class WeaponSystem {
                 ctx.translate(sx, sy);
                 ctx.globalAlpha = lifeRatio;
                 ctx.drawImage(p._tornadoCache, -p._tornadoCacheW / 2, -p._tornadoCacheH / 2);
-            } else if (p.type === 'necro_bolt') {
-                // 灵魂弹外光
-                ctx.globalAlpha = 0.5;
-                ctx.fillStyle = '#66eedd';
-                ctx.beginPath();
-                ctx.arc(sx, sy, p.radius * 1.8, 0, Math.PI * 2);
-                ctx.fill();
-                // 核心
-                ctx.globalAlpha = 1;
-                ctx.fillStyle = '#44ccaa';
-                ctx.beginPath();
-                ctx.arc(sx, sy, p.radius, 0, Math.PI * 2);
-                ctx.fill();
-                // 内核
-                ctx.fillStyle = '#ffffff';
-                ctx.globalAlpha = 0.6;
-                ctx.beginPath();
-                ctx.arc(sx, sy, p.radius * 0.35, 0, Math.PI * 2);
-                ctx.fill();
             }
 
             ctx.restore();
