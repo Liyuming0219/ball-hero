@@ -530,7 +530,8 @@ class Game {
         this._dt = dt; // 缓存dt供render使用
         this._updateInput();
 
-        // 更新玩家
+        // 更新玩家（传递游戏时间用于时间缩放回血等）
+        this.player._gameTime = this.waveManager.gameTime;
         this.player.update(dt, this.inputDir, this.particles);
 
         // 更新相机（平滑跟随）

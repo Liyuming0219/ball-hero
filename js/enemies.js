@@ -700,16 +700,16 @@ class WaveManager {
             { time: 360, types: ['skeleton', 'bat', 'slime', 'shadowWolf', 'gargoyle'], spawnRate: 0.7, count: 9, mult: 1.7, elite: 'eliteSkeleton', eliteChance: 0.06, rangedType: 'skeletonMage', rangedChance: 0.12 },
             // 阶段7 (480~600s)：加入恶魔术士，精英多样化
             { time: 480, types: ['shadowWolf', 'bat', 'slime', 'gargoyle', 'skeleton'], spawnRate: 0.6, count: 12, mult: 2.2, elite: 'eliteDemon', eliteChance: 0.08, rangedType: 'demonCaster', rangedChance: 0.15 },
-            // 阶段8 (600~750s)：加入爆破虫，全面强敌
-            { time: 600, types: ['shadowWolf', 'gargoyle', 'exploder', 'slime', 'bat'], spawnRate: 0.5, count: 15, mult: 3.0, elite: 'eliteDemon', eliteChance: 0.10, rangedType: 'demonCaster', rangedChance: 0.18 },
+            // 阶段8 (600~750s)：加入爆破虫，全面强敌（降低mult，靠difficulty曲线提供压力）
+            { time: 600, types: ['shadowWolf', 'gargoyle', 'exploder', 'slime', 'bat'], spawnRate: 0.5, count: 15, mult: 2.2, elite: 'eliteDemon', eliteChance: 0.10, rangedType: 'demonCaster', rangedChance: 0.18 },
             // 阶段9 (750~900s)：高难度密度
-            { time: 750, types: ['shadowWolf', 'gargoyle', 'exploder', 'demonCaster', 'slime'], spawnRate: 0.4, count: 18, mult: 4.0, elite: 'eliteDemon', eliteChance: 0.12, rangedType: 'demonCaster', rangedChance: 0.20 },
+            { time: 750, types: ['shadowWolf', 'gargoyle', 'exploder', 'demonCaster', 'slime'], spawnRate: 0.4, count: 18, mult: 2.8, elite: 'eliteDemon', eliteChance: 0.12, rangedType: 'demonCaster', rangedChance: 0.20 },
             // 阶段10 (900~1080s)：无尽噩梦
-            { time: 900, types: ['shadowWolf', 'gargoyle', 'exploder', 'demonCaster', 'slime', 'skeleton'], spawnRate: 0.35, count: 22, mult: 5.0, elite: 'eliteDemon', eliteChance: 0.15, rangedType: 'demonCaster', rangedChance: 0.22 },
+            { time: 900, types: ['shadowWolf', 'gargoyle', 'exploder', 'demonCaster', 'slime', 'skeleton'], spawnRate: 0.35, count: 22, mult: 3.2, elite: 'eliteDemon', eliteChance: 0.15, rangedType: 'demonCaster', rangedChance: 0.22 },
             // 阶段11 (1080~1260s)：终极考验
-            { time: 1080, types: ['shadowWolf', 'gargoyle', 'exploder', 'demonCaster', 'slime'], spawnRate: 0.3, count: 28, mult: 6.5, elite: 'eliteDemon', eliteChance: 0.18, rangedType: 'demonCaster', rangedChance: 0.25 },
+            { time: 1080, types: ['shadowWolf', 'gargoyle', 'exploder', 'demonCaster', 'slime'], spawnRate: 0.3, count: 28, mult: 3.8, elite: 'eliteDemon', eliteChance: 0.18, rangedType: 'demonCaster', rangedChance: 0.25 },
             // 阶段12 (1260s+)：真·无尽
-            { time: 1260, types: ['shadowWolf', 'gargoyle', 'exploder', 'demonCaster', 'slime', 'skeleton'], spawnRate: 0.25, count: 35, mult: 8.0, elite: 'eliteDemon', eliteChance: 0.22, rangedType: 'demonCaster', rangedChance: 0.28 },
+            { time: 1260, types: ['shadowWolf', 'gargoyle', 'exploder', 'demonCaster', 'slime', 'skeleton'], spawnRate: 0.25, count: 35, mult: 4.5, elite: 'eliteDemon', eliteChance: 0.22, rangedType: 'demonCaster', rangedChance: 0.28 },
         ];
 
         // 阶段Boss：首次270秒（4.5分钟），之后逐步缩短间隔（最短120秒）
@@ -728,15 +728,20 @@ class WaveManager {
         this.timer += dt;
         this.spawnTimer += dt;
 
-        // 难度递增（分段加速曲线 - 前期更平缓）
-        // 0~5分钟: 缓慢增长; 5~10分钟: 中速增长; 10分钟+: 加速增长
+        // 难度递增（分段曲线 - 后期增长大幅放缓，匹配英雄成长节奏）
+        // 0~5分钟: 缓慢增长; 5~10分钟: 中速增长; 10~20分钟: 放缓增长; 20分钟+: 接近线性
         const t = this.gameTime;
         if (t < 300) {
-            this.difficulty = 1 + t / 200;                // 5分钟 → 2.5x（原3.5x）
+            this.difficulty = 1 + t / 200;                // 5分钟 → 2.5x
         } else if (t < 600) {
-            this.difficulty = 2.5 + (t - 300) / 100;      // 10分钟 → 5.5x（原8.5x）
+            this.difficulty = 2.5 + (t - 300) / 120;      // 10分钟 → 5.0x（原5.5x）
+        } else if (t < 1200) {
+            // 10~20分钟: 对数增长，大幅放缓（原pow 1.4指数增长）
+            // 10分钟=5.0x → 15分钟≈7.3x → 20分钟≈8.9x
+            this.difficulty = 5.0 + 3.0 * Math.log2(1 + (t - 600) / 200);
         } else {
-            this.difficulty = 5.5 + Math.pow((t - 600) / 150, 1.4); // 更平缓的后期增长
+            // 20分钟后: 非常缓慢的线性增长（每分钟 +0.3x）
+            this.difficulty = 8.9 + (t - 1200) / 200;
         }
 
         // 获取当前波次配置
