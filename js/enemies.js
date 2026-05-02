@@ -495,16 +495,15 @@ class Enemy {
 
         const bob = lod < 2 ? Math.sin(this.bodyBob) * 2 : 0; // 低LOD不算bob
 
-        // === LOD 2: 最简渲染 —— 仅一个圆 ===
+        // === LOD 2: 最简渲染 —— fillRect 替代 arc，零路径调用 ===
         if (lod === 2) {
             ctx.fillStyle = this.damageFlash > 0 ? '#ffffff' : this.color;
-            ctx.beginPath();
-            ctx.arc(sx, sy, this.radius, 0, Math.PI * 2);
-            ctx.fill();
+            const r = this.radius;
+            ctx.fillRect(sx - r, sy - r, r * 2, r * 2);
             // 受伤血条仍然显示（玩家需要反馈）
             if (this.hp < this.maxHp) {
-                const barW = this.radius * 2.5, barH = 4;
-                const barY = sy - this.radius - 8;
+                const barW = r * 2.5, barH = 4;
+                const barY = sy - r - 8;
                 ctx.fillStyle = 'rgba(0,0,0,0.6)';
                 ctx.fillRect(sx - barW / 2, barY, barW, barH);
                 const ratio = this.hp / this.maxHp;
@@ -950,44 +949,53 @@ class ExpGem {
         return 0;
     }
 
-    render(ctx, camera) {
+    render(ctx, camera, screenW, screenH) {
         const sx = this.x - camera.x;
         const sy = this.y - camera.y + Math.sin(this.bobPhase) * 3;
 
-        ctx.save();
+        // 屏幕外裁剪
+        if (sx < -20 || sx > screenW + 20 || sy < -20 || sy > screenH + 20) return;
 
-        // 光晕
+        const r = this.radius;
+
+        // 小宝石快速路径：用 fillRect 近似
+        if (r < 7) {
+            ctx.globalAlpha = 0.3;
+            ctx.fillStyle = this.color;
+            const g = r + 4;
+            ctx.fillRect(sx - g, sy - g, g * 2, g * 2);
+            ctx.globalAlpha = 1;
+            ctx.fillStyle = this.color;
+            ctx.fillRect(sx - r * 0.7, sy - r, r * 1.4, r * 2);
+            return;
+        }
+
+        // 大宝石：保留菱形，无save/restore
         ctx.globalAlpha = 0.3;
         ctx.fillStyle = this.color;
         ctx.beginPath();
-        ctx.arc(sx, sy, this.radius + 6, 0, Math.PI * 2);
+        ctx.arc(sx, sy, r + 6, 0, Math.PI * 2);
         ctx.fill();
 
-        // 宝石
         ctx.globalAlpha = 1;
         ctx.fillStyle = this.color;
-
-        // 菱形
         ctx.beginPath();
-        ctx.moveTo(sx, sy - this.radius);
-        ctx.lineTo(sx + this.radius * 0.7, sy);
-        ctx.lineTo(sx, sy + this.radius);
-        ctx.lineTo(sx - this.radius * 0.7, sy);
+        ctx.moveTo(sx, sy - r);
+        ctx.lineTo(sx + r * 0.7, sy);
+        ctx.lineTo(sx, sy + r);
+        ctx.lineTo(sx - r * 0.7, sy);
         ctx.closePath();
         ctx.fill();
 
-        // 高光
         ctx.fillStyle = '#fff';
         ctx.globalAlpha = 0.5;
         ctx.beginPath();
-        ctx.moveTo(sx, sy - this.radius * 0.5);
-        ctx.lineTo(sx + this.radius * 0.3, sy);
-        ctx.lineTo(sx, sy + this.radius * 0.2);
-        ctx.lineTo(sx - this.radius * 0.3, sy - this.radius * 0.2);
+        ctx.moveTo(sx, sy - r * 0.5);
+        ctx.lineTo(sx + r * 0.3, sy);
+        ctx.lineTo(sx, sy + r * 0.2);
+        ctx.lineTo(sx - r * 0.3, sy - r * 0.2);
         ctx.closePath();
         ctx.fill();
-
-        ctx.restore();
     }
 }
 

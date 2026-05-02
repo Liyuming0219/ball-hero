@@ -389,43 +389,61 @@ class ParticleSystem {
         ctx.save();
         const margin = 30; // 屏幕外裁剪余量
 
-        // 拖尾
+        // 拖尾 — 小拖尾用 fillRect 代替 arc
         for (const t of this.trailEffects) {
             const sx = t.x - camera.x;
             const sy = t.y - camera.y;
             if (sx < -margin || sx > screenW + margin || sy < -margin || sy > screenH + margin) continue;
             const alpha = t.life / t.maxLife;
-            if (t.glow) {
+            ctx.fillStyle = t.color;
+            if (t.glow && t.size > 3) {
+                // 大拖尾保留 glow arc
                 ctx.globalAlpha = alpha * 0.6;
-                ctx.fillStyle = t.color;
                 ctx.beginPath();
                 ctx.arc(sx, sy, t.size * 2, 0, Math.PI * 2);
                 ctx.fill();
+                ctx.globalAlpha = alpha;
+                ctx.beginPath();
+                ctx.arc(sx, sy, t.size, 0, Math.PI * 2);
+                ctx.fill();
+            } else {
+                // 小拖尾用 fillRect（极快）
+                ctx.globalAlpha = alpha;
+                const s = t.size;
+                ctx.fillRect(sx - s, sy - s, s * 2, s * 2);
             }
-            ctx.globalAlpha = alpha;
-            ctx.fillStyle = t.color;
-            ctx.beginPath();
-            ctx.arc(sx, sy, t.size, 0, Math.PI * 2);
-            ctx.fill();
         }
 
-        // 基础粒子
+        // 基础粒子 — 小粒子用 fillRect，大粒子保留 arc
         for (const p of this.particles) {
             const sx = p.x - camera.x;
             const sy = p.y - camera.y;
             if (sx < -margin || sx > screenW + margin || sy < -margin || sy > screenH + margin) continue;
             const alpha = p.fadeOut ? (p.life / p.maxLife) : 1;
+            ctx.fillStyle = p.color;
+
+            // 小圆形粒子快速路径：fillRect
+            if (p.shape === 'circle' && p.size < 4) {
+                ctx.globalAlpha = alpha;
+                const s = p.size;
+                if (p.glow) {
+                    ctx.globalAlpha = alpha * 0.4;
+                    const gs = s + p.glowSize * 0.5;
+                    ctx.fillRect(sx - gs, sy - gs, gs * 2, gs * 2);
+                    ctx.globalAlpha = alpha;
+                }
+                ctx.fillRect(sx - s, sy - s, s * 2, s * 2);
+                continue;
+            }
 
             if (p.glow) {
                 ctx.globalAlpha = alpha * 0.5;
-                ctx.fillStyle = p.color;
                 ctx.beginPath();
                 ctx.arc(sx, sy, p.size + p.glowSize, 0, Math.PI * 2);
                 ctx.fill();
             }
 
             ctx.globalAlpha = alpha;
-            ctx.fillStyle = p.color;
 
             if (p.shape === 'circle') {
                 ctx.beginPath();
