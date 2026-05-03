@@ -14,12 +14,12 @@ class ParticleSystem {
 
         // 性能上限 —— 移动端大幅削减
         if (this.isMobile) {
-            this.MAX_PARTICLES = 100;
-            this.MAX_TEXT = 20;
-            this.MAX_TRAIL = 30;
-            this.MAX_SHOCKWAVES = 6;
-            this.MAX_FLASH = 6;
-            this.MAX_LIGHTNING = 3;
+            this.MAX_PARTICLES = 60;
+            this.MAX_TEXT = 15;
+            this.MAX_TRAIL = 20;
+            this.MAX_SHOCKWAVES = 4;
+            this.MAX_FLASH = 4;
+            this.MAX_LIGHTNING = 2;
         } else {
             this.MAX_PARTICLES = 300;
             this.MAX_TEXT = 50;

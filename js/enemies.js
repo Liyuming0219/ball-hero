@@ -881,7 +881,7 @@ class WaveManager {
 
         // 生成怪物（设置总数上限，防止低端设备帧率崩溃）
         // 移动端150，桌面端300；接近上限时逐步减少生成量（软上限）
-        const ENEMY_CAP = this._isMobile ? 150 : 300;
+        const ENEMY_CAP = this._isMobile ? 80 : 300;
         const ENEMY_SOFT_CAP = ENEMY_CAP * 0.75; // 达到75%上限时开始减少生成
 
         if (this.spawnTimer >= config.spawnRate && enemies.length < ENEMY_CAP) {

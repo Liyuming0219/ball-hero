@@ -82,8 +82,8 @@ class Game {
         this.isMobile = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0)
             || (w <= 900 && h > w);
 
-        // 移动端限制 DPR 为 2，大幅减少渲染面积（3x DPR → 9x 面积降为 4x）
-        const dpr = this.isMobile ? Math.min(rawDpr, 2) : rawDpr;
+        // 移动端限制 DPR 为 1.5，大幅减少渲染面积以保证帧率
+        const dpr = this.isMobile ? Math.min(rawDpr, 1.5) : rawDpr;
         this.dpr = dpr;
 
         // 物理像素 = 逻辑尺寸 × devicePixelRatio，提升渲染精度
@@ -936,10 +936,10 @@ class Game {
     _separateEnemies() {
         // 优化：只处理玩家附近的敌人，且限制最大处理数
         // 移动端减少处理数量，O(n²)在低性能设备上很致命
-        const MAX_SEP = this.isMobile ? 30 : 80;
+        const MAX_SEP = this.isMobile ? 20 : 80;
         const px = this.player.x;
         const py = this.player.y;
-        const sepRange = this.isMobile ? 300 : 400; // 移动端缩小检测范围
+        const sepRange = this.isMobile ? 200 : 400; // 移动端缩小检测范围
         const nearby = [];
         for (let i = 0; i < this.enemies.length && nearby.length < MAX_SEP; i++) {
             const e = this.enemies[i];
@@ -1526,8 +1526,8 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
             ctx.drawImage(this._bgGlowB, cx2 - rB, cy2 - rB);
         }
 
-        // ── 氛围雾气 ──
-        if (theme.fogColor) {
+        // ── 氛围雾气 —— 移动端跳过 ──
+        if (theme.fogColor && !mobile) {
             const fogPhase = gt * 0.3;
             ctx.globalAlpha = 0.5 + 0.3 * Math.sin(fogPhase);
             ctx.fillStyle = theme.fogColor;
@@ -1536,7 +1536,7 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
         }
 
         // ── 星尘粒子（固定在世界坐标）—— 移动端减少数量 ──
-        const starCount = mobile ? 40 : 120;
+        const starCount = mobile ? 20 : 120;
         if (!this._bgStars || this._bgStars._count !== starCount) {
             this._bgStars = [];
             this._bgStars._count = starCount;
@@ -1609,7 +1609,7 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
         }
 
         // ── 环境装饰物（固定在世界坐标）—— 移动端减少数量 ──
-        const decorCount = mobile ? 12 : 40;
+        const decorCount = mobile ? 6 : 40;
         if (!this._mapDecors || this._mapDecors._count !== decorCount) {
             this._mapDecors = [];
             this._mapDecors._count = decorCount;
