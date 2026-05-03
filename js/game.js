@@ -101,17 +101,21 @@ class Game {
         // 文字渲染质量提示
         this.ctx.textRendering = 'optimizeLegibility';
 
-        // 逻辑尺寸（供游戏逻辑和UI使用）
-        this.logicWidth = w;
-        this.logicHeight = h;
-
-        // 移动端竖屏视野补偿：缩小游戏世界，让玩家看到更大范围
-        // 例如 393px 宽的手机，zoom=0.7 后等效视野宽度 = 393/0.7 = 561px
+        // 移动端竖屏视野补偿：通过降低逻辑DPR来扩大视野
+        // 不使用gameZoom缩放（会增加渲染面积），而是让逻辑坐标系更大
+        // 例如 393px 宽的手机，viewScale=0.55 后逻辑宽度 = 393/0.55 ≈ 714px
         if (this.isMobile && h > w) {
-            this.gameZoom = Math.max(0.65, Math.min(0.85, w / 500));
+            const viewScale = Math.max(0.5, Math.min(0.65, w / 700));
+            this.logicWidth = Math.round(w / viewScale);
+            this.logicHeight = Math.round(h / viewScale);
+            // 重设transform，让物理像素映射到更大的逻辑空间
+            const effectiveDpr = dpr * viewScale;
+            this.ctx.setTransform(effectiveDpr, 0, 0, effectiveDpr, 0, 0);
         } else {
-            this.gameZoom = 1;
+            this.logicWidth = w;
+            this.logicHeight = h;
         }
+        this.gameZoom = 1; // 不再使用gameZoom缩放
 
         if (this.ui) this.ui.resize(w, h, dpr, this.isMobile);
     }
