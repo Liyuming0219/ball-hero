@@ -361,19 +361,17 @@ class Enemy {
             }
             const dx = tx - this.x;
             const dy = ty - this.y;
-            const distSq = dx * dx + dy * dy;
-            if (distSq > 1) { // > 1px² 避免除零
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist > 0) {
                 const stopDist = this.ranged ? 200 : (this.bossPattern === 'bulletHell' ? 250 : 0);
-                if (distSq > stopDist * stopDist) {
+                if (dist > stopDist) {
                     if (this.slowTimer > 0) {
                         this.slowTimer -= dt;
                         if (this.slowTimer <= 0) this.slowMult = 1;
                     }
                     const spd = this.speed * this.slowMult;
-                    // 只在需要移动时才算 sqrt（已过停止距离检查）
-                    const invDist = 1 / Math.sqrt(distSq);
-                    this.x += dx * invDist * spd * dt;
-                    this.y += dy * invDist * spd * dt;
+                    this.x += (dx / dist) * spd * dt;
+                    this.y += (dy / dist) * spd * dt;
                 }
             }
         } else {
@@ -484,132 +482,8 @@ class Enemy {
         const margin = this.radius + 40;
         if (sx < -margin || sx > screenW + margin || sy < -margin || sy > screenH + margin) return;
 
-        // === LOD分级渲染：根据离屏幕中心的距离简化绘制 ===
-        // 使用 screenW+screenH 对角线比例，移动端缩放后 screenW/H 较大时阈值自动扩大
-        const cx = screenW * 0.5, cy = screenH * 0.5;
-        const distSq = (sx - cx) * (sx - cx) + (sy - cy) * (sy - cy);
-        // 用 distSq vs (screenW*screenH) 的比例避免 sqrt
-        const diagHalfSq = cx * cx + cy * cy; // 半对角线的平方
-        const lodMidSq = diagHalfSq * 0.2025; // (0.45)^2
-        const lodLowSq = diagHalfSq * 0.3844; // (0.62)^2
-        // Boss和精英始终用最高细节
-        const lod = (this.isBoss || this.isElite) ? 0 : (distSq < lodMidSq ? 0 : (distSq < lodLowSq ? 1 : 2));
+        const bob = Math.sin(this.bodyBob) * 2;
 
-        const bob = lod < 2 ? Math.sin(this.bodyBob) * 2 : 0; // 低LOD不算bob
-
-        // === LOD 2: 最简渲染 —— 纯 fillRect，零路径调用 ===
-        if (lod === 2) {
-            ctx.fillStyle = this.damageFlash > 0 ? '#ffffff' : this.color;
-            const r = this.radius;
-            ctx.fillRect(sx - r, sy - r, r * 2, r * 2);
-            if (this.hp < this.maxHp) {
-                const barW = r * 2.5, barH = 4;
-                const barY = sy - r - 8;
-                ctx.fillStyle = 'rgba(0,0,0,0.6)';
-                ctx.fillRect(sx - barW / 2, barY, barW, barH);
-                const ratio = this.hp / this.maxHp;
-                ctx.fillStyle = ratio > 0.5 ? '#44ff44' : (ratio > 0.25 ? '#ffaa00' : '#ff4444');
-                ctx.fillRect(sx - barW / 2, barY, barW * ratio, barH);
-            }
-            return;
-        }
-
-        // === LOD 1: 身体fillRect + 眼睛fillRect + 血条，无save/restore ===
-        if (lod === 1) {
-            const r = this.radius;
-            // 精英/Boss光圈
-            if ((this.isElite && !this.affixColor) || this.isBoss) {
-                ctx.globalAlpha = 0.25;
-                ctx.fillStyle = this.isBoss ? '#ff4444' : '#ffaa00';
-                const gr = r + 8;
-                ctx.fillRect(sx - gr, sy + bob - gr, gr * 2, gr * 2);
-                ctx.globalAlpha = 1;
-            }
-            // 身体
-            ctx.fillStyle = this.damageFlash > 0 ? '#ffffff' : this.color;
-            ctx.beginPath();
-            ctx.arc(sx, sy + bob, r, 0, Math.PI * 2);
-            ctx.fill();
-            // 眼睛用 fillRect
-            ctx.fillStyle = this.isBoss ? '#ffaa00' : '#ff4444';
-            const es = r * 0.2;
-            const ey = sy - r * 0.1 + bob;
-            ctx.fillRect(sx - r * 0.25 - es, ey - es, es * 2, es * 2);
-            ctx.fillRect(sx + r * 0.25 - es, ey - es, es * 2, es * 2);
-            // 血条
-            if (this.hp < this.maxHp && !this.isBoss) {
-                const barW = r * 2.5, barH = 4;
-                const barY = sy - r - 10 + bob;
-                ctx.fillStyle = 'rgba(0,0,0,0.6)';
-                ctx.fillRect(sx - barW / 2, barY, barW, barH);
-                const ratio = this.hp / this.maxHp;
-                ctx.fillStyle = ratio > 0.5 ? '#44ff44' : (ratio > 0.25 ? '#ffaa00' : '#ff4444');
-                ctx.fillRect(sx - barW / 2, barY, barW * ratio, barH);
-            }
-            return;
-        }
-
-        // === LOD 0: 完整细节渲染 ===
-        // 普通敌人快速路径：无精英/Boss/护盾/灼烧/蓄力等特效时，跳过 save/restore
-        const hasSpecial = this.isBoss || this.isElite || this.affixColor
-            || (this._shielded && this._shieldHp > 0)
-            || (this.ranged && this._chargeRatio > 0)
-            || this._burnTimer > 0
-            || this.bossCharging;
-        if (!hasSpecial) {
-            // — 身体 —
-            ctx.fillStyle = this.damageFlash > 0 ? '#ffffff' : this.color;
-            ctx.beginPath();
-            ctx.arc(sx, sy + bob, this.radius, 0, Math.PI * 2);
-            ctx.fill();
-            // 受伤闪白
-            if (this.damageFlash > 0) {
-                ctx.globalAlpha = 0.4;
-                ctx.fillStyle = '#ffffff';
-                ctx.beginPath();
-                ctx.arc(sx, sy + bob, this.radius + 4, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.globalAlpha = 1;
-            }
-            // — 近战冷却指示 —
-            if (!this.ranged && this.attackCooldown > 0.3) {
-                ctx.globalAlpha = 0.3;
-                ctx.fillStyle = '#ff4444';
-                ctx.beginPath();
-                ctx.arc(sx, sy + bob, this.radius + 6, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.globalAlpha = 1;
-            }
-            // — 高光 —
-            ctx.fillStyle = '#fff';
-            ctx.globalAlpha = 0.2;
-            ctx.beginPath();
-            ctx.arc(sx - this.radius * 0.2, sy - this.radius * 0.2 + bob, this.radius * 0.5, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.globalAlpha = 1;
-            // — 眼睛 —
-            ctx.fillStyle = '#ff4444';
-            const eyeS = this.radius * 0.2;
-            ctx.beginPath();
-            ctx.arc(sx - this.radius * 0.25, sy - this.radius * 0.1 + bob, eyeS, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.beginPath();
-            ctx.arc(sx + this.radius * 0.25, sy - this.radius * 0.1 + bob, eyeS, 0, Math.PI * 2);
-            ctx.fill();
-            // — 血条 —
-            if (this.hp < this.maxHp) {
-                const barW = this.radius * 2.5, barH = 4;
-                const barY = sy - this.radius - 10 + bob;
-                ctx.fillStyle = 'rgba(0,0,0,0.6)';
-                ctx.fillRect(sx - barW / 2, barY, barW, barH);
-                const ratio = this.hp / this.maxHp;
-                ctx.fillStyle = ratio > 0.5 ? '#44ff44' : (ratio > 0.25 ? '#ffaa00' : '#ff4444');
-                ctx.fillRect(sx - barW / 2, barY, barW * ratio, barH);
-            }
-            return;
-        }
-
-        // === LOD 0 完整路径（精英/Boss/特效敌人） ===
         ctx.save();
 
         // 精英词缀光圈
@@ -826,16 +700,16 @@ class WaveManager {
             { time: 360, types: ['skeleton', 'bat', 'slime', 'shadowWolf', 'gargoyle'], spawnRate: 0.7, count: 9, mult: 1.7, elite: 'eliteSkeleton', eliteChance: 0.06, rangedType: 'skeletonMage', rangedChance: 0.12 },
             // 阶段7 (480~600s)：加入恶魔术士，精英多样化
             { time: 480, types: ['shadowWolf', 'bat', 'slime', 'gargoyle', 'skeleton'], spawnRate: 0.6, count: 12, mult: 2.2, elite: 'eliteDemon', eliteChance: 0.08, rangedType: 'demonCaster', rangedChance: 0.15 },
-            // 阶段8 (600~750s)：加入爆破虫，全面强敌（降低mult，靠difficulty曲线提供压力）
-            { time: 600, types: ['shadowWolf', 'gargoyle', 'exploder', 'slime', 'bat'], spawnRate: 0.5, count: 15, mult: 2.2, elite: 'eliteDemon', eliteChance: 0.10, rangedType: 'demonCaster', rangedChance: 0.18 },
+            // 阶段8 (600~750s)：加入爆破虫，全面强敌
+            { time: 600, types: ['shadowWolf', 'gargoyle', 'exploder', 'slime', 'bat'], spawnRate: 0.5, count: 15, mult: 3.0, elite: 'eliteDemon', eliteChance: 0.10, rangedType: 'demonCaster', rangedChance: 0.18 },
             // 阶段9 (750~900s)：高难度密度
-            { time: 750, types: ['shadowWolf', 'gargoyle', 'exploder', 'demonCaster', 'slime'], spawnRate: 0.4, count: 18, mult: 2.8, elite: 'eliteDemon', eliteChance: 0.12, rangedType: 'demonCaster', rangedChance: 0.20 },
+            { time: 750, types: ['shadowWolf', 'gargoyle', 'exploder', 'demonCaster', 'slime'], spawnRate: 0.4, count: 18, mult: 4.0, elite: 'eliteDemon', eliteChance: 0.12, rangedType: 'demonCaster', rangedChance: 0.20 },
             // 阶段10 (900~1080s)：无尽噩梦
-            { time: 900, types: ['shadowWolf', 'gargoyle', 'exploder', 'demonCaster', 'slime', 'skeleton'], spawnRate: 0.35, count: 22, mult: 3.2, elite: 'eliteDemon', eliteChance: 0.15, rangedType: 'demonCaster', rangedChance: 0.22 },
+            { time: 900, types: ['shadowWolf', 'gargoyle', 'exploder', 'demonCaster', 'slime', 'skeleton'], spawnRate: 0.35, count: 22, mult: 5.0, elite: 'eliteDemon', eliteChance: 0.15, rangedType: 'demonCaster', rangedChance: 0.22 },
             // 阶段11 (1080~1260s)：终极考验
-            { time: 1080, types: ['shadowWolf', 'gargoyle', 'exploder', 'demonCaster', 'slime'], spawnRate: 0.3, count: 28, mult: 3.8, elite: 'eliteDemon', eliteChance: 0.18, rangedType: 'demonCaster', rangedChance: 0.25 },
+            { time: 1080, types: ['shadowWolf', 'gargoyle', 'exploder', 'demonCaster', 'slime'], spawnRate: 0.3, count: 28, mult: 6.5, elite: 'eliteDemon', eliteChance: 0.18, rangedType: 'demonCaster', rangedChance: 0.25 },
             // 阶段12 (1260s+)：真·无尽
-            { time: 1260, types: ['shadowWolf', 'gargoyle', 'exploder', 'demonCaster', 'slime', 'skeleton'], spawnRate: 0.25, count: 35, mult: 4.5, elite: 'eliteDemon', eliteChance: 0.22, rangedType: 'demonCaster', rangedChance: 0.28 },
+            { time: 1260, types: ['shadowWolf', 'gargoyle', 'exploder', 'demonCaster', 'slime', 'skeleton'], spawnRate: 0.25, count: 35, mult: 8.0, elite: 'eliteDemon', eliteChance: 0.22, rangedType: 'demonCaster', rangedChance: 0.28 },
         ];
 
         // 阶段Boss：首次270秒（4.5分钟），之后逐步缩短间隔（最短120秒）
@@ -854,20 +728,15 @@ class WaveManager {
         this.timer += dt;
         this.spawnTimer += dt;
 
-        // 难度递增（分段曲线 - 后期增长大幅放缓，匹配英雄成长节奏）
-        // 0~5分钟: 缓慢增长; 5~10分钟: 中速增长; 10~20分钟: 放缓增长; 20分钟+: 接近线性
+        // 难度递增（分段加速曲线 - 前期更平缓）
+        // 0~5分钟: 缓慢增长; 5~10分钟: 中速增长; 10分钟+: 加速增长
         const t = this.gameTime;
         if (t < 300) {
-            this.difficulty = 1 + t / 200;                // 5分钟 → 2.5x
+            this.difficulty = 1 + t / 200;                // 5分钟 → 2.5x（原3.5x）
         } else if (t < 600) {
-            this.difficulty = 2.5 + (t - 300) / 120;      // 10分钟 → 5.0x（原5.5x）
-        } else if (t < 1200) {
-            // 10~20分钟: 对数增长，大幅放缓（原pow 1.4指数增长）
-            // 10分钟=5.0x → 15分钟≈7.3x → 20分钟≈8.9x
-            this.difficulty = 5.0 + 3.0 * Math.log2(1 + (t - 600) / 200);
+            this.difficulty = 2.5 + (t - 300) / 100;      // 10分钟 → 5.5x（原8.5x）
         } else {
-            // 20分钟后: 非常缓慢的线性增长（每分钟 +0.3x）
-            this.difficulty = 8.9 + (t - 1200) / 200;
+            this.difficulty = 5.5 + Math.pow((t - 600) / 150, 1.4); // 更平缓的后期增长
         }
 
         // 获取当前波次配置
@@ -879,22 +748,11 @@ class WaveManager {
             }
         }
 
-        // 生成怪物（设置总数上限，防止低端设备帧率崩溃）
-        // 移动端150，桌面端300；接近上限时逐步减少生成量（软上限）
-        const ENEMY_CAP = this._isMobile ? 150 : 300;
-        const ENEMY_SOFT_CAP = ENEMY_CAP * 0.75; // 达到75%上限时开始减少生成
-
-        if (this.spawnTimer >= config.spawnRate && enemies.length < ENEMY_CAP) {
+        // 生成怪物
+        if (this.spawnTimer >= config.spawnRate) {
             this.spawnTimer = 0;
-            let count = config.count + Math.floor(this.gameTime / 90);
-
-            // 软上限：接近上限时按比例减少生成数量
-            if (enemies.length > ENEMY_SOFT_CAP) {
-                const throttle = 1 - (enemies.length - ENEMY_SOFT_CAP) / (ENEMY_CAP - ENEMY_SOFT_CAP);
-                count = Math.max(1, Math.ceil(count * throttle));
-            }
-
-            for (let i = 0; i < count && enemies.length < ENEMY_CAP; i++) {
+            const count = config.count + Math.floor(this.gameTime / 90);
+            for (let i = 0; i < count; i++) {
                 // 远程怪独立低概率生成，不再混入普通池
                 const _rnd = this.rng ? this.rng() : Math.random();
                 let type;
@@ -915,14 +773,12 @@ class WaveManager {
                 enemies.push(newEnemy);
 
                 // 精英怪概率（附带随机词缀，受每日修饰符影响）
-                if (enemies.length < ENEMY_CAP) {
-                    const _eRnd = this.rng ? this.rng() : Math.random();
-                    if (config.elite && _eRnd < (config.eliteChance || 0) * this.eliteChanceMult) {
-                        const elitePos = this._getSpawnPos(playerX, playerY);
-                        const elite = new Enemy(config.elite, elitePos.x, elitePos.y, config.mult * this.difficulty * this.difficultyMultiplier);
-                        elite.applyRandomAffix();
-                        enemies.push(elite);
-                    }
+                const _eRnd = this.rng ? this.rng() : Math.random();
+                if (config.elite && _eRnd < (config.eliteChance || 0) * this.eliteChanceMult) {
+                    const elitePos = this._getSpawnPos(playerX, playerY);
+                    const elite = new Enemy(config.elite, elitePos.x, elitePos.y, config.mult * this.difficulty * this.difficultyMultiplier);
+                    elite.applyRandomAffix();
+                    enemies.push(elite);
                 }
             }
         }
@@ -951,11 +807,10 @@ class WaveManager {
             Utils.shake(10);
         }
 
-        // 精英围攻波次：环形生成一圈精英怪（受上限约束）
-        if (this.gameTime >= this.nextSiegeTime && enemies.length < ENEMY_CAP) {
+        // 精英围攻波次：环形生成一圈精英怪
+        if (this.gameTime >= this.nextSiegeTime) {
             this.siegeCount++;
-            const maxSiege = Math.min(6 + this.siegeCount * 2, 20, ENEMY_CAP - enemies.length);
-            const siegeEliteCount = Math.max(1, maxSiege);
+            const siegeEliteCount = Math.min(6 + this.siegeCount * 2, 20);
             const siegeRadius = 400;
             const eliteTypes = ['eliteSkeleton', 'eliteDemon'];
             const eliteType = this.siegeCount >= 3 ? 'eliteDemon' : 'eliteSkeleton';
@@ -1042,53 +897,44 @@ class ExpGem {
         return 0;
     }
 
-    render(ctx, camera, screenW, screenH) {
+    render(ctx, camera) {
         const sx = this.x - camera.x;
         const sy = this.y - camera.y + Math.sin(this.bobPhase) * 3;
 
-        // 屏幕外裁剪
-        if (sx < -20 || sx > screenW + 20 || sy < -20 || sy > screenH + 20) return;
+        ctx.save();
 
-        const r = this.radius;
-
-        // 小宝石快速路径：用 fillRect 近似
-        if (r < 7) {
-            ctx.globalAlpha = 0.3;
-            ctx.fillStyle = this.color;
-            const g = r + 4;
-            ctx.fillRect(sx - g, sy - g, g * 2, g * 2);
-            ctx.globalAlpha = 1;
-            ctx.fillStyle = this.color;
-            ctx.fillRect(sx - r * 0.7, sy - r, r * 1.4, r * 2);
-            return;
-        }
-
-        // 大宝石：保留菱形，无save/restore
+        // 光晕
         ctx.globalAlpha = 0.3;
         ctx.fillStyle = this.color;
         ctx.beginPath();
-        ctx.arc(sx, sy, r + 6, 0, Math.PI * 2);
+        ctx.arc(sx, sy, this.radius + 6, 0, Math.PI * 2);
         ctx.fill();
 
+        // 宝石
         ctx.globalAlpha = 1;
         ctx.fillStyle = this.color;
+
+        // 菱形
         ctx.beginPath();
-        ctx.moveTo(sx, sy - r);
-        ctx.lineTo(sx + r * 0.7, sy);
-        ctx.lineTo(sx, sy + r);
-        ctx.lineTo(sx - r * 0.7, sy);
+        ctx.moveTo(sx, sy - this.radius);
+        ctx.lineTo(sx + this.radius * 0.7, sy);
+        ctx.lineTo(sx, sy + this.radius);
+        ctx.lineTo(sx - this.radius * 0.7, sy);
         ctx.closePath();
         ctx.fill();
 
+        // 高光
         ctx.fillStyle = '#fff';
         ctx.globalAlpha = 0.5;
         ctx.beginPath();
-        ctx.moveTo(sx, sy - r * 0.5);
-        ctx.lineTo(sx + r * 0.3, sy);
-        ctx.lineTo(sx, sy + r * 0.2);
-        ctx.lineTo(sx - r * 0.3, sy - r * 0.2);
+        ctx.moveTo(sx, sy - this.radius * 0.5);
+        ctx.lineTo(sx + this.radius * 0.3, sy);
+        ctx.lineTo(sx, sy + this.radius * 0.2);
+        ctx.lineTo(sx - this.radius * 0.3, sy - this.radius * 0.2);
         ctx.closePath();
         ctx.fill();
+
+        ctx.restore();
     }
 }
 
@@ -1538,19 +1384,14 @@ class EnemyBullet {
         this.alive = true;
         this.life = 3;
         this.age = 0;
-        // 拖尾历史 — 环形缓冲（避免shift()的数组搬移开销）
-        this._trailBuf = new Float32Array(12); // 6个点 × 2(x,y)
-        this._trailHead = 0;
-        this._trailLen = 0;
+        // 拖尾历史
+        this.trail = [];
     }
 
     update(dt) {
-        // 记录拖尾到环形缓冲
-        const idx = this._trailHead * 2;
-        this._trailBuf[idx] = this.x;
-        this._trailBuf[idx + 1] = this.y;
-        this._trailHead = (this._trailHead + 1) % 6;
-        if (this._trailLen < 6) this._trailLen++;
+        // 记录拖尾
+        this.trail.push({ x: this.x, y: this.y });
+        if (this.trail.length > 6) this.trail.shift();
 
         this.x += this.vx * dt;
         this.y += this.vy * dt;
@@ -1563,19 +1404,16 @@ class EnemyBullet {
         const sx = this.x - camera.x;
         const sy = this.y - camera.y;
         ctx.save();
-        // 拖尾 — 从环形缓冲读取，最旧的先画
-        const len = this._trailLen;
-        const buf = this._trailBuf;
-        const start = (this._trailHead - len + 6) % 6;
-        ctx.fillStyle = this.color;
-        for (let i = 0; i < len; i++) {
-            const slot = ((start + i) % 6) * 2;
-            const tx = buf[slot] - camera.x;
-            const ty = buf[slot + 1] - camera.y;
-            const alpha = (i / len) * 0.3;
+        // 拖尾
+        for (let i = 0; i < this.trail.length; i++) {
+            const t = this.trail[i];
+            const tx = t.x - camera.x;
+            const ty = t.y - camera.y;
+            const alpha = (i / this.trail.length) * 0.3;
             ctx.globalAlpha = alpha;
+            ctx.fillStyle = this.color;
             ctx.beginPath();
-            ctx.arc(tx, ty, this.radius * (0.3 + 0.7 * i / len), 0, Math.PI * 2);
+            ctx.arc(tx, ty, this.radius * (0.3 + 0.7 * i / this.trail.length), 0, Math.PI * 2);
             ctx.fill();
         }
         // 脉动外光——更大更明显

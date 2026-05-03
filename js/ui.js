@@ -1268,30 +1268,26 @@ class UISystem {
         const cy = mapY + mapSize / 2;
         const scale = mapSize / (mapRange * 2);
 
-        // 敌人点 — 普通敌人用 fillRect (极快)，Boss/精英保留 arc
-        ctx.globalAlpha = 0.6;
+        // 敌人点
         ctx.fillStyle = '#ff4444';
         for (const e of enemies) {
             if (!e.alive) continue;
             const dx = (e.x - player.x) * scale;
             const dy = (e.y - player.y) * scale;
             if (Math.abs(dx) > mapSize / 2 || Math.abs(dy) > mapSize / 2) continue;
-            if (e.isBoss || e.isElite) {
-                const dotSize = e.isBoss ? 4 : 2.5;
-                ctx.globalAlpha = e.isBoss ? 1 : 0.7;
-                ctx.beginPath();
-                ctx.arc(cx + dx, cy + dy, dotSize * S, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.globalAlpha = 0.6;
-            } else {
-                ctx.fillRect(cx + dx - S, cy + dy - S, S * 2, S * 2);
-            }
+            const dotSize = e.isBoss ? 4 : (e.isElite ? 2.5 : 1.2);
+            ctx.globalAlpha = e.isBoss ? 1 : 0.6;
+            ctx.beginPath();
+            ctx.arc(cx + dx, cy + dy, dotSize * S, 0, Math.PI * 2);
+            ctx.fill();
         }
 
         // 玩家中心点
         ctx.globalAlpha = 1;
         ctx.fillStyle = '#44aaff';
-        ctx.fillRect(cx - 3 * S, cy - 3 * S, 6 * S, 6 * S);
+        ctx.beginPath();
+        ctx.arc(cx, cy, 3 * S, 0, Math.PI * 2);
+        ctx.fill();
 
         ctx.restore();
     }

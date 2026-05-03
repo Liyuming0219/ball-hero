@@ -344,25 +344,9 @@ class Player {
         while (this.exp >= this.expToNext) {
             this.exp -= this.expToNext;
             this.level++;
-            // 经验曲线：基础15，增长率1.25（原1.35，降低后期升级门槛）
-            // Lv2=15, Lv5=37, Lv10=93, Lv15=231, Lv20=574
-            this.expToNext = Math.floor(15 * Math.pow(1.25, this.level - 1));
-
-            // === 每级自动成长：升级时自动获得小幅属性提升 ===
-            // 攻击力：每级 +3%（乘算），10级时累积约 1.34x，20级约 1.81x
-            this.bonuses.attackMult += 0.03;
-            // 攻速：每级 +2%（乘算），10级时累积约 +0.20，20级约 +0.40
-            this.bonuses.attackSpeedMult += 0.02;
-            // 最大生命：每级 +8（10级时+80，20级时+160）
-            this.bonuses.maxHpBonus += 8;
-            this.stats.hp = Math.min(this.stats.hp + 8, this.getMaxHp());
-            // 回血：每级 +0.3/秒（10级时+3/秒，20级时+6/秒）
-            this.bonuses.hpRegenBonus += 0.3;
-            // 护甲：每2级 +1（10级时+5，20级时+10）
-            if (this.level % 2 === 0) {
-                this.bonuses.armorBonus += 1;
-            }
-
+            // 经验曲线：基础15，增长率1.35，使升级节奏明显放缓
+            // Lv2=15, Lv5=40, Lv10=115, Lv15=330, Lv20=950
+            this.expToNext = Math.floor(15 * Math.pow(1.35, this.level - 1));
             leveledUp = true;
         }
         return leveledUp;
@@ -413,24 +397,9 @@ class Player {
 
         let actualDamage = Math.max(1, (amount - this.getArmor()) * fortifyReduction);
 
-        // 伤害减免（上限由50%提升至65%，增强后期生存能力）
+        // 伤害减免
         if (this.bonuses.damageReduction > 0) {
-            actualDamage *= (1 - Math.min(0.65, this.bonuses.damageReduction));
-        }
-
-        // === 防暴毙机制1: 单次伤害上限（不超过当前最大生命的35%） ===
-        // 防止后期敌人一击秒杀，给玩家反应和回血的时间窗口
-        const maxSingleHit = this.getMaxHp() * 0.35;
-        if (actualDamage > maxSingleHit) {
-            actualDamage = maxSingleHit;
-        }
-
-        // === 防暴毙机制2: 低血量紧急减伤 ===
-        // 血量低于30%时获得额外减伤，越低减伤越高（最高额外50%减伤）
-        const hpRatio = this.stats.hp / this.getMaxHp();
-        if (hpRatio < 0.3) {
-            const emergencyReduction = 0.5 * (1 - hpRatio / 0.3); // 30%血=0%, 0%血=50%
-            actualDamage *= (1 - emergencyReduction);
+            actualDamage *= (1 - Math.min(0.5, this.bonuses.damageReduction));
         }
 
         // 护盾吸收
@@ -579,11 +548,9 @@ class Player {
         if (this.damageFlash > 0) this.damageFlash -= dt;
         if (this.healFlash > 0) this.healFlash -= dt;
 
-        // 回血（含游戏时间加成：每5分钟回血效果+20%，鼓励持久战）
+        // 回血
         if (this.stats.hp < this.getMaxHp()) {
-            const gameTimeMinutes = (this._gameTime || 0) / 60;
-            const regenTimeMult = 1 + Math.floor(gameTimeMinutes / 5) * 0.2; // 5min=1.2x, 10min=1.4x, 15min=1.6x
-            this.stats.hp = Math.min(this.getMaxHp(), this.stats.hp + this.getHpRegen() * regenTimeMult * dt);
+            this.stats.hp = Math.min(this.getMaxHp(), this.stats.hp + this.getHpRegen() * dt);
         }
 
         // 护盾回复

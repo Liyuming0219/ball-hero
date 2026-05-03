@@ -1043,13 +1043,9 @@ class WeaponSystem {
     }
 
     _findNearest(enemies, maxDist) {
-        // 优先使用空间哈希加速查询
-        const candidates = this._spatialHash
-            ? this._spatialHash.query(this.player.x, this.player.y, maxDist)
-            : enemies;
         let nearest = null;
         let nearestDist = maxDist;
-        for (const enemy of candidates) {
+        for (const enemy of enemies) {
             if (!enemy.alive) continue;
             const dist = Utils.dist(this.player.x, this.player.y, enemy.x, enemy.y);
             if (dist < nearestDist) {
@@ -1062,13 +1058,9 @@ class WeaponSystem {
 
     // 从指定位置搜索最近敌人（用于投射物追踪）
     _findNearestFrom(x, y, enemies, maxDist) {
-        // 优先使用空间哈希加速查询
-        const candidates = this._spatialHash
-            ? this._spatialHash.query(x, y, maxDist)
-            : enemies;
         let nearest = null;
         let nearestDist = maxDist;
-        for (const enemy of candidates) {
+        for (const enemy of enemies) {
             if (!enemy.alive) continue;
             const dist = Utils.dist(x, y, enemy.x, enemy.y);
             if (dist < nearestDist) {
@@ -1339,50 +1331,27 @@ class WeaponSystem {
             const sy = p.y - camera.y;
             if (sx < -margin || sx > screenW + margin || sy < -margin || sy > screenH + margin) continue;
 
+            ctx.save();
+
             if (p.type === 'fireball') {
-                // 火球 — 无需 save/restore（无坐标变换）
+                // 外光
                 ctx.globalAlpha = 0.5;
                 ctx.fillStyle = '#ffaa00';
                 ctx.beginPath();
                 ctx.arc(sx, sy, p.radius * 1.8, 0, Math.PI * 2);
                 ctx.fill();
+                // 火球
                 ctx.globalAlpha = 1;
                 ctx.fillStyle = '#ff6644';
                 ctx.beginPath();
                 ctx.arc(sx, sy, p.radius, 0, Math.PI * 2);
                 ctx.fill();
+                // 内核
                 ctx.fillStyle = '#ffff44';
                 ctx.beginPath();
                 ctx.arc(sx, sy, p.radius * 0.4, 0, Math.PI * 2);
                 ctx.fill();
-                continue;
-            }
-
-            if (p.type === 'necro_bolt') {
-                // 灵魂弹 — 无需 save/restore（无坐标变换）
-                ctx.globalAlpha = 0.5;
-                ctx.fillStyle = '#66eedd';
-                ctx.beginPath();
-                ctx.arc(sx, sy, p.radius * 1.8, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.globalAlpha = 1;
-                ctx.fillStyle = '#44ccaa';
-                ctx.beginPath();
-                ctx.arc(sx, sy, p.radius, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.fillStyle = '#ffffff';
-                ctx.globalAlpha = 0.6;
-                ctx.beginPath();
-                ctx.arc(sx, sy, p.radius * 0.35, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.globalAlpha = 1;
-                continue;
-            }
-
-            // 需要坐标变换的类型才用 save/restore
-            ctx.save();
-
-            if (p.type === 'arrow' || p.type === 'rain_arrow') {
+            } else if (p.type === 'arrow' || p.type === 'rain_arrow') {
                 ctx.translate(sx, sy);
                 ctx.rotate(p.angle || Math.atan2(p.vy, p.vx));
                 ctx.fillStyle = p.color;
@@ -1406,165 +1375,188 @@ class WeaponSystem {
                 ctx.closePath();
                 ctx.fill();
             } else if (p.type === 'wind_slash') {
-                // ===== 龙卷风 — OffscreenCanvas 缓存渲染 =====
-                // 每个弹幕每隔几帧才重绘一次缓存图，中间帧直接 drawImage
+                // ===== 真实龙卷风：多层渐变漏斗 + 湍流扰动 + 旋转碎片 =====
                 const lifeRatio = p.life / p.maxLife;
                 const spin = p.spin || 0;
                 const H = p.length * 1.2;
                 const topW = p.width * 0.75;
                 const botW = p.width * 0.10;
                 const halfH = H * 0.5;
-                // 缓存帧间隔：spin 每变化 0.3 弧度重绘一次（约每 5-6 帧）
-                const cacheKey = Math.floor(spin / 0.3);
-                if (!p._tornadoCache || p._tornadoCacheKey !== cacheKey) {
-                    const cW = Math.ceil(topW * 1.7 * 2 + 30);
-                    const cH = Math.ceil(H * 1.1 + 30);
-                    if (!p._tornadoCache) {
-                        p._tornadoCache = document.createElement('canvas');
-                    }
-                    p._tornadoCache.width = cW;
-                    p._tornadoCache.height = cH;
-                    p._tornadoCacheKey = cacheKey;
-                    p._tornadoCacheW = cW;
-                    p._tornadoCacheH = cH;
-                    const tc = p._tornadoCache.getContext('2d');
-                    tc.clearRect(0, 0, cW, cH);
-                    tc.save();
-                    tc.translate(cW / 2, cH / 2);
-                    // 辅助函数
-                    const widthAt = (t, turbSeed) => {
-                        const base = topW + (botW - topW) * t;
-                        return base + Math.sin(spin * 4 + t * 9 + turbSeed) * base * 0.12
-                               + Math.sin(spin * 7 + t * 14 + turbSeed * 2.3) * base * 0.06;
-                    };
-                    const funnelPath = (wMult, hMult, turbSeed) => {
-                        const steps = 14; // 降低步数（从20→14），视觉差异极小
-                        const hh = halfH * hMult;
-                        tc.beginPath();
-                        for (let i = 0; i <= steps; i++) {
-                            const t = i / steps;
-                            const yy = -hh + t * hh * 2;
-                            const w = widthAt(t, turbSeed) * wMult;
-                            if (i === 0) tc.moveTo(-w, yy); else tc.lineTo(-w, yy);
-                        }
-                        for (let i = steps; i >= 0; i--) {
-                            const t = i / steps;
-                            const yy = -hh + t * hh * 2;
-                            const w = widthAt(t, turbSeed + 5) * wMult;
-                            tc.lineTo(w, yy);
-                        }
-                        tc.closePath();
-                    };
-                    // Layer 1
-                    tc.globalAlpha = 0.12;
-                    const outerGrad = tc.createLinearGradient(0, -halfH, 0, halfH);
-                    outerGrad.addColorStop(0, 'rgba(120,180,220,0.3)');
-                    outerGrad.addColorStop(0.5, 'rgba(160,200,230,0.15)');
-                    outerGrad.addColorStop(1, 'rgba(80,130,170,0.05)');
-                    tc.fillStyle = outerGrad;
-                    funnelPath(1.7, 1.05, 0);
-                    tc.fill();
-                    // Layer 2
-                    tc.globalAlpha = 0.38;
-                    const midGrad = tc.createLinearGradient(0, -halfH, 0, halfH);
-                    midGrad.addColorStop(0, 'rgba(85,110,130,0.45)');
-                    midGrad.addColorStop(0.3, 'rgba(100,140,170,0.4)');
-                    midGrad.addColorStop(0.7, 'rgba(75,105,130,0.35)');
-                    midGrad.addColorStop(1, 'rgba(60,80,100,0.2)');
-                    tc.fillStyle = midGrad;
-                    funnelPath(1.15, 1.0, 1);
-                    tc.fill();
-                    // Layer 3
-                    tc.globalAlpha = 0.5;
-                    const innerGrad = tc.createLinearGradient(0, -halfH * 0.9, 0, halfH * 0.9);
-                    innerGrad.addColorStop(0, 'rgba(160,210,235,0.5)');
-                    innerGrad.addColorStop(0.4, 'rgba(190,225,245,0.4)');
-                    innerGrad.addColorStop(1, 'rgba(130,180,210,0.2)');
-                    tc.fillStyle = innerGrad;
-                    funnelPath(0.75, 0.92, 2);
-                    tc.fill();
-                    // Layer 4
-                    tc.globalAlpha = 0.6;
-                    const coreGrad = tc.createLinearGradient(0, -halfH * 0.7, 0, halfH * 0.7);
-                    coreGrad.addColorStop(0, 'rgba(210,240,255,0.6)');
-                    coreGrad.addColorStop(0.5, 'rgba(235,248,255,0.5)');
-                    coreGrad.addColorStop(1, 'rgba(180,220,245,0.3)');
-                    tc.fillStyle = coreGrad;
-                    funnelPath(0.35, 0.8, 3);
-                    tc.fill();
-                    // 旋转云带（减少到6条）
-                    for (let b = 0; b < 6; b++) {
-                        const baseT = ((b / 6) + spin * 0.12) % 1.0;
-                        const ry = -halfH + baseT * H;
-                        const wAtT = widthAt(baseT, b * 0.7);
-                        const waveOff = Math.sin(spin * 5 + b * 2.1) * wAtT * 0.08;
-                        const bandW = wAtT * (0.9 + Math.sin(spin * 3.5 + b * 1.7) * 0.1) + waveOff;
-                        const bandH = H * 0.018 + H * 0.012 * Math.sin(spin * 2.5 + b * 1.3);
-                        tc.globalAlpha = Math.max(0, 0.55 + Math.sin(spin * 4 + b) * 0.1 - Math.abs(baseT - 0.5) * 0.25);
-                        const brightness = 160 + Math.floor(Math.sin(b * 1.5 + spin) * 60);
-                        tc.strokeStyle = `rgba(${brightness},${brightness + 20},${brightness + 40},0.7)`;
-                        tc.lineWidth = 2.0 - baseT * 0.7;
-                        tc.beginPath();
-                        tc.ellipse(waveOff * 0.5, ry, bandW, bandH, Math.sin(spin + b) * 0.15, 0, Math.PI * 2);
-                        tc.stroke();
-                    }
-                    // 螺旋气流线（减少到3条，步数降到20）
-                    for (let arm = 0; arm < 3; arm++) {
-                        const armOffset = (arm / 3) * Math.PI * 2;
-                        tc.beginPath();
-                        for (let s = 0; s <= 20; s++) {
-                            const t = s / 20;
-                            const sy2 = -halfH + t * H;
-                            const wAtT2 = widthAt(t, arm * 1.3);
-                            const spiralAngle = armOffset + spin * 1.5 + t * Math.PI * 4;
-                            const sx2 = Math.cos(spiralAngle) * wAtT2;
-                            if (s === 0) tc.moveTo(sx2, sy2); else tc.lineTo(sx2, sy2);
-                        }
-                        const armBright = 180 + arm * 15;
-                        tc.strokeStyle = `rgba(${armBright},${armBright + 15},${Math.min(255, armBright + 35)},0.5)`;
-                        tc.lineWidth = 2.5 - arm * 0.25;
-                        tc.globalAlpha = 0.6 + arm * 0.05;
-                        tc.stroke();
-                    }
-                    // 顶部云团（减少到3个，用半透明圆代替 radialGradient）
-                    tc.globalAlpha = 0.35;
-                    for (let c = 0; c < 3; c++) {
-                        const ca = spin * 1.5 + c * 2.1;
-                        const cx2 = Math.cos(ca) * topW * (1.0 + Math.sin(spin * 2.5 + c * 0.8) * 0.3);
-                        const cy2 = -halfH - 3 - Math.abs(Math.sin(spin * 3 + c * 1.1)) * 8;
-                        const cr = 4 + Math.sin(spin + c * 2) * 2;
-                        tc.fillStyle = 'rgba(200,225,245,0.3)';
-                        tc.beginPath();
-                        tc.arc(cx2, cy2, cr * 2, 0, Math.PI * 2);
-                        tc.fill();
-                        tc.fillStyle = 'rgba(220,240,255,0.5)';
-                        tc.beginPath();
-                        tc.arc(cx2, cy2, cr, 0, Math.PI * 2);
-                        tc.fill();
-                    }
-                    // 底部碎屑（减少到4个）
-                    tc.globalAlpha = 0.45;
-                    for (let d = 0; d < 4; d++) {
-                        const da = spin * 2 + d * 1.57;
-                        const dist2 = botW * (2 + Math.sin(spin * 3 + d * 1.4) * 1.5);
-                        const dx2 = Math.cos(da) * dist2;
-                        const dy2 = halfH + Math.abs(Math.sin(da * 0.7)) * 5;
-                        const dLen = 3 + d * 1.2;
-                        const tang = da + Math.PI * 0.5;
-                        const dustBright = 150 + d * 25;
-                        tc.strokeStyle = `rgba(${dustBright},${dustBright - 10},${dustBright - 30},0.5)`;
-                        tc.lineWidth = 1.5;
-                        tc.beginPath();
-                        tc.moveTo(dx2, dy2);
-                        tc.lineTo(dx2 + Math.cos(tang) * dLen, dy2 + Math.sin(tang) * dLen);
-                        tc.stroke();
-                    }
-                    tc.restore();
-                }
-                // 直接从缓存绘制，仅应用 lifeRatio 作为透明度
+
                 ctx.translate(sx, sy);
-                ctx.globalAlpha = lifeRatio;
-                ctx.drawImage(p._tornadoCache, -p._tornadoCacheW / 2, -p._tornadoCacheH / 2);
+
+                // --- 辅助：获取某高度t(0=顶,1=底)处的半宽，带湍流扰动 ---
+                const widthAt = (t, turbSeed) => {
+                    const base = topW + (botW - topW) * t;
+                    const turb = Math.sin(spin * 4 + t * 9 + turbSeed) * base * 0.12
+                               + Math.sin(spin * 7 + t * 14 + turbSeed * 2.3) * base * 0.06;
+                    return base + turb;
+                };
+
+                // --- 辅助：画一个带湍流的漏斗路径 ---
+                const funnelPath = (wMult, hMult, turbSeed) => {
+                    const steps = 20;
+                    const hh = halfH * hMult;
+                    ctx.beginPath();
+                    // 左侧从顶到底
+                    for (let i = 0; i <= steps; i++) {
+                        const t = i / steps;
+                        const yy = -hh + t * hh * 2;
+                        const w = widthAt(t, turbSeed) * wMult;
+                        if (i === 0) ctx.moveTo(-w, yy);
+                        else ctx.lineTo(-w, yy);
+                    }
+                    // 右侧从底到顶
+                    for (let i = steps; i >= 0; i--) {
+                        const t = i / steps;
+                        const yy = -hh + t * hh * 2;
+                        const w = widthAt(t, turbSeed + 5) * wMult;
+                        ctx.lineTo(w, yy);
+                    }
+                    ctx.closePath();
+                };
+
+                // Layer 1: 最外层大气扰动光晕
+                ctx.globalAlpha = 0.12 * lifeRatio;
+                const outerGrad = ctx.createLinearGradient(0, -halfH, 0, halfH);
+                outerGrad.addColorStop(0, 'rgba(120,180,220,0.3)');
+                outerGrad.addColorStop(0.5, 'rgba(160,200,230,0.15)');
+                outerGrad.addColorStop(1, 'rgba(80,130,170,0.05)');
+                ctx.fillStyle = outerGrad;
+                funnelPath(1.7, 1.05, 0);
+                ctx.fill();
+
+                // Layer 2: 外层暗色漏斗体
+                ctx.globalAlpha = 0.38 * lifeRatio;
+                const midGrad = ctx.createLinearGradient(0, -halfH, 0, halfH);
+                midGrad.addColorStop(0, 'rgba(85,110,130,0.45)');
+                midGrad.addColorStop(0.3, 'rgba(100,140,170,0.4)');
+                midGrad.addColorStop(0.7, 'rgba(75,105,130,0.35)');
+                midGrad.addColorStop(1, 'rgba(60,80,100,0.2)');
+                ctx.fillStyle = midGrad;
+                funnelPath(1.15, 1.0, 1);
+                ctx.fill();
+
+                // Layer 3: 中层亮色旋转体（向内收）
+                ctx.globalAlpha = 0.5 * lifeRatio;
+                const innerGrad = ctx.createLinearGradient(0, -halfH * 0.9, 0, halfH * 0.9);
+                innerGrad.addColorStop(0, 'rgba(160,210,235,0.5)');
+                innerGrad.addColorStop(0.4, 'rgba(190,225,245,0.4)');
+                innerGrad.addColorStop(1, 'rgba(130,180,210,0.2)');
+                ctx.fillStyle = innerGrad;
+                funnelPath(0.75, 0.92, 2);
+                ctx.fill();
+
+                // Layer 4: 内核明亮通道
+                ctx.globalAlpha = 0.6 * lifeRatio;
+                const coreGrad = ctx.createLinearGradient(0, -halfH * 0.7, 0, halfH * 0.7);
+                coreGrad.addColorStop(0, 'rgba(210,240,255,0.6)');
+                coreGrad.addColorStop(0.5, 'rgba(235,248,255,0.5)');
+                coreGrad.addColorStop(1, 'rgba(180,220,245,0.3)');
+                ctx.fillStyle = coreGrad;
+                funnelPath(0.35, 0.8, 3);
+                ctx.fill();
+
+                // === 旋转云带（多条沿漏斗体包裹的弧线，模拟旋转气流） ===
+                const bandCount = 8;
+                for (let b = 0; b < bandCount; b++) {
+                    const baseT = ((b / bandCount) + spin * 0.12) % 1.0;
+                    const ry = -halfH + baseT * H;
+                    const wAtT = widthAt(baseT, b * 0.7);
+                    // 用正弦波扰动宽度和位置模拟湍流
+                    const waveOff = Math.sin(spin * 5 + b * 2.1) * wAtT * 0.08;
+                    const bandW = wAtT * (0.9 + Math.sin(spin * 3.5 + b * 1.7) * 0.1) + waveOff;
+                    const bandH = H * 0.018 + H * 0.012 * Math.sin(spin * 2.5 + b * 1.3);
+                    const bandAlpha = (0.55 + Math.sin(spin * 4 + b) * 0.1 - Math.abs(baseT - 0.5) * 0.25) * lifeRatio;
+
+                    ctx.globalAlpha = Math.max(0, bandAlpha);
+                    // 颜色从暗灰蓝到亮白交替，模拟真实云层明暗
+                    const brightness = 160 + Math.floor(Math.sin(b * 1.5 + spin) * 60);
+                    ctx.strokeStyle = `rgba(${brightness},${brightness + 20},${brightness + 40},0.7)`;
+                    ctx.lineWidth = (2.0 - baseT * 0.7) * lifeRatio;
+                    ctx.beginPath();
+                    ctx.ellipse(waveOff * 0.5, ry, bandW, bandH, Math.sin(spin + b) * 0.15, 0, Math.PI * 2);
+                    ctx.stroke();
+                }
+
+                // === 5条螺旋气流线（有粗细渐变和深度遮挡） ===
+                const spiralArms = 5;
+                const spiralSteps = 32;
+                for (let arm = 0; arm < spiralArms; arm++) {
+                    const armOffset = (arm / spiralArms) * Math.PI * 2;
+                    ctx.beginPath();
+                    let prevAlpha = 0;
+                    for (let s = 0; s <= spiralSteps; s++) {
+                        const t = s / spiralSteps;
+                        const sy2 = -halfH + t * H;
+                        const wAtT = widthAt(t, arm * 1.3);
+                        const spiralAngle = armOffset + spin * 1.5 + t * Math.PI * 4;
+                        const sx2 = Math.cos(spiralAngle) * wAtT;
+                        // 模拟前后深度：cos > 0 = 前面亮，cos < 0 = 后面暗
+                        const depthFade = 0.3 + Math.max(0, Math.cos(spiralAngle)) * 0.5;
+                        if (s === 0) ctx.moveTo(sx2, sy2);
+                        else ctx.lineTo(sx2, sy2);
+                        prevAlpha = depthFade;
+                    }
+                    const armBright = 180 + arm * 15;
+                    ctx.strokeStyle = `rgba(${armBright},${armBright + 15},${Math.min(255, armBright + 35)},0.5)`;
+                    ctx.lineWidth = (2.5 - arm * 0.25) * lifeRatio;
+                    ctx.globalAlpha = (0.6 + arm * 0.05) * lifeRatio;
+                    ctx.stroke();
+                }
+
+                // === 顶部云团扩散（蘑菇云状喷射物） ===
+                ctx.globalAlpha = 0.4 * lifeRatio;
+                for (let c = 0; c < 5; c++) {
+                    const ca = spin * 1.5 + c * 1.26;
+                    const cx = Math.cos(ca) * topW * (1.0 + Math.sin(spin * 2.5 + c * 0.8) * 0.3);
+                    const cy = -halfH - 3 - Math.abs(Math.sin(spin * 3 + c * 1.1)) * 8;
+                    const cr = 4 + Math.sin(spin + c * 2) * 2;
+                    const cloudGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, cr * 2);
+                    cloudGrad.addColorStop(0, 'rgba(200,225,245,0.4)');
+                    cloudGrad.addColorStop(1, 'rgba(160,200,230,0)');
+                    ctx.fillStyle = cloudGrad;
+                    ctx.beginPath();
+                    ctx.arc(cx, cy, cr * 2, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // === 底部尘土/碎屑飞扬 ===
+                ctx.globalAlpha = 0.45 * lifeRatio;
+                for (let d = 0; d < 6; d++) {
+                    const da = spin * 2 + d * 1.05;
+                    const dist = botW * (2 + Math.sin(spin * 3 + d * 1.4) * 1.5);
+                    const dx = Math.cos(da) * dist;
+                    const dy = halfH + Math.abs(Math.sin(da * 0.7)) * 5;
+                    const dLen = 3 + Math.random() * 4;
+                    const tang = da + Math.PI * 0.5;
+                    const dustBright = 150 + Math.floor(Math.random() * 60);
+                    ctx.strokeStyle = `rgba(${dustBright},${dustBright - 10},${dustBright - 30},0.5)`;
+                    ctx.lineWidth = 1 + Math.random();
+                    ctx.beginPath();
+                    ctx.moveTo(dx, dy);
+                    ctx.lineTo(dx + Math.cos(tang) * dLen, dy + Math.sin(tang) * dLen);
+                    ctx.stroke();
+                }
+            } else if (p.type === 'necro_bolt') {
+                // 灵魂弹外光
+                ctx.globalAlpha = 0.5;
+                ctx.fillStyle = '#66eedd';
+                ctx.beginPath();
+                ctx.arc(sx, sy, p.radius * 1.8, 0, Math.PI * 2);
+                ctx.fill();
+                // 核心
+                ctx.globalAlpha = 1;
+                ctx.fillStyle = '#44ccaa';
+                ctx.beginPath();
+                ctx.arc(sx, sy, p.radius, 0, Math.PI * 2);
+                ctx.fill();
+                // 内核
+                ctx.fillStyle = '#ffffff';
+                ctx.globalAlpha = 0.6;
+                ctx.beginPath();
+                ctx.arc(sx, sy, p.radius * 0.35, 0, Math.PI * 2);
+                ctx.fill();
             }
 
             ctx.restore();

@@ -336,25 +336,18 @@ const MetaProgress = {
     },
 
     // 起始buff列表（按startBuff等级依次解锁）
-    // id 必须与 UpgradePool.statUpgrades 中的 id 完全一致，以避免升级时重复出现
     startingBuffs: [
         { id: 'homing', apply(p) { p.bonuses.homingShot = true; } },
         { id: 'frost', apply(p) { p.bonuses.frostAura = true; } },
-        { id: 'vamp1', apply(p) { p.bonuses.vampiric = 0.02; } },
-        { id: 'orbital1', apply(p) { p.bonuses.orbitalBlades = 1; } },
-        { id: 'shield1', apply(p) { p.bonuses.shieldMax += 20; p.bonuses.shieldRegen += 3; p.shield = 20; } },
+        { id: 'vamp', apply(p) { p.bonuses.vampiric = 0.02; } },
+        { id: 'orbital', apply(p) { p.bonuses.orbitalBlades = 1; } },
+        { id: 'shield', apply(p) { p.bonuses.shield = 20; } },
     ],
 
     applyStartingBuffs(player) {
         const level = this.data.permUpgrades.startBuff || 0;
         for (let i = 0; i < Math.min(level, this.startingBuffs.length); i++) {
-            const buff = this.startingBuffs[i];
-            buff.apply(player);
-            // 将已拥有的起始buff注册到升级池，防止升级时重复出现
-            if (typeof UpgradePool !== 'undefined') {
-                UpgradePool._chosenIds.add(buff.id);
-                UpgradePool._chosenCounts[buff.id] = (UpgradePool._chosenCounts[buff.id] || 0) + 1;
-            }
+            this.startingBuffs[i].apply(player);
         }
     },
 

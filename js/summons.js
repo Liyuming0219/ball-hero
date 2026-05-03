@@ -138,7 +138,7 @@ class Summon {
         return { damage: Math.floor(damage), isCrit };
     }
 
-    update(dt, enemies, particles, spatialHash) {
+    update(dt, enemies, particles) {
         if (!this.alive) return;
 
         this.bodyBob += 6 * dt;
@@ -189,7 +189,7 @@ class Summon {
             this._searchTimer = 0;
             // 牵引绳拉扯时不寻找新目标，回主人身边
             if (!leashing) {
-                this.target = this._findTarget(enemies, spatialHash);
+                this.target = this._findTarget(enemies);
             } else {
                 this.target = null;
             }
@@ -222,7 +222,7 @@ class Summon {
                     // 在射程内：持续喷火
                     this._flameActive = true;
                     this._flameAngle = this.facingAngle;
-                    this._updateFlameBreath(dt, enemies, particles, spatialHash);
+                    this._updateFlameBreath(dt, enemies, particles);
                 }
             } else if (dist > effectiveRange + this.target.radius) {
                 this.x += (dx / dist) * this.speed * dt;
@@ -247,7 +247,7 @@ class Summon {
     }
 
     // ====== 骷髅法师：持续锥形火焰喷射 ======
-    _updateFlameBreath(dt, enemies, particles, spatialHash) {
+    _updateFlameBreath(dt, enemies, particles) {
         const angle = this._flameAngle;
         const fireRange = this.attackRange * (this.owner.bonuses.areaMult || 1);
         const coneHalf = 0.45; // 锥形半角 ~25度
@@ -259,19 +259,16 @@ class Summon {
             const { damage, isCrit } = this.calcDamage();
             // 持续伤害为单次的40%（但每秒4次 = 1.6x DPS）
             const tickDmg = Math.floor(damage * 0.4);
-            // 空间哈希缩小候选范围（只查火焰射程内的敌人）
-            const candidates = spatialHash ? spatialHash.query(this.x, this.y, fireRange + 30) : enemies;
-            for (const e of candidates) {
+            for (const e of enemies) {
                 if (!e.alive) continue;
-                const dx = e.x - this.x, dy = e.y - this.y;
-                const eDist = Math.sqrt(dx * dx + dy * dy);
+                const eDist = Utils.dist(this.x, this.y, e.x, e.y);
                 if (eDist > fireRange + e.radius) continue;
-                const eAngle = Math.atan2(dy, dx);
+                const eAngle = Utils.angle(this.x, this.y, e.x, e.y);
                 let angleDiff = eAngle - angle;
                 while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
                 while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
                 if (Math.abs(angleDiff) <= coneHalf) {
-                    const a = eAngle;
+                    const a = Utils.angle(this.x, this.y, e.x, e.y);
                     e.takeDamage(tickDmg, particles, a, 3);
                     particles.addDamageText(e.x, e.y, tickDmg, isCrit, '#ffaa44');
                 }
@@ -323,17 +320,14 @@ class Summon {
         }
     }
 
-    _findTarget(enemies, spatialHash) {
+    _findTarget(enemies) {
         let nearest = null;
-        let nearestDistSq = this.def.searchRange * this.def.searchRange;
-        // 用空间哈希缩小候选范围（从N个敌人→只查附近格子里的）
-        const candidates = spatialHash ? spatialHash.query(this.x, this.y, this.def.searchRange) : enemies;
-        for (const e of candidates) {
+        let nearestDist = this.def.searchRange;
+        for (const e of enemies) {
             if (!e.alive) continue;
-            const dx = e.x - this.x, dy = e.y - this.y;
-            const dSq = dx * dx + dy * dy;
-            if (dSq < nearestDistSq) {
-                nearestDistSq = dSq;
+            const dist = Utils.dist(this.x, this.y, e.x, e.y);
+            if (dist < nearestDist) {
+                nearestDist = dist;
                 nearest = e;
             }
         }
@@ -1056,10 +1050,10 @@ class SummonManager {
         return s;
     }
 
-    update(dt, enemies, spatialHash) {
+    update(dt, enemies) {
         for (let i = this.summons.length - 1; i >= 0; i--) {
             const s = this.summons[i];
-            s.update(dt, enemies, this.particles, spatialHash);
+            s.update(dt, enemies, this.particles);
             if (!s.alive) {
                 this.summons[i] = this.summons[this.summons.length - 1]; this.summons.pop();
             }
