@@ -1,11 +1,16 @@
-// ============================================
+﻿// ============================================
 // 游戏主循环
 // ============================================
 
 class Game {
     constructor(canvasId) {
         this.canvas = document.getElementById(canvasId);
-        this.ctx = this.canvas.getContext('2d', { alpha: false, desynchronized: true });
+        // alpha: false 提升性能；不使用 desynchronized 以保证跨浏览器兼容性
+        this.ctx = this.canvas.getContext('2d', { alpha: false });
+        if (!this.ctx) {
+            // 极端情况 fallback：不传选项
+            this.ctx = this.canvas.getContext('2d');
+        }
 
         // 自适应大小
         this.resize();
@@ -2451,3 +2456,4 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
         this.relicDrops.push(new RelicDrop(enemy.x, enemy.y, available[0]));
     }
 }
+

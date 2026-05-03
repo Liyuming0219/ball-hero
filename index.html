@@ -37,32 +37,89 @@
             border: none;
             border-radius: 0;
         }
+        /* 加载提示 */
+        #loadingMsg {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #888;
+            font-size: 16px;
+            z-index: 999;
+            text-align: center;
+            line-height: 1.6;
+        }
     </style>
 </head>
 <body>
     <canvas id="gameCanvas"></canvas>
+    <div id="loadingMsg">加载中...</div>
     <script>
-        // 自动版本号：每次部署后玩家自动加载最新代码，彻底解决缓存问题
         // 串行加载保证脚本依赖顺序正确
+        // 带重试机制，防止网络波动导致加载链断裂
         (function() {
-            const V = Date.now();
-            const scripts = [
+            var V = '20250503a'; // 手动版本号：每次部署时更新此字符串
+            var scripts = [
                 'js/utils.js', 'js/particles.js', 'js/characters.js',
                 'js/enemies.js', 'js/weapons.js', 'js/summons.js',
                 'js/upgrades.js', 'js/ui.js', 'js/game.js'
             ];
-            let i = 0;
+            var i = 0;
+            var MAX_RETRIES = 3;
+
             function loadNext() {
                 if (i >= scripts.length) {
-                    const game = new Game('gameCanvas');
-                    game.start();
+                    // 所有脚本加载完成，启动游戏
+                    var msg = document.getElementById('loadingMsg');
+                    if (msg) msg.parentNode.removeChild(msg);
+                    try {
+                        var game = new Game('gameCanvas');
+                        game.start();
+                    } catch (e) {
+                        showError('游戏启动失败: ' + e.message);
+                    }
                     return;
                 }
-                const s = document.createElement('script');
-                s.src = scripts[i] + '?v=' + V;
-                s.onload = () => { i++; loadNext(); };
+                loadScript(scripts[i], 0);
+            }
+
+            function loadScript(src, retryCount) {
+                var s = document.createElement('script');
+                s.src = src + '?v=' + V;
+                s.onload = function() {
+                    i++;
+                    loadNext();
+                };
+                s.onerror = function() {
+                    // 移除失败的 script 标签
+                    if (s.parentNode) s.parentNode.removeChild(s);
+                    if (retryCount < MAX_RETRIES) {
+                        // 延迟重试，每次加长等待时间
+                        var delay = (retryCount + 1) * 500;
+                        updateLoading('加载失败，正在重试...');
+                        setTimeout(function() {
+                            loadScript(src, retryCount + 1);
+                        }, delay);
+                    } else {
+                        showError('脚本加载失败，请检查网络后刷新页面');
+                    }
+                };
                 document.body.appendChild(s);
             }
+
+            function updateLoading(text) {
+                var msg = document.getElementById('loadingMsg');
+                if (msg) msg.textContent = text;
+            }
+
+            function showError(text) {
+                var msg = document.getElementById('loadingMsg');
+                if (msg) {
+                    msg.textContent = text;
+                    msg.style.color = '#ff6666';
+                }
+            }
+
             loadNext();
         })();
     </script>
