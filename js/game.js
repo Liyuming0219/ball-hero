@@ -5,14 +5,7 @@
 class Game {
     constructor(canvasId) {
         this.canvas = document.getElementById(canvasId);
-        // 渐进式 getContext：优先高性能选项，逐级降级
-        this.ctx = this.canvas.getContext('2d', { alpha: false, desynchronized: true });
-        if (!this.ctx) {
-            this.ctx = this.canvas.getContext('2d', { alpha: false });
-        }
-        if (!this.ctx) {
-            this.ctx = this.canvas.getContext('2d');
-        }
+        this.ctx = this.canvas.getContext('2d');
 
         // 自适应大小
         this.resize();
@@ -274,10 +267,7 @@ class Game {
             this.fpsTimer = 0;
         }
 
-        // alpha:false 模式下背景会完全覆盖，playing 状态无需 clearRect
-        if (this.state !== 'playing') {
-            this.ctx.clearRect(0, 0, this.logicWidth, this.logicHeight);
-        }
+        this.ctx.clearRect(0, 0, this.logicWidth, this.logicHeight);
 
         // 冻帧处理：仍然渲染但不更新逻辑
         if (this.freezeTimer > 0) {
