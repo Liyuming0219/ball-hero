@@ -75,11 +75,19 @@ class UISystem {
         if (this.scale < 0.45) this.scale = 0.45;
     }
 
+    // 将屏幕像素坐标转换为逻辑坐标（移动端视野放大时两者不等）
+    _toLogicCoords(screenX, screenY) {
+        const scaleX = this.W / this.canvas.getBoundingClientRect().width;
+        const scaleY = this.H / this.canvas.getBoundingClientRect().height;
+        return { x: screenX * scaleX, y: screenY * scaleY };
+    }
+
     _setupInput() {
         this.canvas.addEventListener('mousemove', (e) => {
             const rect = this.canvas.getBoundingClientRect();
-            this.mouseX = e.clientX - rect.left;
-            this.mouseY = e.clientY - rect.top;
+            const pos = this._toLogicCoords(e.clientX - rect.left, e.clientY - rect.top);
+            this.mouseX = pos.x;
+            this.mouseY = pos.y;
         });
         this.canvas.addEventListener('mousedown', () => {
             this.mouseDown = true;
@@ -98,8 +106,9 @@ class UISystem {
             e.preventDefault();
             const t = e.changedTouches[0];
             const rect = this.canvas.getBoundingClientRect();
-            this.mouseX = t.clientX - rect.left;
-            this.mouseY = t.clientY - rect.top;
+            const pos = this._toLogicCoords(t.clientX - rect.left, t.clientY - rect.top);
+            this.mouseX = pos.x;
+            this.mouseY = pos.y;
             this.mouseDown = true;
             this.clicked = true;
             this._lastClickTime = performance.now();
@@ -109,8 +118,9 @@ class UISystem {
             e.preventDefault();
             const t = e.changedTouches[0];
             const rect = this.canvas.getBoundingClientRect();
-            this.mouseX = t.clientX - rect.left;
-            this.mouseY = t.clientY - rect.top;
+            const pos = this._toLogicCoords(t.clientX - rect.left, t.clientY - rect.top);
+            this.mouseX = pos.x;
+            this.mouseY = pos.y;
         }, { passive: false });
         this.canvas.addEventListener('touchend', (e) => {
             e.preventDefault();
