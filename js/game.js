@@ -1,11 +1,18 @@
-// ============================================
+﻿// ============================================
 // 游戏主循环
 // ============================================
 
 class Game {
     constructor(canvasId) {
         this.canvas = document.getElementById(canvasId);
-        this.ctx = this.canvas.getContext('2d');
+        // 渐进式 getContext：优先高性能选项，逐级降级
+        this.ctx = this.canvas.getContext('2d', { alpha: false, desynchronized: true });
+        if (!this.ctx) {
+            this.ctx = this.canvas.getContext('2d', { alpha: false });
+        }
+        if (!this.ctx) {
+            this.ctx = this.canvas.getContext('2d');
+        }
 
         // 自适应大小
         this.resize();
@@ -267,7 +274,10 @@ class Game {
             this.fpsTimer = 0;
         }
 
-        this.ctx.clearRect(0, 0, this.logicWidth, this.logicHeight);
+        // alpha:false 模式下背景会完全覆盖，playing 状态无需 clearRect
+        if (this.state !== 'playing') {
+            this.ctx.clearRect(0, 0, this.logicWidth, this.logicHeight);
+        }
 
         // 冻帧处理：仍然渲染但不更新逻辑
         if (this.freezeTimer > 0) {
@@ -370,6 +380,7 @@ class Game {
         this.enemyBullets = [];
         this.dropItems = [];
         this.waveManager = new WaveManager(this.gameMode === 'daily' ? this.dailyRng : null);
+        this.waveManager._isMobile = this.isMobile;
         // 应用难度设置（每日挑战固定normal难度）
         const diffSetting = this.gameMode === 'daily' ? 'normal' : this.ui.settings.difficulty;
         this.waveManager.difficultyMultiplier = diffSetting === 'easy' ? 0.4 : diffSetting === 'hard' ? 1.2 : 0.75;
@@ -530,7 +541,8 @@ class Game {
         this._dt = dt; // 缓存dt供render使用
         this._updateInput();
 
-        // 更新玩家
+        // 更新玩家（传递游戏时间用于时间缩放回血等）
+        this.player._gameTime = this.waveManager.gameTime;
         this.player.update(dt, this.inputDir, this.particles);
 
         // 更新相机（平滑跟随）
@@ -565,8 +577,19 @@ class Game {
         this.weapons.update(dt, this.enemies, this.camera, this._enemySpatialHash);
 
         // 更新怪物
+        const RECYCLE_DIST_SQ = 1500 * 1500; // 超过1500px回收
         for (let i = this.enemies.length - 1; i >= 0; i--) {
             const enemy = this.enemies[i];
+
+            // 超远距离敌人回收（Boss不回收）
+            if (!enemy.isBoss) {
+                const rdx = enemy.x - this.player.x, rdy = enemy.y - this.player.y;
+                if (rdx * rdx + rdy * rdy > RECYCLE_DIST_SQ) {
+                    this.enemies[i] = this.enemies[this.enemies.length - 1]; this.enemies.pop();
+                    continue;
+                }
+            }
+
             const bossEvent = enemy.update(dt, this.player.x, this.player.y);
 
             // Boss AI事件处理
@@ -1087,14 +1110,14 @@ class Game {
             item.render(ctx, cam);
         }
 
-        // 经验宝石
+        // 经验宝石（传入屏幕尺寸用于裁剪）
+        const sw = zoom < 1 ? Math.ceil(this.logicWidth / zoom) : this.logicWidth;
+        const sh = zoom < 1 ? Math.ceil(this.logicHeight / zoom) : this.logicHeight;
         for (const gem of this.expGems) {
-            gem.render(ctx, cam);
+            gem.render(ctx, cam, sw, sh);
         }
 
         // 怪物（缩放后可见区域变大，视口裁剪范围需要匹配）
-        const sw = zoom < 1 ? Math.ceil(this.logicWidth / zoom) : this.logicWidth;
-        const sh = zoom < 1 ? Math.ceil(this.logicHeight / zoom) : this.logicHeight;
         for (const enemy of this.enemies) {
             enemy.render(ctx, cam, sw, sh);
         }
@@ -1316,8 +1339,12 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
             ctx.font = "bold 28px 'Microsoft YaHei','PingFang SC',Arial,sans-serif";
             ctx.fillStyle = '#ff2222';
             ctx.textAlign = 'center';
-            ctx.shadowColor = '#ff0000';
-            ctx.shadowBlur = 20;
+            // 用半透明文字模拟发光效果，替代昂贵的shadowBlur
+            ctx.globalAlpha = siegeAlpha * 0.25;
+            ctx.fillStyle = '#ff0000';
+            ctx.fillText('⚠ 精英围攻! ⚠', screenW / 2 + 1, (screenW > 600 ? 60 : 50) + 1);
+            ctx.globalAlpha = siegeAlpha * 0.6;
+            ctx.fillStyle = '#ff2222';
             ctx.fillText('⚠ 精英围攻! ⚠', screenW / 2, screenW > 600 ? 60 : 50);
             ctx.restore();
         }
@@ -1462,23 +1489,51 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
         ctx.fillStyle = this._bgGradCache;
         ctx.fillRect(0, 0, W, H);
 
-        // ── 角落色彩光晕（主题驱动） —— 移动端跳过radialGradient以省GPU ──
+        // ── 角落色彩光晕（主题驱动） —— 移动端跳过，PC用OffscreenCanvas缓存 ──
         if (!mobile) {
+            const glowKey = theme.id + '_' + W + '_' + H;
+            if (!this._bgGlowA || this._bgGlowA._key !== glowKey) {
+                // 预渲染光晕A到离屏canvas
+                const rA = Math.ceil(H * 0.5);
+                const dA = rA * 2;
+                const cA = (typeof OffscreenCanvas !== 'undefined')
+                    ? new OffscreenCanvas(dA, dA) : document.createElement('canvas');
+                cA.width = dA; cA.height = dA;
+                const ctxA = cA.getContext('2d');
+                const gA = ctxA.createRadialGradient(rA, rA, 0, rA, rA, rA);
+                gA.addColorStop(0, theme.glowA);
+                gA.addColorStop(1, 'rgba(0,0,0,0)');
+                ctxA.fillStyle = gA;
+                ctxA.fillRect(0, 0, dA, dA);
+                this._bgGlowA = cA;
+                this._bgGlowA._key = glowKey;
+                this._bgGlowA._r = rA;
+
+                // 预渲染光晕B到离屏canvas
+                const rB = Math.ceil(H * 0.45);
+                const dB = rB * 2;
+                const cB = (typeof OffscreenCanvas !== 'undefined')
+                    ? new OffscreenCanvas(dB, dB) : document.createElement('canvas');
+                cB.width = dB; cB.height = dB;
+                const ctxB = cB.getContext('2d');
+                const gB = ctxB.createRadialGradient(rB, rB, 0, rB, rB, rB);
+                gB.addColorStop(0, theme.glowB);
+                gB.addColorStop(1, 'rgba(0,0,0,0)');
+                ctxB.fillStyle = gB;
+                ctxB.fillRect(0, 0, dB, dB);
+                this._bgGlowB = cB;
+                this._bgGlowB._r = rB;
+            }
+            // 绘制时只做 drawImage 偏移，避免每帧重建gradient
+            const rA = this._bgGlowA._r;
             const cx1 = W * 0.15 - (camera.x % W) * 0.02;
             const cy1 = H * 0.2 - (camera.y % H) * 0.02;
-            const g1 = ctx.createRadialGradient(cx1, cy1, 0, cx1, cy1, H * 0.5);
-            g1.addColorStop(0, theme.glowA);
-            g1.addColorStop(1, 'rgba(0,0,0,0)');
-            ctx.fillStyle = g1;
-            ctx.fillRect(0, 0, W, H);
+            ctx.drawImage(this._bgGlowA, cx1 - rA, cy1 - rA);
 
+            const rB = this._bgGlowB._r;
             const cx2 = W * 0.85 + (camera.x % W) * 0.015;
             const cy2 = H * 0.8 + (camera.y % H) * 0.015;
-            const g2 = ctx.createRadialGradient(cx2, cy2, 0, cx2, cy2, H * 0.45);
-            g2.addColorStop(0, theme.glowB);
-            g2.addColorStop(1, 'rgba(0,0,0,0)');
-            ctx.fillStyle = g2;
-            ctx.fillRect(0, 0, W, H);
+            ctx.drawImage(this._bgGlowB, cx2 - rB, cy2 - rB);
         }
 
         // ── 氛围雾气 ──
@@ -1605,9 +1660,16 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
                 ctx.closePath();
                 ctx.fill();
                 if (!this.isMobile) {
+                    // 用半透明扩大圆代替shadowBlur发光
                     ctx.globalAlpha = 0.08;
-                    ctx.shadowColor = theme.decorColor;
-                    ctx.shadowBlur = 8;
+                    ctx.fillStyle = theme.decorColor;
+                    ctx.beginPath();
+                    ctx.moveTo(0, -16);
+                    ctx.lineTo(9, 0);
+                    ctx.lineTo(5, 18);
+                    ctx.lineTo(-5, 18);
+                    ctx.lineTo(-9, 0);
+                    ctx.closePath();
                     ctx.fill();
                 }
             } else if (theme.decorType === 'pillar') {
@@ -1994,8 +2056,8 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
             this.summonManager.maxSummons = baseMax + levelBonus + upgradeBonus;
         }
 
-        // 更新召唤物AI和位置
-        this.summonManager.update(dt, this.enemies);
+        // 更新召唤物AI和位置（传入空间哈希加速目标搜索和火焰伤害检测）
+        this.summonManager.update(dt, this.enemies, this._enemySpatialHash);
         this.summonManager.updateCollisionCD(dt);
 
         // 召唤物与敌人的碰撞伤害
@@ -2396,3 +2458,4 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
         this.relicDrops.push(new RelicDrop(enemy.x, enemy.y, available[0]));
     }
 }
+

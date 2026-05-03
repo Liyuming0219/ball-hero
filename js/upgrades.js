@@ -60,17 +60,17 @@ const UpgradePool = {
     // classOnly: 仅限这些职业可以获得
     statUpgrades: [
         // 基础数值类（所有职业通用）
-        { id: 'atk1', name: '力量提升', desc: '攻击力+4%', icon: '⚔️', weight: 8, rarity: 'common', apply(p) { p.bonuses.attackMult += 0.04; } },
-        { id: 'atk2', name: '强力打击', desc: '攻击力+8%', icon: '💪', weight: 4, rarity: 'rare', apply(p) { p.bonuses.attackMult += 0.08; } },
-        { id: 'aspd1', name: '疾速', desc: '攻速+5%', icon: '⚡', weight: 8, rarity: 'common', apply(p) { p.bonuses.attackSpeedMult += 0.05; } },
-        { id: 'aspd2', name: '狂暴', desc: '攻速+8%', icon: '🔥', weight: 4, rarity: 'rare', apply(p) { p.bonuses.attackSpeedMult += 0.08; } },
+        { id: 'atk1', name: '力量提升', desc: '攻击力+8%', icon: '⚔️', weight: 8, rarity: 'common', apply(p) { p.bonuses.attackMult += 0.08; } },
+        { id: 'atk2', name: '强力打击', desc: '攻击力+15%', icon: '💪', weight: 4, rarity: 'rare', apply(p) { p.bonuses.attackMult += 0.15; } },
+        { id: 'aspd1', name: '疾速', desc: '攻速+10%', icon: '⚡', weight: 8, rarity: 'common', apply(p) { p.bonuses.attackSpeedMult += 0.10; } },
+        { id: 'aspd2', name: '狂暴', desc: '攻速+15%', icon: '🔥', weight: 4, rarity: 'rare', apply(p) { p.bonuses.attackSpeedMult += 0.15; } },
         { id: 'crit1', name: '精准', desc: '暴击率+3%', icon: '🎯', weight: 6, rarity: 'common', classBonus: ['assassin', 'archer'], apply(p) { p.bonuses.critRateBonus += 0.03; } },
         { id: 'crit2', name: '致命一击', desc: '暴击伤害+20%', icon: '💀', weight: 5, rarity: 'rare', classBonus: ['assassin'], apply(p) { p.bonuses.critDamageBonus += 0.2; } },
-        { id: 'hp1', name: '生命提升', desc: '最大生命+30', icon: '❤️', weight: 6, rarity: 'common', classBonus: ['paladin', 'swordsman'], apply(p) { p.bonuses.maxHpBonus += 30; p.stats.hp = Math.min(p.stats.hp + 30, p.getMaxHp()); } },
-        { id: 'regen1', name: '再生', desc: '每秒回血+1', icon: '💚', weight: 5, rarity: 'common', classBonus: ['paladin'], apply(p) { p.bonuses.hpRegenBonus += 1; } },
+        { id: 'hp1', name: '生命提升', desc: '最大生命+50', icon: '❤️', weight: 6, rarity: 'common', classBonus: ['paladin', 'swordsman'], apply(p) { p.bonuses.maxHpBonus += 50; p.stats.hp = Math.min(p.stats.hp + 50, p.getMaxHp()); } },
+        { id: 'regen1', name: '再生', desc: '每秒回血+2', icon: '💚', weight: 5, rarity: 'common', classBonus: ['paladin'], apply(p) { p.bonuses.hpRegenBonus += 2; } },
         { id: 'spd1', name: '轻盈', desc: '移动速度+8%', icon: '👟', weight: 6, rarity: 'common', classBonus: ['assassin'], apply(p) { p.bonuses.moveSpeedMult += 0.08; } },
         { id: 'pickup', name: '磁铁', desc: '拾取范围+40', icon: '🧲', weight: 5, rarity: 'common', apply(p) { p.bonuses.pickupRangeBonus += 40; } },
-        { id: 'armor1', name: '铁壁', desc: '护甲+3', icon: '🛡️', weight: 5, rarity: 'common', classBonus: ['paladin', 'swordsman'], apply(p) { p.bonuses.armorBonus += 3; } },
+        { id: 'armor1', name: '铁壁', desc: '护甲+5', icon: '🛡️', weight: 5, rarity: 'common', classBonus: ['paladin', 'swordsman'], apply(p) { p.bonuses.armorBonus += 5; } },
         { id: 'area1', name: '扩散', desc: '攻击范围+10%', icon: '🌐', weight: 5, rarity: 'common', classBonus: ['mage', 'necromancer'], apply(p) { p.bonuses.areaMult += 0.10; } },
 
         // === 技能形态改变型Buff（maxCount: 1 = 不可叠加，选过不再出现） ===
@@ -114,14 +114,14 @@ const UpgradePool = {
         // === 新增可叠加升级（保持升级池丰富） ===
         { id: 'crit3', name: '精确打击', desc: '暴击率+4%', icon: '🎯', weight: 5, rarity: 'common', classBonus: ['assassin'], apply(p) { p.bonuses.critRateBonus += 0.04; } },
         { id: 'crit4', name: '致命连击', desc: '暴击伤害+15%', icon: '💀', weight: 4, rarity: 'common', classBonus: ['assassin'], apply(p) { p.bonuses.critDamageBonus += 0.15; } },
-        { id: 'hp2', name: '生命强化', desc: '最大生命+50', icon: '❤️', weight: 5, rarity: 'rare', classBonus: ['paladin'], apply(p) { p.bonuses.maxHpBonus += 50; p.stats.hp = Math.min(p.stats.hp + 50, p.getMaxHp()); } },
-        { id: 'regen2', name: '强力再生', desc: '每秒回血+2', icon: '💚', weight: 4, rarity: 'rare', classBonus: ['paladin', 'necromancer'], apply(p) { p.bonuses.hpRegenBonus += 2; } },
+        { id: 'hp2', name: '生命强化', desc: '最大生命+80', icon: '❤️', weight: 5, rarity: 'rare', classBonus: ['paladin'], apply(p) { p.bonuses.maxHpBonus += 80; p.stats.hp = Math.min(p.stats.hp + 80, p.getMaxHp()); } },
+        { id: 'regen2', name: '强力再生', desc: '每秒回血+4', icon: '💚', weight: 4, rarity: 'rare', classBonus: ['paladin', 'necromancer'], apply(p) { p.bonuses.hpRegenBonus += 4; } },
         { id: 'spd2', name: '疾风步', desc: '移动速度+10%', icon: '👟', weight: 4, rarity: 'rare', classBonus: ['assassin'], apply(p) { p.bonuses.moveSpeedMult += 0.10; } },
-        { id: 'armor2', name: '钢铁壁垒', desc: '护甲+5', icon: '🛡️', weight: 4, rarity: 'rare', classBonus: ['paladin', 'swordsman'], apply(p) { p.bonuses.armorBonus += 5; } },
+        { id: 'armor2', name: '钢铁壁垒', desc: '护甲+8', icon: '🛡️', weight: 4, rarity: 'rare', classBonus: ['paladin', 'swordsman'], apply(p) { p.bonuses.armorBonus += 8; } },
         { id: 'area2', name: '大范围扩散', desc: '攻击范围+12%', icon: '🌐', weight: 4, rarity: 'rare', classBonus: ['mage', 'necromancer'], apply(p) { p.bonuses.areaMult += 0.12; } },
         { id: 'pickup2', name: '强力磁场', desc: '拾取范围+60', icon: '🧲', weight: 4, rarity: 'common', apply(p) { p.bonuses.pickupRangeBonus += 60; } },
-        { id: 'atk3', name: '怒火中烧', desc: '攻击力+5%', icon: '⚔️', weight: 6, rarity: 'common', apply(p) { p.bonuses.attackMult += 0.05; } },
-        { id: 'aspd3', name: '疾风连击', desc: '攻速+6%', icon: '⚡', weight: 5, rarity: 'common', classBonus: ['swordsman', 'assassin'], apply(p) { p.bonuses.attackSpeedMult += 0.06; } },
+        { id: 'atk3', name: '怒火中烧', desc: '攻击力+10%', icon: '⚔️', weight: 6, rarity: 'common', apply(p) { p.bonuses.attackMult += 0.10; } },
+        { id: 'aspd3', name: '疾风连击', desc: '攻速+12%', icon: '⚡', weight: 5, rarity: 'common', classBonus: ['swordsman', 'assassin'], apply(p) { p.bonuses.attackSpeedMult += 0.12; } },
 
         // === 经验获取类 ===
         { id: 'exp1', name: '求知欲', desc: '经验获取+8%', icon: '📖', weight: 5, rarity: 'common', apply(p) { p.bonuses.expMult += 0.08; } },
@@ -144,8 +144,8 @@ const UpgradePool = {
         { id: 'burn_aura', name: '灼烧光环', desc: '对周围敌人每秒造成攻击力25%的火焰伤害', icon: '🌋', weight: 4, rarity: 'rare', maxCount: 1, classBonus: ['mage', 'swordsman'], apply(p) { p.bonuses.burnAura = true; } },
 
         // === 新增·击杀回血 ===
-        { id: 'killheal1', name: '生命收割', desc: '每次击杀敌人回复5点生命', icon: '💖', weight: 5, rarity: 'common', maxCount: 1, apply(p) { p.bonuses.killHeal += 5; } },
-        { id: 'killheal2', name: '灵魂掠夺', desc: '击杀回血提升至12点', icon: '💗', weight: 3, rarity: 'rare', maxCount: 1, requires: 'killheal1', apply(p) { p.bonuses.killHeal = 12; } },
+        { id: 'killheal1', name: '生命收割', desc: '每次击杀敌人回复8点生命', icon: '💖', weight: 5, rarity: 'common', maxCount: 1, apply(p) { p.bonuses.killHeal += 8; } },
+        { id: 'killheal2', name: '灵魂掠夺', desc: '击杀回血提升至20点', icon: '💗', weight: 3, rarity: 'rare', maxCount: 1, requires: 'killheal1', apply(p) { p.bonuses.killHeal = 20; } },
 
         // === 新增·怒气系统 ===
         { id: 'rage1', name: '狂战士之怒', desc: '生命值低于50%时，伤害+25%', icon: '😡', weight: 4, rarity: 'rare', maxCount: 1, classBonus: ['swordsman', 'assassin'], apply(p) { p.bonuses.rageMult += 0.25; } },
@@ -166,8 +166,8 @@ const UpgradePool = {
         { id: 'lucky2', name: '天选之人', desc: '道具掉落率+100%，经验获取+20%', icon: '⭐', weight: 2, rarity: 'epic', maxCount: 1, requires: 'lucky1', apply(p) { p.bonuses.luckyDrop = 1.0; p.bonuses.expMult += 0.2; } },
 
         // === 新增·综合提升 ===
-        { id: 'allstat1', name: '全能战士', desc: '攻击+6%，攻速+6%，移速+6%', icon: '🌈', weight: 3, rarity: 'epic', maxCount: 1, apply(p) { p.bonuses.attackMult += 0.06; p.bonuses.attackSpeedMult += 0.06; p.bonuses.moveSpeedMult += 0.06; } },
-        { id: 'allstat2', name: '超凡入圣', desc: '全属性+10%，暴击率+3%，护甲+2', icon: '✨', weight: 1, rarity: 'legendary', maxCount: 1, requires: 'allstat1', apply(p) { p.bonuses.attackMult += 0.10; p.bonuses.attackSpeedMult += 0.10; p.bonuses.moveSpeedMult += 0.10; p.bonuses.critRateBonus += 0.03; p.bonuses.armorBonus += 2; } },
+        { id: 'allstat1', name: '全能战士', desc: '攻击+10%，攻速+10%，移速+8%', icon: '🌈', weight: 3, rarity: 'epic', maxCount: 1, apply(p) { p.bonuses.attackMult += 0.10; p.bonuses.attackSpeedMult += 0.10; p.bonuses.moveSpeedMult += 0.08; } },
+        { id: 'allstat2', name: '超凡入圣', desc: '全属性+15%，暴击率+5%，护甲+4', icon: '✨', weight: 1, rarity: 'legendary', maxCount: 1, requires: 'allstat1', apply(p) { p.bonuses.attackMult += 0.15; p.bonuses.attackSpeedMult += 0.15; p.bonuses.moveSpeedMult += 0.15; p.bonuses.critRateBonus += 0.05; p.bonuses.armorBonus += 4; } },
 
         // === 新增·投射物数量 ===
         { id: 'proj1', name: '额外弹幕', desc: '额外投射物+1', icon: '🌟', weight: 3, rarity: 'epic', maxCount: 1, classBonus: ['mage', 'archer', 'swordsman'], irrelevantFor: ['paladin', 'assassin'], apply(p) { p.bonuses.projectileBonus += 1; } },
