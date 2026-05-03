@@ -58,7 +58,7 @@
         // 串行加载保证脚本依赖顺序正确
         // 带重试机制，防止网络波动导致加载链断裂
         (function() {
-            var V = '20250503a'; // 手动版本号：每次部署时更新此字符串
+            var V = Date.now(); // 自动版本号：每次加载唯一，彻底避免CDN缓存旧文件
             var scripts = [
                 'js/utils.js', 'js/particles.js', 'js/characters.js',
                 'js/enemies.js', 'js/weapons.js', 'js/summons.js',

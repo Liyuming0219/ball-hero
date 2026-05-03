@@ -5,10 +5,12 @@
 class Game {
     constructor(canvasId) {
         this.canvas = document.getElementById(canvasId);
-        // alpha: false 提升性能；不使用 desynchronized 以保证跨浏览器兼容性
-        this.ctx = this.canvas.getContext('2d', { alpha: false });
+        // 渐进式 getContext：优先高性能选项，逐级降级
+        this.ctx = this.canvas.getContext('2d', { alpha: false, desynchronized: true });
         if (!this.ctx) {
-            // 极端情况 fallback：不传选项
+            this.ctx = this.canvas.getContext('2d', { alpha: false });
+        }
+        if (!this.ctx) {
             this.ctx = this.canvas.getContext('2d');
         }
 
