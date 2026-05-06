@@ -153,7 +153,7 @@ class Game {
         }
         this.gameZoom = 1; // 不再使用gameZoom缩放
 
-        if (this.ui) this.ui.resize(w, h, dpr, this.isMobile);
+        if (this.ui) this.ui.resize(this.logicWidth, this.logicHeight, dpr, this.isMobile);
     }
 
     // 将屏幕clientX/Y转换为canvas逻辑坐标

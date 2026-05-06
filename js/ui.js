@@ -84,8 +84,8 @@ class UISystem {
     _setupInput() {
         this.canvas.addEventListener('mousemove', (e) => {
             const rect = this.canvas.getBoundingClientRect();
-            this.mouseX = e.clientX - rect.left;
-            this.mouseY = e.clientY - rect.top;
+            this.mouseX = (e.clientX - rect.left) * (this._inputScaleX || 1);
+            this.mouseY = (e.clientY - rect.top) * (this._inputScaleY || 1);
         });
         this.canvas.addEventListener('mousedown', () => {
             this.mouseDown = true;
@@ -99,13 +99,13 @@ class UISystem {
             this._draggingSlider = null;
         });
 
-        // 触屏支持：将 touch 事件映射为 mouse 事件
+        // 触屏支持：将 touch 事件映射为 mouse 事件（坐标转换为逻辑坐标）
         this.canvas.addEventListener('touchstart', (e) => {
             e.preventDefault();
             const t = e.changedTouches[0];
             const rect = this.canvas.getBoundingClientRect();
-            this.mouseX = t.clientX - rect.left;
-            this.mouseY = t.clientY - rect.top;
+            this.mouseX = (t.clientX - rect.left) * (this._inputScaleX || 1);
+            this.mouseY = (t.clientY - rect.top) * (this._inputScaleY || 1);
             this.mouseDown = true;
             this.clicked = true;
             this._lastClickTime = performance.now();
@@ -115,8 +115,8 @@ class UISystem {
             e.preventDefault();
             const t = e.changedTouches[0];
             const rect = this.canvas.getBoundingClientRect();
-            this.mouseX = t.clientX - rect.left;
-            this.mouseY = t.clientY - rect.top;
+            this.mouseX = (t.clientX - rect.left) * (this._inputScaleX || 1);
+            this.mouseY = (t.clientY - rect.top) * (this._inputScaleY || 1);
         }, { passive: false });
         this.canvas.addEventListener('touchend', (e) => {
             e.preventDefault();
@@ -136,6 +136,10 @@ class UISystem {
         this.H = h;
         if (dpr !== undefined) this.dpr = dpr;
         if (isMobile !== undefined) this.isMobile = isMobile;
+        // 计算屏幕坐标到逻辑坐标的缩放比（用于触摸事件坐标转换）
+        const rect = this.canvas.getBoundingClientRect();
+        this._inputScaleX = w / rect.width;
+        this._inputScaleY = h / rect.height;
         this._calcScale();
     }
 
