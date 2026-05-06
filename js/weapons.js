@@ -932,6 +932,12 @@ class WeaponSystem {
             this._triggerSplitShot(enemy.x, enemy.y, damage * 0.4, projectile.color);
         }
 
+        // 皮肤命中特效
+        if (window._skinFxSystem && typeof skinManager !== 'undefined') {
+            const skin = skinManager.getEquippedSkin(this.player.def.id);
+            if (skin) window._skinFxSystem.onHit(enemy.x, enemy.y, skin);
+        }
+
         if (died) {
             this._onKill(enemy);
         }

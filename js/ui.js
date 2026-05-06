@@ -30,8 +30,9 @@ class UISystem {
 
         // 皮肤商店
         this._skinShopOpen = false;
-        this._skinShopChar = 0; // 当前查看的角色索引
-        this._skinShopScroll = 0;
+        this._skinShopTab = 0;     // 当前系列标签
+        this._skinShopScroll = 0;  // 滚动位置
+        this._skinShopCharId = 'swordsman'; // 当前预览装备的角色
 
         // 游戏设置
         this.settings = {
@@ -80,19 +81,11 @@ class UISystem {
         if (this.scale < 0.45) this.scale = 0.45;
     }
 
-    // 将屏幕像素坐标转换为逻辑坐标（移动端视野放大时两者不等）
-    _toLogicCoords(screenX, screenY) {
-        const scaleX = this.W / this.canvas.getBoundingClientRect().width;
-        const scaleY = this.H / this.canvas.getBoundingClientRect().height;
-        return { x: screenX * scaleX, y: screenY * scaleY };
-    }
-
     _setupInput() {
         this.canvas.addEventListener('mousemove', (e) => {
             const rect = this.canvas.getBoundingClientRect();
-            const pos = this._toLogicCoords(e.clientX - rect.left, e.clientY - rect.top);
-            this.mouseX = pos.x;
-            this.mouseY = pos.y;
+            this.mouseX = e.clientX - rect.left;
+            this.mouseY = e.clientY - rect.top;
         });
         this.canvas.addEventListener('mousedown', () => {
             this.mouseDown = true;
@@ -111,9 +104,8 @@ class UISystem {
             e.preventDefault();
             const t = e.changedTouches[0];
             const rect = this.canvas.getBoundingClientRect();
-            const pos = this._toLogicCoords(t.clientX - rect.left, t.clientY - rect.top);
-            this.mouseX = pos.x;
-            this.mouseY = pos.y;
+            this.mouseX = t.clientX - rect.left;
+            this.mouseY = t.clientY - rect.top;
             this.mouseDown = true;
             this.clicked = true;
             this._lastClickTime = performance.now();
@@ -123,9 +115,8 @@ class UISystem {
             e.preventDefault();
             const t = e.changedTouches[0];
             const rect = this.canvas.getBoundingClientRect();
-            const pos = this._toLogicCoords(t.clientX - rect.left, t.clientY - rect.top);
-            this.mouseX = pos.x;
-            this.mouseY = pos.y;
+            this.mouseX = t.clientX - rect.left;
+            this.mouseY = t.clientY - rect.top;
         }, { passive: false });
         this.canvas.addEventListener('touchend', (e) => {
             e.preventDefault();
@@ -166,7 +157,7 @@ class UISystem {
         if (this._shopOpen) {
             return this._renderShop(dt);
         }
-        // 如果在皮肤商店界面
+        // 如果在皮肤商店
         if (this._skinShopOpen) {
             return this._renderSkinShop(dt);
         }
@@ -199,7 +190,7 @@ class UISystem {
             const sr = 1 + Math.sin(this._titleTime * 2 + i) * 0.5;
             ctx.globalAlpha = 0.3 + Math.sin(this._titleTime * 3 + i * 0.7) * 0.2;
             ctx.beginPath();
-            ctx.arc(sx, sy, sr, 0, TWO_PI);
+            ctx.arc(sx, sy, sr, 0, Math.PI * 2);
             ctx.fill();
         }
         ctx.globalAlpha = 1;
@@ -222,19 +213,19 @@ class UISystem {
             ctx.globalAlpha = 0.15;
             ctx.fillStyle = ball.color;
             ctx.beginPath();
-            ctx.arc(bx, by, drawR + 5, 0, TWO_PI);
+            ctx.arc(bx, by, drawR + 5, 0, Math.PI * 2);
             ctx.fill();
             // 球体
             ctx.globalAlpha = 0.35;
             ctx.fillStyle = ball.color;
             ctx.beginPath();
-            ctx.arc(bx, by, drawR, 0, TWO_PI);
+            ctx.arc(bx, by, drawR, 0, Math.PI * 2);
             ctx.fill();
             // 高光
             ctx.globalAlpha = 0.2;
             ctx.fillStyle = '#fff';
             ctx.beginPath();
-            ctx.arc(bx - drawR * 0.3, by - drawR * 0.3, drawR * 0.3, 0, TWO_PI);
+            ctx.arc(bx - drawR * 0.3, by - drawR * 0.3, drawR * 0.3, 0, Math.PI * 2);
             ctx.fill();
         }
         ctx.globalAlpha = 1;
@@ -337,33 +328,17 @@ class UISystem {
             const ballR = Math.min(28 * S, ballZoneH * 0.38);
             const ballBob = Math.sin(this._titleTime * 2.5 + i * 1.2) * 3 * S;
 
-            // 选中角色额外光效：旋转光粒子
-            if (isSelected) {
-                ctx.globalAlpha = 0.6;
-                ctx.fillStyle = ballColor;
-                for (let pi = 0; pi < 6; pi++) {
-                    const pa = this._titleTime * 2.5 + pi * Math.PI / 3;
-                    const pr = ballR + 10 * S;
-                    const ppx = ballCX + Math.cos(pa) * pr;
-                    const ppy = ballCY + ballBob + Math.sin(pa) * pr;
-                    const ps = 1.5 + Math.sin(this._titleTime * 4 + pi) * 0.5;
-                    ctx.beginPath();
-                    ctx.arc(ppx, ppy, ps * S, 0, TWO_PI);
-                    ctx.fill();
-                }
-            }
-
             // 球球阴影
             ctx.globalAlpha = 0.12;
             ctx.fillStyle = '#000';
             ctx.beginPath();
-            ctx.ellipse(ballCX, ballCY + ballR + 6 * S, ballR * 0.6, ballR * 0.15, 0, 0, TWO_PI);
+            ctx.ellipse(ballCX, ballCY + ballR + 6 * S, ballR * 0.6, ballR * 0.15, 0, 0, Math.PI * 2);
             ctx.fill();
             // 球球光晕
-            ctx.globalAlpha = isSelected ? 0.35 : 0.25;
+            ctx.globalAlpha = 0.25;
             ctx.fillStyle = ballColor;
             ctx.beginPath();
-            ctx.arc(ballCX, ballCY + ballBob, ballR + (isSelected ? 8 : 5) * S, 0, TWO_PI);
+            ctx.arc(ballCX, ballCY + ballBob, ballR + 5 * S, 0, Math.PI * 2);
             ctx.fill();
             // 球球身体（径向渐变立体感）
             ctx.globalAlpha = 1;
@@ -376,7 +351,7 @@ class UISystem {
             cardBodyGrad.addColorStop(1, this._darkenColor(ballColor, 0.45));
             ctx.fillStyle = cardBodyGrad;
             ctx.beginPath();
-            ctx.arc(ballCX, ballCY + ballBob, ballR, 0, TWO_PI);
+            ctx.arc(ballCX, ballCY + ballBob, ballR, 0, Math.PI * 2);
             ctx.fill();
             // 球球高光（柔和渐变）
             const cHlR = ballR * 0.26;
@@ -388,26 +363,26 @@ class UISystem {
             cHlGrad.addColorStop(1, 'rgba(255,255,255,0)');
             ctx.fillStyle = cHlGrad;
             ctx.beginPath();
-            ctx.arc(cHlX, cHlY, cHlR, 0, TWO_PI);
+            ctx.arc(cHlX, cHlY, cHlR, 0, Math.PI * 2);
             ctx.fill();
             // 球球眼睛
             ctx.globalAlpha = 1;
             ctx.fillStyle = '#fff';
             const eOff = ballR * 0.25;
             ctx.beginPath();
-            ctx.arc(ballCX - eOff, ballCY + ballBob - ballR * 0.05, ballR * 0.2, 0, TWO_PI);
+            ctx.arc(ballCX - eOff, ballCY + ballBob - ballR * 0.05, ballR * 0.2, 0, Math.PI * 2);
             ctx.fill();
             ctx.beginPath();
-            ctx.arc(ballCX + eOff, ballCY + ballBob - ballR * 0.05, ballR * 0.2, 0, TWO_PI);
+            ctx.arc(ballCX + eOff, ballCY + ballBob - ballR * 0.05, ballR * 0.2, 0, Math.PI * 2);
             ctx.fill();
             // 瞳孔
             ctx.fillStyle = '#222';
             const pupil = Math.sin(this._titleTime * 0.8 + i) * 1.5;
             ctx.beginPath();
-            ctx.arc(ballCX - eOff + pupil, ballCY + ballBob - ballR * 0.05, ballR * 0.1, 0, TWO_PI);
+            ctx.arc(ballCX - eOff + pupil, ballCY + ballBob - ballR * 0.05, ballR * 0.1, 0, Math.PI * 2);
             ctx.fill();
             ctx.beginPath();
-            ctx.arc(ballCX + eOff + pupil, ballCY + ballBob - ballR * 0.05, ballR * 0.1, 0, TWO_PI);
+            ctx.arc(ballCX + eOff + pupil, ballCY + ballBob - ballR * 0.05, ballR * 0.1, 0, Math.PI * 2);
             ctx.fill();
             // 嘴巴
             ctx.strokeStyle = 'rgba(0,0,0,0.3)';
@@ -512,11 +487,11 @@ class UISystem {
         ctx.fillStyle = '#feca57';
         ctx.fillText(`💰 ${gold} 金币`, W / 2, btnAreaY - 14 * S);
 
-        // === 按钮区域：开始战斗 + 每日挑战 + 天赋商店 + 皮肤商店 ===
-        const btnW = Math.round(130 * S);
+        // === 按钮区域：开始战斗 + 每日挑战 + 天赋商店 ===
+        const btnW = Math.round(150 * S);
         const btnH = Math.round(50 * S);
-        const btnGap = Math.round(12 * S);
-        const totalBtnW = btnW * 4 + btnGap * 3;
+        const btnGap = Math.round(16 * S);
+        const totalBtnW = btnW * 3 + btnGap * 2;
         const btnStartX = (W - totalBtnW) / 2;
         const btnY = btnAreaY;
 
@@ -587,7 +562,7 @@ class UISystem {
             }
         }
 
-        // --- 天赋商店按钮（描边透明风格，与封面"游戏设置"同款） ---
+        // --- 天赋商店按钮（描边透明风格） ---
         const shopBtnX = dailyBtnX + btnW + btnGap;
         const shopHover = this.mouseX >= shopBtnX && this.mouseX <= shopBtnX + btnW && this.mouseY >= btnY && this.mouseY <= btnY + btnH;
 
@@ -599,34 +574,28 @@ class UISystem {
         this._roundRect(ctx, shopBtnX, btnY, btnW, btnH, 25 * S);
         ctx.stroke();
 
-        ctx.font = this._font('bold', 16);
+        ctx.font = this._font('bold', 18);
         ctx.fillStyle = shopHover ? '#feca57' : 'rgba(255,255,255,0.7)';
         ctx.textAlign = 'center';
         ctx.fillText('天赋商店', shopBtnX + btnW / 2, btnY + btnH / 2 + 1);
 
-        // --- 皮肤商店按钮（紫色渐变） ---
-        const skinBtnX = shopBtnX + btnW + btnGap;
-        const skinHover = this.mouseX >= skinBtnX && this.mouseX <= skinBtnX + btnW && this.mouseY >= btnY && this.mouseY <= btnY + btnH;
-
-        const skinGrad = ctx.createLinearGradient(skinBtnX, btnY, skinBtnX + btnW, btnY + btnH);
-        skinGrad.addColorStop(0, skinHover ? '#bb66ff' : '#9944dd');
-        skinGrad.addColorStop(1, skinHover ? '#8844cc' : '#6622aa');
+        // --- 皮肤商店按钮（紫色渐变，新增） ---
+        const skinBtnW = Math.round(130 * S);
+        const skinBtnH = Math.round(38 * S);
+        const skinBtnX = W / 2 - skinBtnW / 2;
+        const skinBtnY = btnY + btnH + Math.round(12 * S);
+        const skinHover = this.mouseX >= skinBtnX && this.mouseX <= skinBtnX + skinBtnW &&
+                          this.mouseY >= skinBtnY && this.mouseY <= skinBtnY + skinBtnH;
+        const skinGrad = ctx.createLinearGradient(skinBtnX, skinBtnY, skinBtnX + skinBtnW, skinBtnY + skinBtnH);
+        skinGrad.addColorStop(0, skinHover ? '#bb66ff' : '#9944ee');
+        skinGrad.addColorStop(1, skinHover ? '#ff66aa' : '#dd44aa');
         ctx.fillStyle = skinGrad;
-        this._roundRect(ctx, skinBtnX, btnY, btnW, btnH, 25 * S);
+        this._roundRect(ctx, skinBtnX, skinBtnY, skinBtnW, skinBtnH, 19 * S);
         ctx.fill();
-
-        if (skinHover) {
-            ctx.shadowColor = '#aa44ff';
-            ctx.shadowBlur = 15;
-            this._roundRect(ctx, skinBtnX, btnY, btnW, btnH, 25 * S);
-            ctx.fill();
-            ctx.shadowBlur = 0;
-        }
-
-        ctx.font = this._font('bold', 16);
+        ctx.font = this._font('bold', 15);
         ctx.fillStyle = '#fff';
         ctx.textAlign = 'center';
-        ctx.fillText('皮肤商店', skinBtnX + btnW / 2, btnY + btnH / 2 + 1);
+        ctx.fillText('✨ 皮肤商店', skinBtnX + skinBtnW / 2, skinBtnY + skinBtnH / 2 + 1);
 
         // 返回按钮（左下角）
         const backW = Math.round(100 * S);
@@ -673,7 +642,6 @@ class UISystem {
         }
         if (skinHover && this.consumeClick()) {
             this._skinShopOpen = true;
-            this._skinShopChar = this.selectedCharacter;
             return null;
         }
         this.clicked = false;
@@ -699,7 +667,7 @@ class UISystem {
             ctx.globalAlpha = 0.06 + Math.sin(time + i) * 0.03;
             ctx.fillStyle = Utils.hsl(30 + i * 8, 70, 55);
             ctx.beginPath();
-            ctx.arc(x, y, (1 + Math.sin(time * 0.5 + i) * 0.8) * S, 0, TWO_PI);
+            ctx.arc(x, y, (1 + Math.sin(time * 0.5 + i) * 0.8) * S, 0, Math.PI * 2);
             ctx.fill();
         }
         ctx.globalAlpha = 1;
@@ -736,6 +704,7 @@ class UISystem {
             { id: 'armor', name: '铁壁', icon: '🛡️', desc: '+1 护甲/级', color: '#8899bb', baseCost: 60, maxLv: 8 },
             { id: 'hpRegen', name: '再生', icon: '💚', desc: '+0.5 回复/秒/级', color: '#44ff88', baseCost: 50, maxLv: 8 },
             { id: 'cooldown', name: '疾风', icon: '⚡', desc: '+3% 攻速/级', color: '#ffdd44', baseCost: 100, maxLv: 5 },
+            { id: 'startBuff', name: '天赋觉醒', icon: '🌟', desc: '每级解锁起始技能', color: '#ff8800', baseCost: 200, maxLv: 5 },
         ];
 
         // 卡片布局（2行5列）
@@ -820,7 +789,7 @@ class UISystem {
                 moveSpeed: `+${currentLv * 2}%移速`, pickupRange: `+${currentLv * 10}范围`,
                 expGain: `+${currentLv * 5}%经验`, critRate: `+${currentLv * 2}%暴击`,
                 armor: `+${currentLv}护甲`, hpRegen: `+${(currentLv * 0.5).toFixed(1)}/秒`,
-                cooldown: `+${currentLv * 3}%攻速`,
+                cooldown: `+${currentLv * 3}%攻速`, startBuff: `${currentLv}个起始技能`,
             };
             ctx.fillText(effectMap[upg.id] || '', cx + cardW / 2, cy + 136 * S);
 
@@ -913,245 +882,240 @@ class UISystem {
         const S = this.scale;
 
         // 背景
-        ctx.fillStyle = '#0a0812';
+        ctx.fillStyle = '#0a0a14';
         ctx.fillRect(0, 0, W, H);
 
         // 标题
-        ctx.font = this._font('bold', 28);
-        ctx.fillStyle = '#cc88ff';
+        ctx.font = this._font('bold', 24);
         ctx.textAlign = 'center';
-        ctx.fillText('✨ 皮肤商店', W / 2, 40 * S);
+        ctx.fillStyle = '#fff';
+        ctx.fillText('✨ 皮肤商店', W / 2, 36 * S);
 
-        // 金币显示
-        const gold = (typeof MetaProgress !== 'undefined') ? MetaProgress.data.gold : 0;
-        ctx.font = this._font('bold', 16);
+        // 金币
+        const gold = (typeof skinManager !== 'undefined') ? skinManager.gold : 0;
+        ctx.font = this._font(null, 14);
         ctx.fillStyle = '#feca57';
-        ctx.fillText(`💰 ${gold} 金币`, W / 2, 68 * S);
+        ctx.fillText(`💰 ${gold} 金币`, W / 2, 56 * S);
 
-        // 角色切换标签
-        const charList = this.characterList;
-        const tabW = Math.round(90 * S);
-        const tabH = Math.round(32 * S);
-        const tabGap = Math.round(6 * S);
-        const totalTabW = charList.length * tabW + (charList.length - 1) * tabGap;
-        const tabStartX = (W - totalTabW) / 2;
-        const tabY = 82 * S;
+        // 系列标签
+        const seriesKeys = Object.keys(SkinSeries);
+        const tabW = Math.min(90 * S, (W - 40 * S) / seriesKeys.length - 6 * S);
+        const tabH = 30 * S;
+        const tabStartX = (W - seriesKeys.length * (tabW + 6 * S)) / 2;
+        const tabY = 70 * S;
 
-        for (let i = 0; i < charList.length; i++) {
-            const tx = tabStartX + i * (tabW + tabGap);
-            const isActive = i === this._skinShopChar;
-            const tabHover = this.mouseX >= tx && this.mouseX <= tx + tabW && this.mouseY >= tabY && this.mouseY <= tabY + tabH;
+        for (let i = 0; i < seriesKeys.length; i++) {
+            const series = SkinSeries[seriesKeys[i]];
+            const tx = tabStartX + i * (tabW + 6 * S);
+            const isActive = this._skinShopTab === i;
+            const tabHover = this.mouseX >= tx && this.mouseX <= tx + tabW &&
+                             this.mouseY >= tabY && this.mouseY <= tabY + tabH;
 
-            ctx.fillStyle = isActive ? 'rgba(170,68,255,0.3)' : (tabHover ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.04)');
-            ctx.strokeStyle = isActive ? '#aa44ff' : 'rgba(255,255,255,0.2)';
-            ctx.lineWidth = isActive ? 2 : 1;
-            this._roundRect(ctx, tx, tabY, tabW, tabH, 16 * S);
+            // 不同tier对应不同颜色
+            const tierColors = ['#44aa66', '#4488ff', '#aa44ff', '#ff6644'];
+            const tc = tierColors[series.tier - 1] || '#888';
+
+            ctx.fillStyle = isActive ? tc : (tabHover ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.04)');
+            this._roundRect(ctx, tx, tabY, tabW, tabH, 12 * S);
             ctx.fill();
-            this._roundRect(ctx, tx, tabY, tabW, tabH, 16 * S);
-            ctx.stroke();
+            if (!isActive) {
+                ctx.strokeStyle = tabHover ? tc : 'rgba(255,255,255,0.15)';
+                ctx.lineWidth = 1;
+                this._roundRect(ctx, tx, tabY, tabW, tabH, 12 * S);
+                ctx.stroke();
+            }
 
-            const charDef = CharacterDefs[charList[i]];
-            ctx.font = this._font(isActive ? 'bold' : null, 12);
-            ctx.fillStyle = isActive ? '#cc88ff' : '#888899';
+            ctx.font = this._font('bold', 11);
             ctx.textAlign = 'center';
-            ctx.fillText(charDef ? charDef.name.split('·')[0] : charList[i], tx + tabW / 2, tabY + tabH / 2 + 1);
+            ctx.fillStyle = isActive ? '#fff' : (tabHover ? '#ddd' : '#999');
+            ctx.fillText(`${series.icon} ${series.name}`, tx + tabW / 2, tabY + tabH / 2 + 1);
 
             if (tabHover && this.consumeClick()) {
-                this._skinShopChar = i;
+                this._skinShopTab = i;
             }
         }
 
-        // 当前角色的皮肤列表
-        const charId = charList[this._skinShopChar];
-        const skins = (typeof SkinManager !== 'undefined') ? SkinManager.getSkinsForChar(charId) : [];
+        // 当前系列的皮肤列表
+        const currentSeriesKey = seriesKeys[this._skinShopTab];
+        const currentSeries = SkinSeries[currentSeriesKey];
+        const skinList = Object.values(currentSeries.skins);
 
-        const cardW = Math.round(180 * S);
-        const cardH = Math.round(280 * S);
-        const cardGap = Math.round(16 * S);
-        const cardStartY = tabY + tabH + 24 * S;
-        const maxCards = Math.min(skins.length, 3); // 一行最多3个
-        const totalCardW = maxCards * cardW + (maxCards - 1) * cardGap;
-        const cardStartX = (W - totalCardW) / 2;
+        // 皮肤卡片
+        const cardAreaY = tabY + tabH + 16 * S;
+        const isNarrow = W < 600;
+        const cols = isNarrow ? 1 : Math.min(3, skinList.length);
+        const cardGap = 12 * S;
+        const cardW = isNarrow ? (W - 40 * S) : Math.min(180 * S, (W - 40 * S - (cols - 1) * cardGap) / cols);
+        const cardH = isNarrow ? 130 * S : 240 * S;
+        const cardStartX = (W - cols * cardW - (cols - 1) * cardGap) / 2;
 
-        for (let i = 0; i < skins.length; i++) {
-            const skin = skins[i];
-            const col = i % 3;
-            const row = Math.floor(i / 3);
+        for (let i = 0; i < skinList.length; i++) {
+            const skin = skinList[i];
+            const row = Math.floor(i / cols);
+            const col = i % cols;
             const cx = cardStartX + col * (cardW + cardGap);
-            const cy = cardStartY + row * (cardH + cardGap);
-            const isHover = this.mouseX >= cx && this.mouseX <= cx + cardW && this.mouseY >= cy && this.mouseY <= cy + cardH;
-            const isOwned = (typeof SkinManager !== 'undefined') && SkinManager.isOwned(skin.id);
-            const isEquipped = (typeof SkinManager !== 'undefined') && SkinManager.isEquipped(charId, skin.id);
-            const price = SkinRarity[skin.rarity].price;
-            const rarityInfo = SkinRarity[skin.rarity];
+            const cy = cardAreaY + row * (cardH + cardGap);
+
+            if (cy > H) break; // 超出屏幕不渲染
+
+            const owned = (typeof skinManager !== 'undefined') && skinManager.ownedSkins.includes(skin.id);
+            const cardHover = this.mouseX >= cx && this.mouseX <= cx + cardW &&
+                              this.mouseY >= cy && this.mouseY <= cy + cardH;
 
             // 卡片背景
-            ctx.fillStyle = isHover ? 'rgba(170,68,255,0.12)' : 'rgba(255,255,255,0.04)';
-            ctx.strokeStyle = isEquipped ? '#44ff88' : (isOwned ? 'rgba(255,255,255,0.3)' : rarityInfo.color);
-            ctx.lineWidth = isEquipped ? 2.5 : 1.5;
-            this._roundRect(ctx, cx, cy, cardW, cardH, 12 * S);
+            const tierColors = ['#1a2a1a', '#1a2244', '#2a1a3a', '#2a1a1a'];
+            const borderColors = ['#44aa66', '#4488ff', '#aa44ff', '#ff6644'];
+            ctx.fillStyle = cardHover ? 'rgba(255,255,255,0.08)' : (tierColors[skin.tier - 1] || '#1a1a2a');
+            this._roundRect(ctx, cx, cy, cardW, cardH, 14 * S);
             ctx.fill();
-            this._roundRect(ctx, cx, cy, cardW, cardH, 12 * S);
+            ctx.strokeStyle = owned ? '#44ff88' : (cardHover ? borderColors[skin.tier - 1] : 'rgba(255,255,255,0.1)');
+            ctx.lineWidth = owned ? 2 : 1;
+            this._roundRect(ctx, cx, cy, cardW, cardH, 14 * S);
             ctx.stroke();
 
-            // 稀有度标签
-            ctx.font = this._font('bold', 10);
-            ctx.fillStyle = rarityInfo.color;
-            ctx.textAlign = 'center';
-            ctx.fillText(rarityInfo.name, cx + cardW / 2, cy + 20 * S);
+            if (isNarrow) {
+                // 窄屏：横向布局
+                const previewR = 28 * S;
+                const previewX = cx + 50 * S;
+                const previewY = cy + cardH / 2;
 
-            // 皮肤预览球（展示皮肤配色）
-            const previewR = 28 * S;
-            const previewX = cx + cardW / 2;
-            const previewY = cy + 70 * S;
-
-            // 外层光晕
-            ctx.globalAlpha = 0.3;
-            ctx.fillStyle = skin.glowColor;
-            ctx.beginPath();
-            ctx.arc(previewX, previewY, previewR + 10 * S, 0, TWO_PI);
-            ctx.fill();
-
-            // 主体球
-            ctx.globalAlpha = 1;
-            const prevGrad = ctx.createRadialGradient(
-                previewX - previewR * 0.25, previewY - previewR * 0.25, previewR * 0.05,
-                previewX + previewR * 0.1, previewY + previewR * 0.1, previewR
-            );
-            prevGrad.addColorStop(0, skin.bodyColors[2] || skin.bodyColors[0]);
-            prevGrad.addColorStop(0.4, skin.bodyColors[0]);
-            prevGrad.addColorStop(1, skin.bodyColors[1]);
-            ctx.fillStyle = prevGrad;
-            ctx.beginPath();
-            ctx.arc(previewX, previewY, previewR, 0, TWO_PI);
-            ctx.fill();
-
-            // 眼睛
-            ctx.fillStyle = skin.eyeColor;
-            ctx.beginPath();
-            ctx.arc(previewX - 4 * S, previewY - 3 * S, 4 * S, 0, TWO_PI);
-            ctx.fill();
-            ctx.beginPath();
-            ctx.arc(previewX + 4 * S, previewY - 3 * S, 4 * S, 0, TWO_PI);
-            ctx.fill();
-            ctx.fillStyle = '#111';
-            ctx.beginPath();
-            ctx.arc(previewX - 3 * S, previewY - 3 * S, 2 * S, 0, TWO_PI);
-            ctx.fill();
-            ctx.beginPath();
-            ctx.arc(previewX + 5 * S, previewY - 3 * S, 2 * S, 0, TWO_PI);
-            ctx.fill();
-
-            // 传说特效预览（旋转光点）
-            if (skin.rarity === 'LEGENDARY') {
-                const now = performance.now();
-                ctx.globalAlpha = 0.7;
-                for (let j = 0; j < 4; j++) {
-                    const a = now * 0.003 + j * (TWO_PI / 4);
-                    ctx.fillStyle = skin.effects.trailColors[j % skin.effects.trailColors.length];
-                    ctx.beginPath();
-                    ctx.arc(previewX + Math.cos(a) * (previewR + 6 * S), previewY + Math.sin(a) * (previewR + 6 * S), 2.5 * S, 0, TWO_PI);
-                    ctx.fill();
+                // 皮肤预览
+                if (window._skinRenderer && skin.shape) {
+                    window._skinRenderer.renderBody(ctx, skin, previewX, previewY, previewR, 0, 0, 1);
+                } else {
+                    ctx.fillStyle = skin.shape ? skin.shape.baseColor : '#888';
+                    ctx.beginPath(); ctx.arc(previewX, previewY, previewR, 0, Math.PI * 2); ctx.fill();
                 }
-                ctx.globalAlpha = 1;
-            }
 
-            // 皮肤名称
-            ctx.font = this._font('bold', 14);
-            ctx.fillStyle = '#ffffff';
-            ctx.textAlign = 'center';
-            ctx.fillText(skin.name, cx + cardW / 2, cy + 130 * S);
-
-            // 描述
-            ctx.font = this._font(null, 11);
-            ctx.fillStyle = '#8888aa';
-            ctx.fillText(skin.desc, cx + cardW / 2, cy + 152 * S);
-
-            // 特效说明
-            if (skin.effects.legendaryTrail) {
+                // 文字信息
+                const textX = cx + 110 * S;
+                ctx.font = this._font('bold', 13);
+                ctx.textAlign = 'left';
+                ctx.fillStyle = '#fff';
+                ctx.fillText(skin.name, textX, cy + 30 * S);
                 ctx.font = this._font(null, 10);
-                ctx.fillStyle = '#ffaa44';
-                ctx.fillText('★ 专属攻击尾迹特效', cx + cardW / 2, cy + 170 * S);
-            }
+                ctx.fillStyle = '#aaa';
+                ctx.fillText(skin.desc.slice(0, 12) + '...', textX, cy + 50 * S);
 
-            // 按钮区域
-            const btnBuyW = cardW - 24 * S;
-            const btnBuyH = 32 * S;
-            const btnBuyX = cx + 12 * S;
-            const btnBuyY = cy + cardH - 50 * S;
-            const btnBuyHover = isHover && this.mouseY >= btnBuyY && this.mouseY <= btnBuyY + btnBuyH;
-
-            if (isEquipped) {
-                // 已装备
-                ctx.fillStyle = 'rgba(68,255,136,0.15)';
-                this._roundRect(ctx, btnBuyX, btnBuyY, btnBuyW, btnBuyH, 16 * S);
-                ctx.fill();
-                ctx.font = this._font('bold', 13);
-                ctx.fillStyle = '#44ff88';
-                ctx.textAlign = 'center';
-                ctx.fillText('已装备 ✓', cx + cardW / 2, btnBuyY + btnBuyH / 2 + 1);
-
-                // 点击卸下
-                if (btnBuyHover && this.consumeClick()) {
-                    SkinManager.unequip(charId);
-                }
-            } else if (isOwned) {
-                // 已拥有，可装备
-                ctx.fillStyle = btnBuyHover ? 'rgba(68,136,255,0.3)' : 'rgba(68,136,255,0.15)';
-                this._roundRect(ctx, btnBuyX, btnBuyY, btnBuyW, btnBuyH, 16 * S);
-                ctx.fill();
-                ctx.font = this._font('bold', 13);
-                ctx.fillStyle = btnBuyHover ? '#88ccff' : '#4488ff';
-                ctx.textAlign = 'center';
-                ctx.fillText('装备', cx + cardW / 2, btnBuyY + btnBuyH / 2 + 1);
-
-                if (btnBuyHover && this.consumeClick()) {
-                    SkinManager.equip(charId, skin.id);
+                // 价格/状态
+                const btnX = cx + cardW - 80 * S;
+                const btnY2 = cy + cardH / 2 - 14 * S;
+                const btnW2 = 65 * S;
+                const btnH2 = 28 * S;
+                if (owned) {
+                    const charId = this._skinShopCharId || 'swordsman';
+                    const isEquipped = skinManager.equippedSkins[charId] === skin.id;
+                    const equipBtnHover = this.mouseX >= btnX && this.mouseX <= btnX + btnW2 &&
+                                          this.mouseY >= btnY2 && this.mouseY <= btnY2 + btnH2;
+                    ctx.fillStyle = isEquipped ? 'rgba(68,255,136,0.25)' : (equipBtnHover ? 'rgba(100,200,255,0.2)' : 'rgba(68,255,136,0.1)');
+                    this._roundRect(ctx, btnX, btnY2, btnW2, btnH2, 10 * S); ctx.fill();
+                    ctx.font = this._font('bold', 11);
+                    ctx.textAlign = 'center';
+                    ctx.fillStyle = isEquipped ? '#44ff88' : (equipBtnHover ? '#88ddff' : '#88cc88');
+                    ctx.fillText(isEquipped ? '已装备' : '装备', btnX + btnW2 / 2, btnY2 + btnH2 / 2 + 1);
+                    if (equipBtnHover && this.consumeClick()) {
+                        skinManager.equipSkin(charId, isEquipped ? null : skin.id);
+                    }
+                } else {
+                    const canBuy = gold >= skin.price;
+                    ctx.fillStyle = canBuy ? 'rgba(254,202,87,0.2)' : 'rgba(100,100,100,0.2)';
+                    this._roundRect(ctx, btnX, btnY2, btnW2, btnH2, 10 * S); ctx.fill();
+                    ctx.font = this._font('bold', 11);
+                    ctx.textAlign = 'center';
+                    ctx.fillStyle = canBuy ? '#feca57' : '#666';
+                    ctx.fillText(`💰${skin.price}`, btnX + btnW2 / 2, btnY2 + btnH2 / 2 + 1);
+                    if (canBuy && cardHover && this.consumeClick()) {
+                        skinManager.buySkin(skin.id);
+                    }
                 }
             } else {
-                // 未拥有，可购买
-                const canBuy = gold >= price;
-                ctx.fillStyle = btnBuyHover && canBuy ? 'rgba(254,202,87,0.3)' : (canBuy ? 'rgba(254,202,87,0.12)' : 'rgba(100,100,100,0.12)');
-                this._roundRect(ctx, btnBuyX, btnBuyY, btnBuyW, btnBuyH, 16 * S);
-                ctx.fill();
-                ctx.font = this._font('bold', 13);
-                ctx.fillStyle = canBuy ? (btnBuyHover ? '#ffdd66' : '#feca57') : '#555555';
-                ctx.textAlign = 'center';
-                ctx.fillText(`💰 ${price}`, cx + cardW / 2, btnBuyY + btnBuyH / 2 + 1);
+                // 宽屏：竖向卡片布局
+                const previewR = 30 * S;
+                const previewX = cx + cardW / 2;
+                const previewY = cy + 60 * S;
 
-                if (btnBuyHover && canBuy && this.consumeClick()) {
-                    SkinManager.buy(skin.id);
+                // 皮肤预览球
+                if (window._skinRenderer && skin.shape) {
+                    window._skinRenderer.renderBody(ctx, skin, previewX, previewY, previewR, 0, 0, 1);
+                } else {
+                    ctx.fillStyle = skin.shape ? skin.shape.baseColor : '#888';
+                    ctx.beginPath(); ctx.arc(previewX, previewY, previewR, 0, Math.PI * 2); ctx.fill();
                 }
-            }
-        }
 
-        // "默认皮肤" 提示
-        if (skins.length > 0) {
-            const equipped = (typeof SkinManager !== 'undefined') ? SkinManager.getEquippedSkin(charId) : null;
-            if (equipped) {
-                ctx.font = this._font(null, 12);
-                ctx.fillStyle = 'rgba(255,255,255,0.4)';
+                // 名称
+                ctx.font = this._font('bold', 14);
                 ctx.textAlign = 'center';
-                ctx.fillText('点击已装备的皮肤可卸下恢复默认外观', W / 2, H - 60 * S);
+                ctx.fillStyle = '#fff';
+                ctx.fillText(skin.name, previewX, previewY + previewR + 22 * S);
+
+                // 描述
+                ctx.font = this._font(null, 10);
+                ctx.fillStyle = '#aaa';
+                const maxDescW = cardW - 16 * S;
+                const descText = skin.desc.length > 20 ? skin.desc.slice(0, 20) + '...' : skin.desc;
+                ctx.fillText(descText, previewX, previewY + previewR + 40 * S);
+
+                // 稀有度标签
+                const tierLabels = ['普通', '稀有', '史诗', '传说'];
+                const tierLabelColors = ['#44aa66', '#4488ff', '#aa44ff', '#ff6644'];
+                ctx.font = this._font('bold', 10);
+                ctx.fillStyle = tierLabelColors[skin.tier - 1];
+                ctx.fillText(tierLabels[skin.tier - 1], cx + cardW / 2, cy + 16 * S);
+
+                // 购买/装备按钮
+                const btnW2 = 80 * S;
+                const btnH2 = 30 * S;
+                const btnX = cx + (cardW - btnW2) / 2;
+                const btnY2 = cy + cardH - btnH2 - 12 * S;
+                if (owned) {
+                    const charId = this._skinShopCharId || 'swordsman';
+                    const isEquipped = skinManager.equippedSkins[charId] === skin.id;
+                    const equipBtnHover = cardHover && this.mouseY >= btnY2 && this.mouseY <= btnY2 + btnH2;
+                    ctx.fillStyle = isEquipped ? 'rgba(68,255,136,0.2)' : (equipBtnHover ? 'rgba(100,200,255,0.2)' : 'rgba(68,255,136,0.08)');
+                    this._roundRect(ctx, btnX, btnY2, btnW2, btnH2, 12 * S); ctx.fill();
+                    ctx.strokeStyle = isEquipped ? '#44ff88' : '#88cc88';
+                    ctx.lineWidth = 1;
+                    this._roundRect(ctx, btnX, btnY2, btnW2, btnH2, 12 * S); ctx.stroke();
+                    ctx.font = this._font('bold', 12);
+                    ctx.fillStyle = isEquipped ? '#44ff88' : (equipBtnHover ? '#88ddff' : '#88cc88');
+                    ctx.fillText(isEquipped ? '✓ 已装备' : '装备', cx + cardW / 2, btnY2 + btnH2 / 2 + 1);
+                    if (equipBtnHover && this.consumeClick()) {
+                        skinManager.equipSkin(charId, isEquipped ? null : skin.id);
+                    }
+                } else {
+                    const canBuy = gold >= skin.price;
+                    const btnHover2 = cardHover && this.mouseY >= btnY2 && this.mouseY <= btnY2 + btnH2;
+                    ctx.fillStyle = canBuy ? (btnHover2 ? 'rgba(254,202,87,0.3)' : 'rgba(254,202,87,0.15)') : 'rgba(100,100,100,0.15)';
+                    this._roundRect(ctx, btnX, btnY2, btnW2, btnH2, 12 * S); ctx.fill();
+                    ctx.strokeStyle = canBuy ? '#feca57' : '#444';
+                    ctx.lineWidth = 1;
+                    this._roundRect(ctx, btnX, btnY2, btnW2, btnH2, 12 * S); ctx.stroke();
+                    ctx.font = this._font('bold', 12);
+                    ctx.fillStyle = canBuy ? '#feca57' : '#666';
+                    ctx.fillText(`💰 ${skin.price}`, cx + cardW / 2, btnY2 + btnH2 / 2 + 1);
+                    if (canBuy && btnHover2 && this.consumeClick()) {
+                        skinManager.buySkin(skin.id);
+                    }
+                }
             }
         }
 
         // 返回按钮
-        const backW = Math.round(100 * S);
-        const backH = Math.round(38 * S);
-        const backX = Math.round(20 * S);
-        const backY = H - 60 * S;
+        const backW = Math.round(120 * S);
+        const backH = Math.round(36 * S);
+        const backX = (W - backW) / 2;
+        const backY = H - 50 * S;
         const backHover = this.mouseX >= backX && this.mouseX <= backX + backW &&
                           this.mouseY >= backY && this.mouseY <= backY + backH;
         ctx.fillStyle = backHover ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)';
-        ctx.strokeStyle = backHover ? '#ffffff' : 'rgba(255,255,255,0.25)';
+        ctx.strokeStyle = backHover ? '#fff' : 'rgba(255,255,255,0.3)';
         ctx.lineWidth = 1.5;
-        this._roundRect(ctx, backX, backY, backW, backH, 19 * S);
+        this._roundRect(ctx, backX, backY, backW, backH, 18 * S);
         ctx.fill();
-        this._roundRect(ctx, backX, backY, backW, backH, 19 * S);
+        this._roundRect(ctx, backX, backY, backW, backH, 18 * S);
         ctx.stroke();
         ctx.font = this._font('bold', 14);
-        ctx.fillStyle = backHover ? '#fff' : '#8899aa';
+        ctx.fillStyle = backHover ? '#fff' : '#aaa';
         ctx.textAlign = 'center';
         ctx.fillText('← 返回', backX + backW / 2, backY + backH / 2 + 1);
 
@@ -1573,7 +1537,7 @@ class UISystem {
         ctx.globalAlpha = 0.5;
         ctx.fillStyle = '#0a0a1a';
         ctx.beginPath();
-        ctx.arc(mapX + mapSize / 2, mapY + mapSize / 2, mapSize / 2, 0, TWO_PI);
+        ctx.arc(mapX + mapSize / 2, mapY + mapSize / 2, mapSize / 2, 0, Math.PI * 2);
         ctx.fill();
         ctx.strokeStyle = '#334466';
         ctx.lineWidth = 1.5;
@@ -1582,7 +1546,7 @@ class UISystem {
 
         // 裁剪圆形
         ctx.beginPath();
-        ctx.arc(mapX + mapSize / 2, mapY + mapSize / 2, mapSize / 2 - 2, 0, TWO_PI);
+        ctx.arc(mapX + mapSize / 2, mapY + mapSize / 2, mapSize / 2 - 2, 0, Math.PI * 2);
         ctx.clip();
 
         const cx = mapX + mapSize / 2;
@@ -1601,7 +1565,7 @@ class UISystem {
                 const dotSize = e.isBoss ? 4 : 2.5;
                 ctx.globalAlpha = e.isBoss ? 1 : 0.7;
                 ctx.beginPath();
-                ctx.arc(cx + dx, cy + dy, dotSize * S, 0, TWO_PI);
+                ctx.arc(cx + dx, cy + dy, dotSize * S, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.globalAlpha = 0.6;
             } else {
@@ -2447,7 +2411,7 @@ _roundRect(ctx, x, y, w, h, r) {
         glow.addColorStop(1, 'rgba(0,0,0,0)');
         ctx.fillStyle = glow;
         ctx.beginPath();
-        ctx.arc(x, y, r * 1.4, 0, TWO_PI);
+        ctx.arc(x, y, r * 1.4, 0, Math.PI * 2);
         ctx.fill();
 
         // 深色圆底
@@ -2456,14 +2420,14 @@ _roundRect(ctx, x, y, w, h, r) {
         bgGrad.addColorStop(1, '#111118');
         ctx.fillStyle = bgGrad;
         ctx.beginPath();
-        ctx.arc(x, y, r, 0, TWO_PI);
+        ctx.arc(x, y, r, 0, Math.PI * 2);
         ctx.fill();
 
         // 外框
         ctx.strokeStyle = borderCol;
         ctx.lineWidth = (rar === 'legendary' ? 2.5 : rar === 'epic' ? 2 : 1.5) * S;
         ctx.beginPath();
-        ctx.arc(x, y, r, 0, TWO_PI);
+        ctx.arc(x, y, r, 0, Math.PI * 2);
         ctx.stroke();
 
         // 内部高光弧
@@ -2528,8 +2492,8 @@ _roundRect(ctx, x, y, w, h, r) {
                 color: colors[i % colors.length],
                 vx: (Math.random() - 0.5) * 30,
                 vy: (Math.random() - 0.5) * 30,
-                phase: Math.random() * TWO_PI,
-                eyeDir: Math.random() * TWO_PI,
+                phase: Math.random() * Math.PI * 2,
+                eyeDir: Math.random() * Math.PI * 2,
             });
         }
     }
@@ -2659,7 +2623,7 @@ _roundRect(ctx, x, y, w, h, r) {
             headGlow.addColorStop(1, `rgba(${r},${g},${b},0)`);
             ctx.fillStyle = headGlow;
             ctx.beginPath();
-            ctx.arc(srcX, srcY + 4, headR, 0, TWO_PI);
+            ctx.arc(srcX, srcY + 4, headR, 0, Math.PI * 2);
             ctx.fill();
         }
         ctx.globalCompositeOperation = 'source-over';
@@ -2674,7 +2638,7 @@ _roundRect(ctx, x, y, w, h, r) {
             const sr = 0.5 + Math.sin(t * 1.5 + i * 0.9) * 0.3;
             ctx.globalAlpha = 0.15 + Math.sin(t * 2 + i * 1.1) * 0.1;
             ctx.beginPath();
-            ctx.arc(sx, sy, sr, 0, TWO_PI);
+            ctx.arc(sx, sy, sr, 0, Math.PI * 2);
             ctx.fill();
         }
         // 中景星星
@@ -2685,52 +2649,9 @@ _roundRect(ctx, x, y, w, h, r) {
             const sr = 0.8 + Math.sin(t * 2.5 + i * 0.6) * 0.5;
             ctx.globalAlpha = 0.3 + Math.sin(t * 3 + i * 0.7) * 0.2;
             ctx.beginPath();
-            ctx.arc(sx, sy, sr, 0, TWO_PI);
+            ctx.arc(sx, sy, sr, 0, Math.PI * 2);
             ctx.fill();
         }
-        // 流星效果（最多3条同时可见，极低开销）
-        if (!this._meteors) this._meteors = [];
-        // 按概率生成新流星
-        if (this._meteors.length < 3 && Math.random() < 0.008) {
-            this._meteors.push({
-                x: Math.random() * W * 0.8 + W * 0.1,
-                y: Math.random() * H * 0.3,
-                vx: 350 + Math.random() * 200,
-                vy: 180 + Math.random() * 120,
-                life: 0.6 + Math.random() * 0.5,
-                maxLife: 0.6 + Math.random() * 0.5,
-                size: 1.5 + Math.random() * 1.5,
-            });
-        }
-        for (let i = this._meteors.length - 1; i >= 0; i--) {
-            const m = this._meteors[i];
-            m.x += m.vx * dt;
-            m.y += m.vy * dt;
-            m.life -= dt;
-            if (m.life <= 0 || m.x > W || m.y > H) {
-                this._meteors.splice(i, 1);
-                continue;
-            }
-            const alpha = Math.min(1, m.life / m.maxLife * 2);
-            const tailLen = 40 + (1 - m.life / m.maxLife) * 30;
-            const angle = Math.atan2(m.vy, m.vx);
-            // 流星尾巴
-            ctx.globalAlpha = alpha * 0.6;
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = m.size;
-            ctx.lineCap = 'round';
-            ctx.beginPath();
-            ctx.moveTo(m.x, m.y);
-            ctx.lineTo(m.x - Math.cos(angle) * tailLen, m.y - Math.sin(angle) * tailLen);
-            ctx.stroke();
-            // 流星头部亮点
-            ctx.globalAlpha = alpha;
-            ctx.fillStyle = '#ffffff';
-            ctx.beginPath();
-            ctx.arc(m.x, m.y, m.size * 1.2, 0, TWO_PI);
-            ctx.fill();
-        }
-
         // 近景亮星 + 十字星芒
         for (let i = 0; i < 8; i++) {
             const sx = (Math.sin(i * 53.7 + 100) * 0.4 + 0.5) * W;
@@ -2739,7 +2660,7 @@ _roundRect(ctx, x, y, w, h, r) {
             ctx.globalAlpha = bright;
             ctx.fillStyle = '#ffffff';
             ctx.beginPath();
-            ctx.arc(sx, sy, 1.5, 0, TWO_PI);
+            ctx.arc(sx, sy, 1.5, 0, Math.PI * 2);
             ctx.fill();
             // 十字星芒
             ctx.globalAlpha = bright * 0.4;
@@ -2770,7 +2691,7 @@ _roundRect(ctx, x, y, w, h, r) {
             ctx.globalAlpha = 0.18;
             ctx.fillStyle = '#000';
             ctx.beginPath();
-            ctx.ellipse(bx, by + ball.r + 6, ball.r * 0.7, ball.r * 0.18, 0, 0, TWO_PI);
+            ctx.ellipse(bx, by + ball.r + 6, ball.r * 0.7, ball.r * 0.18, 0, 0, Math.PI * 2);
             ctx.fill();
 
             // 外发光
@@ -2780,7 +2701,7 @@ _roundRect(ctx, x, y, w, h, r) {
             outerGlow.addColorStop(1, 'rgba(0,0,0,0)');
             ctx.fillStyle = outerGlow;
             ctx.beginPath();
-            ctx.arc(bx, by, ball.r + 10, 0, TWO_PI);
+            ctx.arc(bx, by, ball.r + 10, 0, Math.PI * 2);
             ctx.fill();
 
             // 球体（径向渐变立体感，光源偏左上）
@@ -2794,7 +2715,7 @@ _roundRect(ctx, x, y, w, h, r) {
             bodyGrad.addColorStop(1, this._darkenColor(ball.color, 0.45));
             ctx.fillStyle = bodyGrad;
             ctx.beginPath();
-            ctx.arc(bx, by, ball.r, 0, TWO_PI);
+            ctx.arc(bx, by, ball.r, 0, Math.PI * 2);
             ctx.fill();
 
             // 高光（柔和径向渐变，不是实心圆）
@@ -2807,13 +2728,13 @@ _roundRect(ctx, x, y, w, h, r) {
             hlGrad.addColorStop(1, 'rgba(255,255,255,0)');
             ctx.fillStyle = hlGrad;
             ctx.beginPath();
-            ctx.arc(hlX, hlY, hlR, 0, TWO_PI);
+            ctx.arc(hlX, hlY, hlR, 0, Math.PI * 2);
             ctx.fill();
             // 边缘反光（底部微弱环境光）
             ctx.globalAlpha = 0.08;
             ctx.fillStyle = '#ffffff';
             ctx.beginPath();
-            ctx.arc(bx + ball.r * 0.2, by + ball.r * 0.28, ball.r * 0.12, 0, TWO_PI);
+            ctx.arc(bx + ball.r * 0.2, by + ball.r * 0.28, ball.r * 0.12, 0, Math.PI * 2);
             ctx.fill();
             ctx.globalAlpha = 1;
 
@@ -2822,19 +2743,19 @@ _roundRect(ctx, x, y, w, h, r) {
             ctx.fillStyle = '#fff';
             const eyeOff = ball.r * 0.25;
             ctx.beginPath();
-            ctx.arc(bx - eyeOff, by - ball.r * 0.1, ball.r * 0.22, 0, TWO_PI);
+            ctx.arc(bx - eyeOff, by - ball.r * 0.1, ball.r * 0.22, 0, Math.PI * 2);
             ctx.fill();
             ctx.beginPath();
-            ctx.arc(bx + eyeOff, by - ball.r * 0.1, ball.r * 0.22, 0, TWO_PI);
+            ctx.arc(bx + eyeOff, by - ball.r * 0.1, ball.r * 0.22, 0, Math.PI * 2);
             ctx.fill();
             // 瞳孔
             ctx.fillStyle = '#222';
             const pupilOff = Math.sin(t + ball.phase) * 2;
             ctx.beginPath();
-            ctx.arc(bx - eyeOff + pupilOff, by - ball.r * 0.1, ball.r * 0.12, 0, TWO_PI);
+            ctx.arc(bx - eyeOff + pupilOff, by - ball.r * 0.1, ball.r * 0.12, 0, Math.PI * 2);
             ctx.fill();
             ctx.beginPath();
-            ctx.arc(bx + eyeOff + pupilOff, by - ball.r * 0.1, ball.r * 0.12, 0, TWO_PI);
+            ctx.arc(bx + eyeOff + pupilOff, by - ball.r * 0.1, ball.r * 0.12, 0, Math.PI * 2);
             ctx.fill();
 
             // 嘴巴
@@ -2864,7 +2785,7 @@ _roundRect(ctx, x, y, w, h, r) {
                         litGrad.addColorStop(1, `rgba(${sl.r},${sl.g},${sl.b},0)`);
                         ctx.fillStyle = litGrad;
                         ctx.beginPath();
-                        ctx.arc(bx, by, ball.r * 1.2, 0, TWO_PI);
+                        ctx.arc(bx, by, ball.r * 1.2, 0, Math.PI * 2);
                         ctx.fill();
                         // 顶部高光条（模拟光从上方射入的反光）
                         ctx.globalAlpha = Math.min(litAlpha * 0.8, 0.4);
@@ -2873,7 +2794,7 @@ _roundRect(ctx, x, y, w, h, r) {
                         topHlGrad.addColorStop(1, `rgba(${sl.r},${sl.g},${sl.b},0)`);
                         ctx.fillStyle = topHlGrad;
                         ctx.beginPath();
-                        ctx.arc(bx, by - ball.r * 0.4, ball.r * 0.5, 0, TWO_PI);
+                        ctx.arc(bx, by - ball.r * 0.4, ball.r * 0.5, 0, Math.PI * 2);
                         ctx.fill();
                     }
                 }
@@ -2977,13 +2898,13 @@ _roundRect(ctx, x, y, w, h, r) {
                 dGrad.addColorStop(1, this._darkenColor(charColors[ci][1], 0.6));
                 ctx.fillStyle = dGrad;
                 ctx.beginPath();
-                ctx.arc(decoX, decoY, decoR, 0, TWO_PI);
+                ctx.arc(decoX, decoY, decoR, 0, Math.PI * 2);
                 ctx.fill();
                 // 小球高光
                 ctx.fillStyle = '#fff';
                 ctx.globalAlpha = 0.6;
                 ctx.beginPath();
-                ctx.arc(decoX - decoR * 0.25, decoY - decoR * 0.3, decoR * 0.35, 0, TWO_PI);
+                ctx.arc(decoX - decoR * 0.25, decoY - decoR * 0.3, decoR * 0.35, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.globalAlpha = 1;
             }
@@ -3087,7 +3008,7 @@ _roundRect(ctx, x, y, w, h, r) {
         ctx.font = this._font(null, 11);
         ctx.fillStyle = '#445566';
         ctx.textAlign = 'center';
-        ctx.fillText((typeof GAME_VERSION !== 'undefined' ? GAME_VERSION : 'v1.0') + '  by CatDesk', W / 2, H - 18 * S);
+        ctx.fillText('v1.1  by CatDesk', W / 2, H - 18 * S);
 
         // 点击检测
         if (startHover && this.consumeClick()) {
@@ -3130,7 +3051,7 @@ _roundRect(ctx, x, y, w, h, r) {
             const sr = 1 + Math.sin(this._titleTime * 2 + i) * 0.5;
             ctx.globalAlpha = 0.2 + Math.sin(this._titleTime * 3 + i * 0.7) * 0.12;
             ctx.beginPath();
-            ctx.arc(sx, sy, sr, 0, TWO_PI);
+            ctx.arc(sx, sy, sr, 0, Math.PI * 2);
             ctx.fill();
         }
         ctx.globalAlpha = 1;
@@ -3192,7 +3113,7 @@ _roundRect(ctx, x, y, w, h, r) {
                                Math.abs(this.mouseY - (sliderCY + sliderH / 2)) < soundKnobR * 2;
         ctx.fillStyle = soundKnobHover || this._draggingSlider === 'sound' ? '#66eedd' : '#4ecdc4';
         ctx.beginPath();
-        ctx.arc(soundKnobX, sliderCY + sliderH / 2, soundKnobR, 0, TWO_PI);
+        ctx.arc(soundKnobX, sliderCY + sliderH / 2, soundKnobR, 0, Math.PI * 2);
         ctx.fill();
         // 滑条交互（支持点击和拖拽）
         const soundSliderArea = this.mouseX >= sliderX - 5 && this.mouseX <= sliderX + sliderW + 5 &&
@@ -3243,7 +3164,7 @@ _roundRect(ctx, x, y, w, h, r) {
                                Math.abs(this.mouseY - (musicSliderCY + sliderH / 2)) < soundKnobR * 2;
         ctx.fillStyle = musicKnobHover || this._draggingSlider === 'music' ? '#ffbb66' : '#ff9f43';
         ctx.beginPath();
-        ctx.arc(musicKnobX, musicSliderCY + sliderH / 2, soundKnobR, 0, TWO_PI);
+        ctx.arc(musicKnobX, musicSliderCY + sliderH / 2, soundKnobR, 0, Math.PI * 2);
         ctx.fill();
         // 滑条交互
         const musicSliderArea = this.mouseX >= sliderX - 5 && this.mouseX <= sliderX + sliderW + 5 &&
@@ -3326,6 +3247,46 @@ _roundRect(ctx, x, y, w, h, r) {
             this.settings.showFps = !this.settings.showFps;
         }
 
+        curY += itemH;
+
+        // --- 画质特效 ---
+        ctx.font = this._font(null, 16);
+        ctx.textAlign = 'left';
+        ctx.fillStyle = '#ccddee';
+        ctx.fillText('画质特效', labelX, curY + itemH / 2);
+        if (typeof QualityLevels !== 'undefined' && typeof skinManager !== 'undefined') {
+            const qualityKeys = ['low', 'medium', 'high', 'ultra'];
+            const qualityLabels = ['流畅', '均衡', '高画质', '极致'];
+            const qBtnW = Math.round(48 * S);
+            const qBtnH = Math.round(26 * S);
+            const qStartX = rightX - qualityKeys.length * (qBtnW + 4 * S);
+            const qBtnY = curY + (itemH - qBtnH) / 2 - 5 * S;
+            for (let qi = 0; qi < qualityKeys.length; qi++) {
+                const qx = qStartX + qi * (qBtnW + 4 * S);
+                const isActive = skinManager.qualityLevel === qualityKeys[qi];
+                const qHover = this.mouseX >= qx && this.mouseX <= qx + qBtnW &&
+                               this.mouseY >= qBtnY && this.mouseY <= qBtnY + qBtnH;
+                ctx.fillStyle = isActive ? '#4ecdc4' : (qHover ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)');
+                this._roundRect(ctx, qx, qBtnY, qBtnW, qBtnH, 12 * S);
+                ctx.fill();
+                if (!isActive) {
+                    ctx.strokeStyle = qHover ? '#88bbdd' : '#445566';
+                    ctx.lineWidth = 1;
+                    this._roundRect(ctx, qx, qBtnY, qBtnW, qBtnH, 12 * S);
+                    ctx.stroke();
+                }
+                ctx.font = this._font('bold', 10);
+                ctx.textAlign = 'center';
+                ctx.fillStyle = isActive ? '#fff' : (qHover ? '#ddd' : '#889');
+                ctx.fillText(qualityLabels[qi], qx + qBtnW / 2, qBtnY + qBtnH / 2 + 1);
+                if (qHover && this.consumeClick()) {
+                    skinManager.setQuality(qualityKeys[qi]);
+                    const q = skinManager.getQuality();
+                    if (window._skinRenderer) window._skinRenderer.setQuality(q);
+                    if (window._skinFxSystem) window._skinFxSystem.setQuality(q);
+                }
+            }
+        }
         curY += itemH;
 
         // --- 操作说明 ---

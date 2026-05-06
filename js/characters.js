@@ -636,9 +636,13 @@ class Player {
         ctx.save();
 
         // 无敌闪烁
-        if (this.invincibleTime > 0 && Math.floor(this.invincibleTime * 20) % 2 === 0) {
-            ctx.globalAlpha = 0.4;
-        }
+        const isFlashing = this.invincibleTime > 0 && Math.floor(this.invincibleTime * 20) % 2 === 0;
+        if (isFlashing) ctx.globalAlpha = 0.4;
+
+        // 获取当前皮肤
+        const skin = (typeof skinManager !== 'undefined') ? skinManager.getEquippedSkin(this.def.id) : null;
+        const skinRenderer = (typeof window !== 'undefined' && window._skinRenderer) ? window._skinRenderer : null;
+        const skinFx = (typeof window !== 'undefined' && window._skinFxSystem) ? window._skinFxSystem : null;
 
         // 武器进化光环（增强：双层呼吸光环 + 旋转光点）
         if (this.weaponEvolved) {
@@ -757,24 +761,103 @@ class Player {
             ctx.beginPath();
             ctx.arc(eyeX + 3 + Math.cos(this.facingAngle) * pupilOff, eyeY - 2 + Math.sin(this.facingAngle) * pupilOff, 2, 0, TWO_PI);
             ctx.fill();
+            ctx.globalAlpha = isFlashing ? 0.4 : 1;
         }
 
-        // 受伤/回血闪光效果（皮肤与默认共用）
-        if (this.damageFlash > 0) {
-            ctx.globalAlpha = 0.4 * (this.damageFlash / 0.2);
-            ctx.fillStyle = '#ff0000';
-            ctx.beginPath();
-            ctx.arc(sx, sy + bob, this.radius + 6, 0, TWO_PI);
-            ctx.fill();
-            ctx.globalAlpha = 1;
+        // 皮肤光环
+        if (skin && skinFx) {
+            skinFx.renderAura(ctx, sx, sy + bob + this.radius + 2, this.radius, skin);
         }
-        if (this.healFlash > 0) {
-            ctx.globalAlpha = 0.35 * (this.healFlash / 0.3);
-            ctx.fillStyle = '#44ff88';
+
+        // 脚下光圈
+        ctx.globalAlpha = 0.15;
+        ctx.fillStyle = this.def.color;
+        ctx.beginPath();
+        ctx.ellipse(sx, sy + this.radius + 2, this.radius * 1.2, 6, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = isFlashing ? 0.4 : 1;
+
+        // === 皮肤形态渲染 ===
+        if (skin && skinRenderer && skinRenderer.renderBody(ctx, skin, sx, sy, this.radius, this.facingAngle, bob, ctx.globalAlpha)) {
+            // 皮肤渲染成功 - 仅添加受伤/回血闪光
+            if (this.damageFlash > 0) {
+                ctx.globalAlpha = 0.35;
+                ctx.fillStyle = '#ff0000';
+                ctx.beginPath();
+                ctx.arc(sx, sy + bob, this.radius + 6, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            }
+            if (this.healFlash > 0) {
+                ctx.globalAlpha = 0.3;
+                ctx.fillStyle = '#00ff00';
+                ctx.beginPath();
+                ctx.arc(sx, sy + bob, this.radius + 5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            }
+        } else {
+            // 无皮肤：默认渲染
+            // 身体外圈光晕
+            ctx.globalAlpha *= 0.25;
+            ctx.fillStyle = this.def.color;
             ctx.beginPath();
-            ctx.arc(sx, sy + bob, this.radius + 5, 0, TWO_PI);
+            ctx.arc(sx, sy + bob, this.radius + 8, 0, Math.PI * 2);
             ctx.fill();
+            ctx.globalAlpha = isFlashing ? 0.4 : 1;
+
+            // 身体
+            ctx.fillStyle = this.def.color;
+            ctx.beginPath();
+            ctx.arc(sx, sy + bob, this.radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 受伤/回血闪光
+            if (this.damageFlash > 0) {
+                ctx.globalAlpha = 0.35;
+                ctx.fillStyle = '#ff0000';
+                ctx.beginPath();
+                ctx.arc(sx, sy + bob, this.radius + 6, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            }
+            if (this.healFlash > 0) {
+                ctx.globalAlpha = 0.3;
+                ctx.fillStyle = '#00ff00';
+                ctx.beginPath();
+                ctx.arc(sx, sy + bob, this.radius + 5, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            }
+
+            // 内圈高光
+            ctx.fillStyle = '#fff';
+            ctx.globalAlpha *= 0.3;
+            ctx.beginPath();
+            ctx.arc(sx - 3, sy - 3 + bob, this.radius * 0.6, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 眼睛
             ctx.globalAlpha = 1;
+            const eyeDist = 6;
+            const eyeX = sx + Math.cos(this.facingAngle) * eyeDist;
+            const eyeY = sy + Math.sin(this.facingAngle) * eyeDist + bob;
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(eyeX - 3, eyeY - 2, 4, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(eyeX + 3, eyeY - 2, 4, 0, Math.PI * 2);
+            ctx.fill();
+            // 瞳孔
+            ctx.fillStyle = '#111';
+            const pupilOff = 1.5;
+            ctx.beginPath();
+            ctx.arc(eyeX - 3 + Math.cos(this.facingAngle) * pupilOff, eyeY - 2 + Math.sin(this.facingAngle) * pupilOff, 2, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(eyeX + 3 + Math.cos(this.facingAngle) * pupilOff, eyeY - 2 + Math.sin(this.facingAngle) * pupilOff, 2, 0, Math.PI * 2);
+            ctx.fill();
         }
 
         ctx.restore();

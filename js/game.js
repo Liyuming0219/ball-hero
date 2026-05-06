@@ -100,6 +100,13 @@ class Game {
         this.achievementPopup = null;
         this.achievementTimer = 0;
         this.deathAnimEnemies = []; // 正在播放死亡动画的敌人
+
+        // === 皮肤系统 ===
+        if (typeof SkinRenderer !== 'undefined') {
+            const quality = (typeof skinManager !== 'undefined') ? skinManager.getQuality() : QualityLevels.high;
+            window._skinRenderer = new SkinRenderer(quality);
+            window._skinFxSystem = new SkinFxSystem(this.particles, quality);
+        }
     }
 
     resize() {
@@ -924,6 +931,13 @@ class Game {
 
         // 粒子更新
         this.particles.update(dt);
+
+        // 皮肤系统更新
+        if (window._skinRenderer) window._skinRenderer.update(dt);
+        if (window._skinFxSystem && this.player && this.player.isMoving) {
+            const skin = (typeof skinManager !== 'undefined') ? skinManager.getEquippedSkin(this.player.def.id) : null;
+            if (skin) window._skinFxSystem.emitMoveTrail(this.player.x, this.player.y, skin);
+        }
 
         // === 渲染 ===
         this._render();
