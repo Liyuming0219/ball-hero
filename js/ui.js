@@ -2792,7 +2792,7 @@ _roundRect(ctx, x, y, w, h, r) {
         ctx.font = this._font(null, 11);
         ctx.fillStyle = '#445566';
         ctx.textAlign = 'center';
-        ctx.fillText('v1.0  by CatDesk', W / 2, H - 18 * S);
+        ctx.fillText((typeof GAME_VERSION !== 'undefined' ? GAME_VERSION : 'v1.0') + '  by CatDesk', W / 2, H - 18 * S);
 
         // 点击检测
         if (startHover && this.consumeClick()) {
