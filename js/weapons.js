@@ -2,6 +2,22 @@
 // 武器系统 - 华丽的攻击方式
 // ============================================
 
+// 共享投射物更新函数（避免每个投射物创建独立闭包）
+function _projUpdateBasic(dt) {
+    this.x += this.vx * dt;
+    this.y += this.vy * dt;
+    this.life -= dt;
+    if (this.life <= 0) this.alive = false;
+}
+
+function _projUpdateWindSlash(dt) {
+    this.x += this.vx * dt;
+    this.y += this.vy * dt;
+    this.spin += dt * 14;
+    this.life -= dt;
+    if (this.life <= 0) this.alive = false;
+}
+
 class WeaponSystem {
     constructor(player, particles, combatLog) {
         this.player = player;
@@ -122,8 +138,8 @@ class WeaponSystem {
                     const targetAngle = Utils.angle(p.x, p.y, target.x, target.y);
                     const currentAngle = Math.atan2(p.vy, p.vx);
                     let diff = targetAngle - currentAngle;
-                    while (diff > Math.PI) diff -= Math.PI * 2;
-                    while (diff < -Math.PI) diff += Math.PI * 2;
+                    while (diff > Math.PI) diff -= TWO_PI;
+                    while (diff < -Math.PI) diff += TWO_PI;
                     const newAngle = currentAngle + Utils.clamp(diff, -turnSpeed, turnSpeed);
                     const speed = Math.sqrt(p.vx * p.vx + p.vy * p.vy);
                     p.vx = Math.cos(newAngle) * speed;
@@ -133,7 +149,7 @@ class WeaponSystem {
             }
 
             if (!p.alive) {
-                this.projectiles[i] = this.projectiles[this.projectiles.length - 1]; this.projectiles.pop();
+                swapRemove(this.projectiles, i);
                 continue;
             }
 
@@ -276,8 +292,8 @@ class WeaponSystem {
 
             const enemyAngle = Utils.angle(px, py, enemy.x, enemy.y);
             let angleDiff = enemyAngle - angle;
-            while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
-            while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+            while (angleDiff > Math.PI) angleDiff -= TWO_PI;
+            while (angleDiff < -Math.PI) angleDiff += TWO_PI;
             if (Math.abs(angleDiff) <= arcWidth / 2) {
                 const { damage, isCrit } = this._calcDamage();
                 const died = enemy.takeDamage(damage, this.particles, enemyAngle, 8);
@@ -371,13 +387,7 @@ class WeaponSystem {
                 type: 'wind_slash',
                 spin: off * 2,     // 每道初始旋转相位不同，视觉更丰富
                 hitEnemies: new Set(),
-                update(dt) {
-                    this.x += this.vx * dt;
-                    this.y += this.vy * dt;
-                    this.spin += dt * 14;
-                    this.life -= dt;
-                    if (this.life <= 0) this.alive = false;
-                },
+                update: _projUpdateWindSlash,
             });
         }
 
@@ -436,12 +446,7 @@ class WeaponSystem {
                 type: 'fireball',
                 evolved: evolved,
                 hitEnemies: new Set(),
-                update(dt) {
-                    this.x += this.vx * dt;
-                    this.y += this.vy * dt;
-                    this.life -= dt;
-                    if (this.life <= 0) this.alive = false;
-                },
+                update: _projUpdateBasic,
             });
         }
 
@@ -528,8 +533,8 @@ class WeaponSystem {
 
             const enemyAngle = Utils.angle(px, py, enemy.x, enemy.y);
             let angleDiff = enemyAngle - angle;
-            while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
-            while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+            while (angleDiff > Math.PI) angleDiff -= TWO_PI;
+            while (angleDiff < -Math.PI) angleDiff += TWO_PI;
             if (Math.abs(angleDiff) <= arcWidth / 2) {
                 // 背刺判定：敌人正在移向玩家方向（面朝玩家）= 背刺
                 const enemyMoveAngle = Utils.angle(enemy.x, enemy.y, px, py);
@@ -688,12 +693,7 @@ class WeaponSystem {
                 type: 'arrow',
                 evolved: evo,
                 hitEnemies: new Set(),
-                update(dt) {
-                    this.x += this.vx * dt;
-                    this.y += this.vy * dt;
-                    this.life -= dt;
-                    if (this.life <= 0) this.alive = false;
-                },
+                update: _projUpdateBasic,
             });
         }
 
@@ -759,12 +759,7 @@ class WeaponSystem {
                 trailSize: 2,
                 type: 'rain_arrow',
                 hitEnemies: new Set(),
-                update(dt) {
-                    this.x += this.vx * dt;
-                    this.y += this.vy * dt;
-                    this.life -= dt;
-                    if (this.life <= 0) this.alive = false;
-                },
+                update: _projUpdateBasic,
             });
         }
 
@@ -801,7 +796,7 @@ class WeaponSystem {
 
         if (this.summonManager && totalCount < maxSummons) {
             // 召唤物未满时：智能轮换召唤已解锁的类型
-            const offsetAngle = Utils.rand(0, Math.PI * 2);
+            const offsetAngle = Utils.rand(0, TWO_PI);
             const offsetDist = Utils.rand(30, 60);
             const sx = px + Math.cos(offsetAngle) * offsetDist;
             const sy = py + Math.sin(offsetAngle) * offsetDist;
@@ -823,12 +818,7 @@ class WeaponSystem {
                 trailSize: 5,
                 type: 'necro_bolt',
                 hitEnemies: new Set(),
-                update(dt) {
-                    this.x += this.vx * dt;
-                    this.y += this.vy * dt;
-                    this.life -= dt;
-                    if (this.life <= 0) this.alive = false;
-                },
+                update: _projUpdateBasic,
             });
         }
     }
@@ -1027,7 +1017,7 @@ class WeaponSystem {
     // --- 分裂弹 ---
     _triggerSplitShot(x, y, damage, color) {
         for (let i = 0; i < 3; i++) {
-            const a = (i / 3) * Math.PI * 2 + Utils.rand(-0.3, 0.3);
+            const a = (i / 3) * TWO_PI + Utils.rand(-0.3, 0.3);
             this.projectiles.push({
                 x, y,
                 vx: Math.cos(a) * 250,
@@ -1042,12 +1032,7 @@ class WeaponSystem {
                 type: 'split',
                 hitEnemies: new Set(),
                 _hasSplit: true, // 防止递归分裂
-                update(dt) {
-                    this.x += this.vx * dt;
-                    this.y += this.vy * dt;
-                    this.life -= dt;
-                    if (this.life <= 0) this.alive = false;
-                },
+                update: _projUpdateBasic,
             });
         }
     }
@@ -1218,7 +1203,7 @@ class WeaponSystem {
         ctx.globalAlpha = glow;
         ctx.fillStyle = '#ffdd66';
         ctx.beginPath();
-        ctx.arc(18, 0, 12, 0, Math.PI * 2);
+        ctx.arc(18, 0, 12, 0, TWO_PI);
         ctx.fill();
         ctx.globalAlpha = 1;
         // 锤头
@@ -1243,24 +1228,24 @@ class WeaponSystem {
         // 顶端装饰
         ctx.fillStyle = '#aa4422';
         ctx.beginPath();
-        ctx.arc(20, 0, 5, 0, Math.PI * 2);
+        ctx.arc(20, 0, 5, 0, TWO_PI);
         ctx.fill();
         // 火焰核心
         const glow = attacking ? 0.8 : 0.4;
         ctx.globalAlpha = glow;
         ctx.fillStyle = '#ff6633';
         ctx.beginPath();
-        ctx.arc(20, 0, 7, 0, Math.PI * 2);
+        ctx.arc(20, 0, 7, 0, TWO_PI);
         ctx.fill();
         ctx.globalAlpha = 1;
         ctx.fillStyle = '#ffaa33';
         ctx.beginPath();
-        ctx.arc(20, 0, 3, 0, Math.PI * 2);
+        ctx.arc(20, 0, 3, 0, TWO_PI);
         ctx.fill();
         // 杖尾
         ctx.fillStyle = '#553311';
         ctx.beginPath();
-        ctx.arc(-8, 0, 3, 0, Math.PI * 2);
+        ctx.arc(-8, 0, 3, 0, TWO_PI);
         ctx.fill();
     }
 
@@ -1316,28 +1301,28 @@ class WeaponSystem {
         ctx.globalAlpha = glow;
         ctx.fillStyle = '#66eedd';
         ctx.beginPath();
-        ctx.arc(18, 0, 8, 0, Math.PI * 2);
+        ctx.arc(18, 0, 8, 0, TWO_PI);
         ctx.fill();
         ctx.globalAlpha = 1;
         // 骷髅外形
         ctx.fillStyle = '#ddeedd';
         ctx.beginPath();
-        ctx.arc(18, -1, 6, 0, Math.PI * 2);
+        ctx.arc(18, -1, 6, 0, TWO_PI);
         ctx.fill();
         // 下巴
         ctx.fillRect(14, 3, 8, 3);
         // 眼睛
         ctx.fillStyle = '#22aa88';
         ctx.beginPath();
-        ctx.arc(16, -2, 2, 0, Math.PI * 2);
+        ctx.arc(16, -2, 2, 0, TWO_PI);
         ctx.fill();
         ctx.beginPath();
-        ctx.arc(20, -2, 2, 0, Math.PI * 2);
+        ctx.arc(20, -2, 2, 0, TWO_PI);
         ctx.fill();
         // 杖尾宝石
         ctx.fillStyle = '#44ccaa';
         ctx.beginPath();
-        ctx.arc(-8, 0, 3, 0, Math.PI * 2);
+        ctx.arc(-8, 0, 3, 0, TWO_PI);
         ctx.fill();
     }
 
@@ -1354,16 +1339,16 @@ class WeaponSystem {
                 ctx.globalAlpha = 0.5;
                 ctx.fillStyle = '#ffaa00';
                 ctx.beginPath();
-                ctx.arc(sx, sy, p.radius * 1.8, 0, Math.PI * 2);
+                ctx.arc(sx, sy, p.radius * 1.8, 0, TWO_PI);
                 ctx.fill();
                 ctx.globalAlpha = 1;
                 ctx.fillStyle = '#ff6644';
                 ctx.beginPath();
-                ctx.arc(sx, sy, p.radius, 0, Math.PI * 2);
+                ctx.arc(sx, sy, p.radius, 0, TWO_PI);
                 ctx.fill();
                 ctx.fillStyle = '#ffff44';
                 ctx.beginPath();
-                ctx.arc(sx, sy, p.radius * 0.4, 0, Math.PI * 2);
+                ctx.arc(sx, sy, p.radius * 0.4, 0, TWO_PI);
                 ctx.fill();
                 continue;
             }
@@ -1373,17 +1358,17 @@ class WeaponSystem {
                 ctx.globalAlpha = 0.5;
                 ctx.fillStyle = '#66eedd';
                 ctx.beginPath();
-                ctx.arc(sx, sy, p.radius * 1.8, 0, Math.PI * 2);
+                ctx.arc(sx, sy, p.radius * 1.8, 0, TWO_PI);
                 ctx.fill();
                 ctx.globalAlpha = 1;
                 ctx.fillStyle = '#44ccaa';
                 ctx.beginPath();
-                ctx.arc(sx, sy, p.radius, 0, Math.PI * 2);
+                ctx.arc(sx, sy, p.radius, 0, TWO_PI);
                 ctx.fill();
                 ctx.fillStyle = '#ffffff';
                 ctx.globalAlpha = 0.6;
                 ctx.beginPath();
-                ctx.arc(sx, sy, p.radius * 0.35, 0, Math.PI * 2);
+                ctx.arc(sx, sy, p.radius * 0.35, 0, TWO_PI);
                 ctx.fill();
                 ctx.globalAlpha = 1;
                 continue;
@@ -1515,12 +1500,12 @@ class WeaponSystem {
                         tc.strokeStyle = `rgba(${brightness},${brightness + 20},${brightness + 40},0.7)`;
                         tc.lineWidth = 2.0 - baseT * 0.7;
                         tc.beginPath();
-                        tc.ellipse(waveOff * 0.5, ry, bandW, bandH, Math.sin(spin + b) * 0.15, 0, Math.PI * 2);
+                        tc.ellipse(waveOff * 0.5, ry, bandW, bandH, Math.sin(spin + b) * 0.15, 0, TWO_PI);
                         tc.stroke();
                     }
                     // 螺旋气流线（减少到3条，步数降到20）
                     for (let arm = 0; arm < 3; arm++) {
-                        const armOffset = (arm / 3) * Math.PI * 2;
+                        const armOffset = (arm / 3) * TWO_PI;
                         tc.beginPath();
                         for (let s = 0; s <= 20; s++) {
                             const t = s / 20;
@@ -1545,11 +1530,11 @@ class WeaponSystem {
                         const cr = 4 + Math.sin(spin + c * 2) * 2;
                         tc.fillStyle = 'rgba(200,225,245,0.3)';
                         tc.beginPath();
-                        tc.arc(cx2, cy2, cr * 2, 0, Math.PI * 2);
+                        tc.arc(cx2, cy2, cr * 2, 0, TWO_PI);
                         tc.fill();
                         tc.fillStyle = 'rgba(220,240,255,0.5)';
                         tc.beginPath();
-                        tc.arc(cx2, cy2, cr, 0, Math.PI * 2);
+                        tc.arc(cx2, cy2, cr, 0, TWO_PI);
                         tc.fill();
                     }
                     // 底部碎屑（减少到4个）

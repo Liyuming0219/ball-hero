@@ -190,7 +190,7 @@ class UISystem {
             const sr = 1 + Math.sin(this._titleTime * 2 + i) * 0.5;
             ctx.globalAlpha = 0.3 + Math.sin(this._titleTime * 3 + i * 0.7) * 0.2;
             ctx.beginPath();
-            ctx.arc(sx, sy, sr, 0, Math.PI * 2);
+            ctx.arc(sx, sy, sr, 0, TWO_PI);
             ctx.fill();
         }
         ctx.globalAlpha = 1;
@@ -213,19 +213,19 @@ class UISystem {
             ctx.globalAlpha = 0.15;
             ctx.fillStyle = ball.color;
             ctx.beginPath();
-            ctx.arc(bx, by, drawR + 5, 0, Math.PI * 2);
+            ctx.arc(bx, by, drawR + 5, 0, TWO_PI);
             ctx.fill();
             // 球体
             ctx.globalAlpha = 0.35;
             ctx.fillStyle = ball.color;
             ctx.beginPath();
-            ctx.arc(bx, by, drawR, 0, Math.PI * 2);
+            ctx.arc(bx, by, drawR, 0, TWO_PI);
             ctx.fill();
             // 高光
             ctx.globalAlpha = 0.2;
             ctx.fillStyle = '#fff';
             ctx.beginPath();
-            ctx.arc(bx - drawR * 0.3, by - drawR * 0.3, drawR * 0.3, 0, Math.PI * 2);
+            ctx.arc(bx - drawR * 0.3, by - drawR * 0.3, drawR * 0.3, 0, TWO_PI);
             ctx.fill();
         }
         ctx.globalAlpha = 1;
@@ -339,7 +339,7 @@ class UISystem {
                     const ppy = ballCY + ballBob + Math.sin(pa) * pr;
                     const ps = 1.5 + Math.sin(this._titleTime * 4 + pi) * 0.5;
                     ctx.beginPath();
-                    ctx.arc(ppx, ppy, ps * S, 0, Math.PI * 2);
+                    ctx.arc(ppx, ppy, ps * S, 0, TWO_PI);
                     ctx.fill();
                 }
             }
@@ -348,13 +348,13 @@ class UISystem {
             ctx.globalAlpha = 0.12;
             ctx.fillStyle = '#000';
             ctx.beginPath();
-            ctx.ellipse(ballCX, ballCY + ballR + 6 * S, ballR * 0.6, ballR * 0.15, 0, 0, Math.PI * 2);
+            ctx.ellipse(ballCX, ballCY + ballR + 6 * S, ballR * 0.6, ballR * 0.15, 0, 0, TWO_PI);
             ctx.fill();
             // 球球光晕
             ctx.globalAlpha = isSelected ? 0.35 : 0.25;
             ctx.fillStyle = ballColor;
             ctx.beginPath();
-            ctx.arc(ballCX, ballCY + ballBob, ballR + (isSelected ? 8 : 5) * S, 0, Math.PI * 2);
+            ctx.arc(ballCX, ballCY + ballBob, ballR + (isSelected ? 8 : 5) * S, 0, TWO_PI);
             ctx.fill();
             // 球球身体（径向渐变立体感）
             ctx.globalAlpha = 1;
@@ -367,7 +367,7 @@ class UISystem {
             cardBodyGrad.addColorStop(1, this._darkenColor(ballColor, 0.45));
             ctx.fillStyle = cardBodyGrad;
             ctx.beginPath();
-            ctx.arc(ballCX, ballCY + ballBob, ballR, 0, Math.PI * 2);
+            ctx.arc(ballCX, ballCY + ballBob, ballR, 0, TWO_PI);
             ctx.fill();
             // 球球高光（柔和渐变）
             const cHlR = ballR * 0.26;
@@ -379,26 +379,26 @@ class UISystem {
             cHlGrad.addColorStop(1, 'rgba(255,255,255,0)');
             ctx.fillStyle = cHlGrad;
             ctx.beginPath();
-            ctx.arc(cHlX, cHlY, cHlR, 0, Math.PI * 2);
+            ctx.arc(cHlX, cHlY, cHlR, 0, TWO_PI);
             ctx.fill();
             // 球球眼睛
             ctx.globalAlpha = 1;
             ctx.fillStyle = '#fff';
             const eOff = ballR * 0.25;
             ctx.beginPath();
-            ctx.arc(ballCX - eOff, ballCY + ballBob - ballR * 0.05, ballR * 0.2, 0, Math.PI * 2);
+            ctx.arc(ballCX - eOff, ballCY + ballBob - ballR * 0.05, ballR * 0.2, 0, TWO_PI);
             ctx.fill();
             ctx.beginPath();
-            ctx.arc(ballCX + eOff, ballCY + ballBob - ballR * 0.05, ballR * 0.2, 0, Math.PI * 2);
+            ctx.arc(ballCX + eOff, ballCY + ballBob - ballR * 0.05, ballR * 0.2, 0, TWO_PI);
             ctx.fill();
             // 瞳孔
             ctx.fillStyle = '#222';
             const pupil = Math.sin(this._titleTime * 0.8 + i) * 1.5;
             ctx.beginPath();
-            ctx.arc(ballCX - eOff + pupil, ballCY + ballBob - ballR * 0.05, ballR * 0.1, 0, Math.PI * 2);
+            ctx.arc(ballCX - eOff + pupil, ballCY + ballBob - ballR * 0.05, ballR * 0.1, 0, TWO_PI);
             ctx.fill();
             ctx.beginPath();
-            ctx.arc(ballCX + eOff + pupil, ballCY + ballBob - ballR * 0.05, ballR * 0.1, 0, Math.PI * 2);
+            ctx.arc(ballCX + eOff + pupil, ballCY + ballBob - ballR * 0.05, ballR * 0.1, 0, TWO_PI);
             ctx.fill();
             // 嘴巴
             ctx.strokeStyle = 'rgba(0,0,0,0.3)';
@@ -661,7 +661,7 @@ class UISystem {
             ctx.globalAlpha = 0.06 + Math.sin(time + i) * 0.03;
             ctx.fillStyle = Utils.hsl(30 + i * 8, 70, 55);
             ctx.beginPath();
-            ctx.arc(x, y, (1 + Math.sin(time * 0.5 + i) * 0.8) * S, 0, Math.PI * 2);
+            ctx.arc(x, y, (1 + Math.sin(time * 0.5 + i) * 0.8) * S, 0, TWO_PI);
             ctx.fill();
         }
         ctx.globalAlpha = 1;
@@ -698,7 +698,6 @@ class UISystem {
             { id: 'armor', name: '铁壁', icon: '🛡️', desc: '+1 护甲/级', color: '#8899bb', baseCost: 60, maxLv: 8 },
             { id: 'hpRegen', name: '再生', icon: '💚', desc: '+0.5 回复/秒/级', color: '#44ff88', baseCost: 50, maxLv: 8 },
             { id: 'cooldown', name: '疾风', icon: '⚡', desc: '+3% 攻速/级', color: '#ffdd44', baseCost: 100, maxLv: 5 },
-            { id: 'startBuff', name: '天赋觉醒', icon: '🌟', desc: '每级解锁起始技能', color: '#ff8800', baseCost: 200, maxLv: 5 },
         ];
 
         // 卡片布局（2行5列）
@@ -783,7 +782,7 @@ class UISystem {
                 moveSpeed: `+${currentLv * 2}%移速`, pickupRange: `+${currentLv * 10}范围`,
                 expGain: `+${currentLv * 5}%经验`, critRate: `+${currentLv * 2}%暴击`,
                 armor: `+${currentLv}护甲`, hpRegen: `+${(currentLv * 0.5).toFixed(1)}/秒`,
-                cooldown: `+${currentLv * 3}%攻速`, startBuff: `${currentLv}个起始技能`,
+                cooldown: `+${currentLv * 3}%攻速`,
             };
             ctx.fillText(effectMap[upg.id] || '', cx + cardW / 2, cy + 136 * S);
 
@@ -1278,7 +1277,7 @@ class UISystem {
         ctx.globalAlpha = 0.5;
         ctx.fillStyle = '#0a0a1a';
         ctx.beginPath();
-        ctx.arc(mapX + mapSize / 2, mapY + mapSize / 2, mapSize / 2, 0, Math.PI * 2);
+        ctx.arc(mapX + mapSize / 2, mapY + mapSize / 2, mapSize / 2, 0, TWO_PI);
         ctx.fill();
         ctx.strokeStyle = '#334466';
         ctx.lineWidth = 1.5;
@@ -1287,7 +1286,7 @@ class UISystem {
 
         // 裁剪圆形
         ctx.beginPath();
-        ctx.arc(mapX + mapSize / 2, mapY + mapSize / 2, mapSize / 2 - 2, 0, Math.PI * 2);
+        ctx.arc(mapX + mapSize / 2, mapY + mapSize / 2, mapSize / 2 - 2, 0, TWO_PI);
         ctx.clip();
 
         const cx = mapX + mapSize / 2;
@@ -1306,7 +1305,7 @@ class UISystem {
                 const dotSize = e.isBoss ? 4 : 2.5;
                 ctx.globalAlpha = e.isBoss ? 1 : 0.7;
                 ctx.beginPath();
-                ctx.arc(cx + dx, cy + dy, dotSize * S, 0, Math.PI * 2);
+                ctx.arc(cx + dx, cy + dy, dotSize * S, 0, TWO_PI);
                 ctx.fill();
                 ctx.globalAlpha = 0.6;
             } else {
@@ -2152,7 +2151,7 @@ _roundRect(ctx, x, y, w, h, r) {
         glow.addColorStop(1, 'rgba(0,0,0,0)');
         ctx.fillStyle = glow;
         ctx.beginPath();
-        ctx.arc(x, y, r * 1.4, 0, Math.PI * 2);
+        ctx.arc(x, y, r * 1.4, 0, TWO_PI);
         ctx.fill();
 
         // 深色圆底
@@ -2161,14 +2160,14 @@ _roundRect(ctx, x, y, w, h, r) {
         bgGrad.addColorStop(1, '#111118');
         ctx.fillStyle = bgGrad;
         ctx.beginPath();
-        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.arc(x, y, r, 0, TWO_PI);
         ctx.fill();
 
         // 外框
         ctx.strokeStyle = borderCol;
         ctx.lineWidth = (rar === 'legendary' ? 2.5 : rar === 'epic' ? 2 : 1.5) * S;
         ctx.beginPath();
-        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.arc(x, y, r, 0, TWO_PI);
         ctx.stroke();
 
         // 内部高光弧
@@ -2233,8 +2232,8 @@ _roundRect(ctx, x, y, w, h, r) {
                 color: colors[i % colors.length],
                 vx: (Math.random() - 0.5) * 30,
                 vy: (Math.random() - 0.5) * 30,
-                phase: Math.random() * Math.PI * 2,
-                eyeDir: Math.random() * Math.PI * 2,
+                phase: Math.random() * TWO_PI,
+                eyeDir: Math.random() * TWO_PI,
             });
         }
     }
@@ -2364,7 +2363,7 @@ _roundRect(ctx, x, y, w, h, r) {
             headGlow.addColorStop(1, `rgba(${r},${g},${b},0)`);
             ctx.fillStyle = headGlow;
             ctx.beginPath();
-            ctx.arc(srcX, srcY + 4, headR, 0, Math.PI * 2);
+            ctx.arc(srcX, srcY + 4, headR, 0, TWO_PI);
             ctx.fill();
         }
         ctx.globalCompositeOperation = 'source-over';
@@ -2379,7 +2378,7 @@ _roundRect(ctx, x, y, w, h, r) {
             const sr = 0.5 + Math.sin(t * 1.5 + i * 0.9) * 0.3;
             ctx.globalAlpha = 0.15 + Math.sin(t * 2 + i * 1.1) * 0.1;
             ctx.beginPath();
-            ctx.arc(sx, sy, sr, 0, Math.PI * 2);
+            ctx.arc(sx, sy, sr, 0, TWO_PI);
             ctx.fill();
         }
         // 中景星星
@@ -2390,7 +2389,7 @@ _roundRect(ctx, x, y, w, h, r) {
             const sr = 0.8 + Math.sin(t * 2.5 + i * 0.6) * 0.5;
             ctx.globalAlpha = 0.3 + Math.sin(t * 3 + i * 0.7) * 0.2;
             ctx.beginPath();
-            ctx.arc(sx, sy, sr, 0, Math.PI * 2);
+            ctx.arc(sx, sy, sr, 0, TWO_PI);
             ctx.fill();
         }
         // 流星效果（最多3条同时可见，极低开销）
@@ -2432,7 +2431,7 @@ _roundRect(ctx, x, y, w, h, r) {
             ctx.globalAlpha = alpha;
             ctx.fillStyle = '#ffffff';
             ctx.beginPath();
-            ctx.arc(m.x, m.y, m.size * 1.2, 0, Math.PI * 2);
+            ctx.arc(m.x, m.y, m.size * 1.2, 0, TWO_PI);
             ctx.fill();
         }
 
@@ -2444,7 +2443,7 @@ _roundRect(ctx, x, y, w, h, r) {
             ctx.globalAlpha = bright;
             ctx.fillStyle = '#ffffff';
             ctx.beginPath();
-            ctx.arc(sx, sy, 1.5, 0, Math.PI * 2);
+            ctx.arc(sx, sy, 1.5, 0, TWO_PI);
             ctx.fill();
             // 十字星芒
             ctx.globalAlpha = bright * 0.4;
@@ -2475,7 +2474,7 @@ _roundRect(ctx, x, y, w, h, r) {
             ctx.globalAlpha = 0.18;
             ctx.fillStyle = '#000';
             ctx.beginPath();
-            ctx.ellipse(bx, by + ball.r + 6, ball.r * 0.7, ball.r * 0.18, 0, 0, Math.PI * 2);
+            ctx.ellipse(bx, by + ball.r + 6, ball.r * 0.7, ball.r * 0.18, 0, 0, TWO_PI);
             ctx.fill();
 
             // 外发光
@@ -2485,7 +2484,7 @@ _roundRect(ctx, x, y, w, h, r) {
             outerGlow.addColorStop(1, 'rgba(0,0,0,0)');
             ctx.fillStyle = outerGlow;
             ctx.beginPath();
-            ctx.arc(bx, by, ball.r + 10, 0, Math.PI * 2);
+            ctx.arc(bx, by, ball.r + 10, 0, TWO_PI);
             ctx.fill();
 
             // 球体（径向渐变立体感，光源偏左上）
@@ -2499,7 +2498,7 @@ _roundRect(ctx, x, y, w, h, r) {
             bodyGrad.addColorStop(1, this._darkenColor(ball.color, 0.45));
             ctx.fillStyle = bodyGrad;
             ctx.beginPath();
-            ctx.arc(bx, by, ball.r, 0, Math.PI * 2);
+            ctx.arc(bx, by, ball.r, 0, TWO_PI);
             ctx.fill();
 
             // 高光（柔和径向渐变，不是实心圆）
@@ -2512,13 +2511,13 @@ _roundRect(ctx, x, y, w, h, r) {
             hlGrad.addColorStop(1, 'rgba(255,255,255,0)');
             ctx.fillStyle = hlGrad;
             ctx.beginPath();
-            ctx.arc(hlX, hlY, hlR, 0, Math.PI * 2);
+            ctx.arc(hlX, hlY, hlR, 0, TWO_PI);
             ctx.fill();
             // 边缘反光（底部微弱环境光）
             ctx.globalAlpha = 0.08;
             ctx.fillStyle = '#ffffff';
             ctx.beginPath();
-            ctx.arc(bx + ball.r * 0.2, by + ball.r * 0.28, ball.r * 0.12, 0, Math.PI * 2);
+            ctx.arc(bx + ball.r * 0.2, by + ball.r * 0.28, ball.r * 0.12, 0, TWO_PI);
             ctx.fill();
             ctx.globalAlpha = 1;
 
@@ -2527,19 +2526,19 @@ _roundRect(ctx, x, y, w, h, r) {
             ctx.fillStyle = '#fff';
             const eyeOff = ball.r * 0.25;
             ctx.beginPath();
-            ctx.arc(bx - eyeOff, by - ball.r * 0.1, ball.r * 0.22, 0, Math.PI * 2);
+            ctx.arc(bx - eyeOff, by - ball.r * 0.1, ball.r * 0.22, 0, TWO_PI);
             ctx.fill();
             ctx.beginPath();
-            ctx.arc(bx + eyeOff, by - ball.r * 0.1, ball.r * 0.22, 0, Math.PI * 2);
+            ctx.arc(bx + eyeOff, by - ball.r * 0.1, ball.r * 0.22, 0, TWO_PI);
             ctx.fill();
             // 瞳孔
             ctx.fillStyle = '#222';
             const pupilOff = Math.sin(t + ball.phase) * 2;
             ctx.beginPath();
-            ctx.arc(bx - eyeOff + pupilOff, by - ball.r * 0.1, ball.r * 0.12, 0, Math.PI * 2);
+            ctx.arc(bx - eyeOff + pupilOff, by - ball.r * 0.1, ball.r * 0.12, 0, TWO_PI);
             ctx.fill();
             ctx.beginPath();
-            ctx.arc(bx + eyeOff + pupilOff, by - ball.r * 0.1, ball.r * 0.12, 0, Math.PI * 2);
+            ctx.arc(bx + eyeOff + pupilOff, by - ball.r * 0.1, ball.r * 0.12, 0, TWO_PI);
             ctx.fill();
 
             // 嘴巴
@@ -2569,7 +2568,7 @@ _roundRect(ctx, x, y, w, h, r) {
                         litGrad.addColorStop(1, `rgba(${sl.r},${sl.g},${sl.b},0)`);
                         ctx.fillStyle = litGrad;
                         ctx.beginPath();
-                        ctx.arc(bx, by, ball.r * 1.2, 0, Math.PI * 2);
+                        ctx.arc(bx, by, ball.r * 1.2, 0, TWO_PI);
                         ctx.fill();
                         // 顶部高光条（模拟光从上方射入的反光）
                         ctx.globalAlpha = Math.min(litAlpha * 0.8, 0.4);
@@ -2578,7 +2577,7 @@ _roundRect(ctx, x, y, w, h, r) {
                         topHlGrad.addColorStop(1, `rgba(${sl.r},${sl.g},${sl.b},0)`);
                         ctx.fillStyle = topHlGrad;
                         ctx.beginPath();
-                        ctx.arc(bx, by - ball.r * 0.4, ball.r * 0.5, 0, Math.PI * 2);
+                        ctx.arc(bx, by - ball.r * 0.4, ball.r * 0.5, 0, TWO_PI);
                         ctx.fill();
                     }
                 }
@@ -2682,13 +2681,13 @@ _roundRect(ctx, x, y, w, h, r) {
                 dGrad.addColorStop(1, this._darkenColor(charColors[ci][1], 0.6));
                 ctx.fillStyle = dGrad;
                 ctx.beginPath();
-                ctx.arc(decoX, decoY, decoR, 0, Math.PI * 2);
+                ctx.arc(decoX, decoY, decoR, 0, TWO_PI);
                 ctx.fill();
                 // 小球高光
                 ctx.fillStyle = '#fff';
                 ctx.globalAlpha = 0.6;
                 ctx.beginPath();
-                ctx.arc(decoX - decoR * 0.25, decoY - decoR * 0.3, decoR * 0.35, 0, Math.PI * 2);
+                ctx.arc(decoX - decoR * 0.25, decoY - decoR * 0.3, decoR * 0.35, 0, TWO_PI);
                 ctx.fill();
                 ctx.globalAlpha = 1;
             }
@@ -2835,7 +2834,7 @@ _roundRect(ctx, x, y, w, h, r) {
             const sr = 1 + Math.sin(this._titleTime * 2 + i) * 0.5;
             ctx.globalAlpha = 0.2 + Math.sin(this._titleTime * 3 + i * 0.7) * 0.12;
             ctx.beginPath();
-            ctx.arc(sx, sy, sr, 0, Math.PI * 2);
+            ctx.arc(sx, sy, sr, 0, TWO_PI);
             ctx.fill();
         }
         ctx.globalAlpha = 1;
@@ -2897,7 +2896,7 @@ _roundRect(ctx, x, y, w, h, r) {
                                Math.abs(this.mouseY - (sliderCY + sliderH / 2)) < soundKnobR * 2;
         ctx.fillStyle = soundKnobHover || this._draggingSlider === 'sound' ? '#66eedd' : '#4ecdc4';
         ctx.beginPath();
-        ctx.arc(soundKnobX, sliderCY + sliderH / 2, soundKnobR, 0, Math.PI * 2);
+        ctx.arc(soundKnobX, sliderCY + sliderH / 2, soundKnobR, 0, TWO_PI);
         ctx.fill();
         // 滑条交互（支持点击和拖拽）
         const soundSliderArea = this.mouseX >= sliderX - 5 && this.mouseX <= sliderX + sliderW + 5 &&
@@ -2948,7 +2947,7 @@ _roundRect(ctx, x, y, w, h, r) {
                                Math.abs(this.mouseY - (musicSliderCY + sliderH / 2)) < soundKnobR * 2;
         ctx.fillStyle = musicKnobHover || this._draggingSlider === 'music' ? '#ffbb66' : '#ff9f43';
         ctx.beginPath();
-        ctx.arc(musicKnobX, musicSliderCY + sliderH / 2, soundKnobR, 0, Math.PI * 2);
+        ctx.arc(musicKnobX, musicSliderCY + sliderH / 2, soundKnobR, 0, TWO_PI);
         ctx.fill();
         // 滑条交互
         const musicSliderArea = this.mouseX >= sliderX - 5 && this.mouseX <= sliderX + sliderW + 5 &&

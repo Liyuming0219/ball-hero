@@ -72,7 +72,7 @@ class Summon {
         this.type = type;       // 'skeleton' | 'skeleton_mage' | 'skeleton_tank' | 'beast'
         this.owner = owner;
         this.alive = true;
-        this.bodyBob = Math.random() * Math.PI * 2;
+        this.bodyBob = Math.random() * TWO_PI;
         this.facingAngle = 0;
         this.attackTimer = 0;
         this.target = null;
@@ -160,7 +160,7 @@ class Summon {
 
         if (distOwner > LEASH_SNAP_DIST) {
             // 太远了，直接传送到主人身边
-            const snapAngle = Math.random() * Math.PI * 2;
+            const snapAngle = Math.random() * TWO_PI;
             this.x = this.owner.x + Math.cos(snapAngle) * 50;
             this.y = this.owner.y + Math.sin(snapAngle) * 50;
             particles.emit(this.x, this.y, 8, {
@@ -268,8 +268,8 @@ class Summon {
                 if (eDist > fireRange + e.radius) continue;
                 const eAngle = Math.atan2(dy, dx);
                 let angleDiff = eAngle - angle;
-                while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
-                while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+                while (angleDiff > Math.PI) angleDiff -= TWO_PI;
+                while (angleDiff < -Math.PI) angleDiff += TWO_PI;
                 if (Math.abs(angleDiff) <= coneHalf) {
                     const a = eAngle;
                     e.takeDamage(tickDmg, particles, a, 3);
@@ -389,8 +389,8 @@ class Summon {
                 // 检查是否在扇形内
                 const eAngle = Utils.angle(this.x, this.y, e.x, e.y);
                 let angleDiff = eAngle - angle;
-                while (angleDiff > Math.PI) angleDiff -= Math.PI * 2;
-                while (angleDiff < -Math.PI) angleDiff += Math.PI * 2;
+                while (angleDiff > Math.PI) angleDiff -= TWO_PI;
+                while (angleDiff < -Math.PI) angleDiff += TWO_PI;
                 if (Math.abs(angleDiff) <= fireAngle + 0.2) {
                     const a = Utils.angle(this.x, this.y, e.x, e.y);
                     const d = e.takeDamage(damage, particles, a, 6);
@@ -507,28 +507,28 @@ class Summon {
         ctx.globalAlpha = 0.15;
         ctx.fillStyle = this.color;
         ctx.beginPath();
-        ctx.ellipse(sx, sy + this.radius + 2, this.radius * 1.1, 4, 0, 0, Math.PI * 2);
+        ctx.ellipse(sx, sy + this.radius + 2, this.radius * 1.1, 4, 0, 0, TWO_PI);
         ctx.fill();
 
         // 身体外光晕
         ctx.globalAlpha = 0.2;
         ctx.fillStyle = this.color;
         ctx.beginPath();
-        ctx.arc(sx, sy + bob, this.radius + 5, 0, Math.PI * 2);
+        ctx.arc(sx, sy + bob, this.radius + 5, 0, TWO_PI);
         ctx.fill();
 
         // 身体
         ctx.globalAlpha = 1;
         ctx.fillStyle = this.damageFlash > 0 ? '#ffffff' : this.color;
         ctx.beginPath();
-        ctx.arc(sx, sy + bob, this.radius, 0, Math.PI * 2);
+        ctx.arc(sx, sy + bob, this.radius, 0, TWO_PI);
         ctx.fill();
 
         // 头骨高光
         ctx.fillStyle = '#ddfff8';
         ctx.globalAlpha = 0.4;
         ctx.beginPath();
-        ctx.arc(sx - 1, sy - 2 + bob, this.radius * 0.55, 0, Math.PI * 2);
+        ctx.arc(sx - 1, sy - 2 + bob, this.radius * 0.55, 0, TWO_PI);
         ctx.fill();
 
         // 眼睛
@@ -536,8 +536,8 @@ class Summon {
         ctx.fillStyle = '#22ff88';
         const ex = sx + Math.cos(this.facingAngle) * 3;
         const ey = sy + Math.sin(this.facingAngle) * 3 + bob;
-        ctx.beginPath(); ctx.arc(ex - 3.5, ey - 1, 2.5, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(ex + 3.5, ey - 1, 2.5, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(ex - 3.5, ey - 1, 2.5, 0, TWO_PI); ctx.fill();
+        ctx.beginPath(); ctx.arc(ex + 3.5, ey - 1, 2.5, 0, TWO_PI); ctx.fill();
 
         // 武器（骨棒）
         const wpnDist = this.radius + 3;
@@ -549,7 +549,7 @@ class Summon {
         ctx.fillStyle = '#ccddcc';
         ctx.fillRect(-1.5, -7, 3, 14);
         ctx.fillStyle = '#aabbaa';
-        ctx.beginPath(); ctx.arc(0, -7, 3, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(0, -7, 3, 0, TWO_PI); ctx.fill();
         ctx.restore();
     }
 
@@ -559,7 +559,7 @@ class Summon {
         ctx.globalAlpha = 0.15;
         ctx.fillStyle = this.color;
         ctx.beginPath();
-        ctx.ellipse(sx, sy + this.radius + 2, this.radius * 1.1, 4, 0, 0, Math.PI * 2);
+        ctx.ellipse(sx, sy + this.radius + 2, this.radius * 1.1, 4, 0, 0, TWO_PI);
         ctx.fill();
 
         // 喷火时：渲染逼真锥形火焰（多层渐变 + 湍流扰动 + 热浪）
@@ -695,7 +695,7 @@ class Summon {
                 sparkGrad.addColorStop(1, 'rgba(255,100,0,0)');
                 ctx.fillStyle = sparkGrad;
                 ctx.beginPath();
-                ctx.arc(spX, spY, spR * 3, 0, Math.PI * 2);
+                ctx.arc(spX, spY, spR * 3, 0, TWO_PI);
                 ctx.fill();
             }
 
@@ -707,21 +707,21 @@ class Summon {
         ctx.globalAlpha = this._flameActive ? 0.2 : 0.12;
         ctx.fillStyle = '#ff6622';
         ctx.beginPath();
-        ctx.arc(sx, sy + bob, (this.radius + 10) * pulse, 0, Math.PI * 2);
+        ctx.arc(sx, sy + bob, (this.radius + 10) * pulse, 0, TWO_PI);
         ctx.fill();
 
         // 身体
         ctx.globalAlpha = 1;
         ctx.fillStyle = this.damageFlash > 0 ? '#ffffff' : this.color;
         ctx.beginPath();
-        ctx.arc(sx, sy + bob, this.radius, 0, Math.PI * 2);
+        ctx.arc(sx, sy + bob, this.radius, 0, TWO_PI);
         ctx.fill();
 
         // 头骨高光
         ctx.fillStyle = '#ffe8cc';
         ctx.globalAlpha = 0.4;
         ctx.beginPath();
-        ctx.arc(sx - 1, sy - 2 + bob, this.radius * 0.5, 0, Math.PI * 2);
+        ctx.arc(sx - 1, sy - 2 + bob, this.radius * 0.5, 0, TWO_PI);
         ctx.fill();
 
         // 火焰眼睛
@@ -729,13 +729,13 @@ class Summon {
         ctx.fillStyle = '#ffdd00';
         const ex = sx + Math.cos(this.facingAngle) * 2.5;
         const ey = sy + Math.sin(this.facingAngle) * 2.5 + bob;
-        ctx.beginPath(); ctx.arc(ex - 3, ey - 1, 2, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(ex + 3, ey - 1, 2, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(ex - 3, ey - 1, 2, 0, TWO_PI); ctx.fill();
+        ctx.beginPath(); ctx.arc(ex + 3, ey - 1, 2, 0, TWO_PI); ctx.fill();
         // 眼睛光晕
         ctx.globalAlpha = 0.3;
         ctx.fillStyle = '#ff8800';
-        ctx.beginPath(); ctx.arc(ex - 3, ey - 1, 4, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(ex + 3, ey - 1, 4, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(ex - 3, ey - 1, 4, 0, TWO_PI); ctx.fill();
+        ctx.beginPath(); ctx.arc(ex + 3, ey - 1, 4, 0, TWO_PI); ctx.fill();
 
         // 法杖
         ctx.globalAlpha = 1;
@@ -749,10 +749,10 @@ class Summon {
         ctx.fillRect(-1.5, -10, 3, 20);
         // 杖顶火焰
         ctx.fillStyle = '#ff4400';
-        ctx.beginPath(); ctx.arc(0, -10, 4, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(0, -10, 4, 0, TWO_PI); ctx.fill();
         ctx.globalAlpha = 0.4;
         ctx.fillStyle = '#ffaa00';
-        ctx.beginPath(); ctx.arc(0, -10, 6, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(0, -10, 6, 0, TWO_PI); ctx.fill();
         ctx.restore();
     }
 
@@ -762,7 +762,7 @@ class Summon {
         ctx.globalAlpha = 0.15;
         ctx.fillStyle = this.color;
         ctx.beginPath();
-        ctx.ellipse(sx, sy + this.radius + 3, this.radius * 1.2, 5, 0, 0, Math.PI * 2);
+        ctx.ellipse(sx, sy + this.radius + 3, this.radius * 1.2, 5, 0, 0, TWO_PI);
         ctx.fill();
 
         // 嘲讽光环（蓝色脉动圈）
@@ -772,7 +772,7 @@ class Summon {
             ctx.strokeStyle = '#4488ff';
             ctx.lineWidth = 2;
             ctx.beginPath();
-            ctx.arc(sx, sy + bob, this.def.tauntRange * pulse, 0, Math.PI * 2);
+            ctx.arc(sx, sy + bob, this.def.tauntRange * pulse, 0, TWO_PI);
             ctx.stroke();
         }
 
@@ -780,21 +780,21 @@ class Summon {
         ctx.globalAlpha = 0.2;
         ctx.fillStyle = this.color;
         ctx.beginPath();
-        ctx.arc(sx, sy + bob, this.radius + 6, 0, Math.PI * 2);
+        ctx.arc(sx, sy + bob, this.radius + 6, 0, TWO_PI);
         ctx.fill();
 
         // 身体（较大）
         ctx.globalAlpha = 1;
         ctx.fillStyle = this.damageFlash > 0 ? '#ffffff' : this.color;
         ctx.beginPath();
-        ctx.arc(sx, sy + bob, this.radius, 0, Math.PI * 2);
+        ctx.arc(sx, sy + bob, this.radius, 0, TWO_PI);
         ctx.fill();
 
         // 头骨高光
         ctx.fillStyle = '#ccddef';
         ctx.globalAlpha = 0.4;
         ctx.beginPath();
-        ctx.arc(sx - 1, sy - 2 + bob, this.radius * 0.5, 0, Math.PI * 2);
+        ctx.arc(sx - 1, sy - 2 + bob, this.radius * 0.5, 0, TWO_PI);
         ctx.fill();
 
         // 蓝色眼睛
@@ -802,8 +802,8 @@ class Summon {
         ctx.fillStyle = '#88ccff';
         const ex = sx + Math.cos(this.facingAngle) * 4;
         const ey = sy + Math.sin(this.facingAngle) * 4 + bob;
-        ctx.beginPath(); ctx.arc(ex - 4, ey - 1, 2.5, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(ex + 4, ey - 1, 2.5, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(ex - 4, ey - 1, 2.5, 0, TWO_PI); ctx.fill();
+        ctx.beginPath(); ctx.arc(ex + 4, ey - 1, 2.5, 0, TWO_PI); ctx.fill();
 
         // 盾牌（在面朝方向）
         const shieldDist = this.radius + 2;
@@ -842,7 +842,7 @@ class Summon {
         ctx.globalAlpha = 0.15;
         ctx.fillStyle = this.color;
         ctx.beginPath();
-        ctx.ellipse(sx, sy + this.radius + 3, this.radius * 1.3, 7, 0, 0, Math.PI * 2);
+        ctx.ellipse(sx, sy + this.radius + 3, this.radius * 1.3, 7, 0, 0, TWO_PI);
         ctx.fill();
 
         // 灵魂光环（外圈脉动）
@@ -850,28 +850,28 @@ class Summon {
         ctx.globalAlpha = 0.15;
         ctx.fillStyle = '#aaffee';
         ctx.beginPath();
-        ctx.arc(sx, sy + bob, (this.radius + 15) * pulse, 0, Math.PI * 2);
+        ctx.arc(sx, sy + bob, (this.radius + 15) * pulse, 0, TWO_PI);
         ctx.fill();
 
         // 外光晕
         ctx.globalAlpha = 0.25;
         ctx.fillStyle = this.color;
         ctx.beginPath();
-        ctx.arc(sx, sy + bob, this.radius + 8, 0, Math.PI * 2);
+        ctx.arc(sx, sy + bob, this.radius + 8, 0, TWO_PI);
         ctx.fill();
 
         // 主体
         ctx.globalAlpha = 1;
         ctx.fillStyle = this.damageFlash > 0 ? '#ffffff' : this.color;
         ctx.beginPath();
-        ctx.arc(sx, sy + bob, this.radius, 0, Math.PI * 2);
+        ctx.arc(sx, sy + bob, this.radius, 0, TWO_PI);
         ctx.fill();
 
         // 头骨纹路
         ctx.fillStyle = '#eeffee';
         ctx.globalAlpha = 0.3;
         ctx.beginPath();
-        ctx.arc(sx, sy - 3 + bob, this.radius * 0.65, 0, Math.PI * 2);
+        ctx.arc(sx, sy - 3 + bob, this.radius * 0.65, 0, TWO_PI);
         ctx.fill();
 
         // 下巴
@@ -884,14 +884,14 @@ class Summon {
         const eyeSize = 4;
         const eyeOff = 6;
         ctx.fillStyle = '#22ffaa';
-        ctx.beginPath(); ctx.arc(sx - eyeOff, sy - 4 + bob, eyeSize, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(sx + eyeOff, sy - 4 + bob, eyeSize, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(sx - eyeOff, sy - 4 + bob, eyeSize, 0, TWO_PI); ctx.fill();
+        ctx.beginPath(); ctx.arc(sx + eyeOff, sy - 4 + bob, eyeSize, 0, TWO_PI); ctx.fill();
 
         // 眼睛内光
         ctx.fillStyle = '#ffffff';
         ctx.globalAlpha = 0.6;
-        ctx.beginPath(); ctx.arc(sx - eyeOff, sy - 4 + bob, eyeSize * 0.4, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(sx + eyeOff, sy - 4 + bob, eyeSize * 0.4, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(sx - eyeOff, sy - 4 + bob, eyeSize * 0.4, 0, TWO_PI); ctx.fill();
+        ctx.beginPath(); ctx.arc(sx + eyeOff, sy - 4 + bob, eyeSize * 0.4, 0, TWO_PI); ctx.fill();
 
         // 头顶角
         ctx.globalAlpha = 1;
@@ -911,15 +911,15 @@ class Summon {
 
         // 灵魂粒子环绕
         for (let i = 0; i < 4; i++) {
-            const orbAngle = this.bodyBob * 1.5 + (i / 4) * Math.PI * 2;
+            const orbAngle = this.bodyBob * 1.5 + (i / 4) * TWO_PI;
             const orbR = this.radius + 10;
             const ox = sx + Math.cos(orbAngle) * orbR;
             const oy = sy + Math.sin(orbAngle) * orbR + bob;
             ctx.globalAlpha = 0.5;
             ctx.fillStyle = '#aaffee';
-            ctx.beginPath(); ctx.arc(ox, oy, 3, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(ox, oy, 3, 0, TWO_PI); ctx.fill();
             ctx.globalAlpha = 0.2;
-            ctx.beginPath(); ctx.arc(ox, oy, 6, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(ox, oy, 6, 0, TWO_PI); ctx.fill();
         }
     }
 }
@@ -1061,7 +1061,7 @@ class SummonManager {
             const s = this.summons[i];
             s.update(dt, enemies, this.particles, spatialHash);
             if (!s.alive) {
-                this.summons[i] = this.summons[this.summons.length - 1]; this.summons.pop();
+                swapRemove(this.summons, i);
             }
         }
     }

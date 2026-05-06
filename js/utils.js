@@ -2,6 +2,28 @@
 // 工具函数库
 // ============================================
 
+// 常用数学常量（避免每帧重复计算）
+const TWO_PI = Math.PI * 2;
+const HALF_PI = Math.PI * 0.5;
+const DEG_TO_RAD = Math.PI / 180;
+const RAD_TO_DEG = 180 / Math.PI;
+
+// 高性能数组元素移除（尾部交换，O(1) 但不保序）
+function swapRemove(arr, index) {
+    arr[index] = arr[arr.length - 1];
+    arr.pop();
+}
+
+// 高性能数组过滤移除（从后向前遍历 + swap，避免 splice/filter 产生新数组）
+function swapRemoveIf(arr, predicate) {
+    for (let i = arr.length - 1; i >= 0; i--) {
+        if (predicate(arr[i], i)) {
+            arr[i] = arr[arr.length - 1];
+            arr.pop();
+        }
+    }
+}
+
 const Utils = {
     // 两点距离
     dist(x1, y1, x2, y2) {
@@ -10,9 +32,23 @@ const Utils = {
         return Math.sqrt(dx * dx + dy * dy);
     },
 
+    // 两点距离平方（用于距离比较，避免开方）
+    distSq(x1, y1, x2, y2) {
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        return dx * dx + dy * dy;
+    },
+
     // 两点角度
     angle(x1, y1, x2, y2) {
         return Math.atan2(y2 - y1, x2 - x1);
+    },
+
+    // 将角度规范化到 [-PI, PI]
+    normalizeAngle(a) {
+        while (a > Math.PI) a -= TWO_PI;
+        while (a < -Math.PI) a += TWO_PI;
+        return a;
     },
 
     // 随机范围
@@ -269,7 +305,6 @@ const MetaProgress = {
                 armor: 0,       // 每级+1护甲
                 hpRegen: 0,     // 每级+0.5生命恢复
                 cooldown: 0,    // 每级+3%攻速
-                startBuff: 0,   // 每级解锁1个起始buff
             }
         };
     },
@@ -332,37 +367,13 @@ const MetaProgress = {
         player.bonuses.armorBonus += p.armor * 1;
         player.bonuses.hpRegenBonus += p.hpRegen * 0.5;
         player.bonuses.attackSpeedMult += p.cooldown * 0.03;
-        // startBuff: 按等级解锁起始buff（由game.js在初始化时处理）
-    },
-
-    // 起始buff列表（按startBuff等级依次解锁）
-    // id 必须与 UpgradePool.statUpgrades 中的 id 完全一致，以避免升级时重复出现
-    startingBuffs: [
-        { id: 'homing', apply(p) { p.bonuses.homingShot = true; } },
-        { id: 'frost', apply(p) { p.bonuses.frostAura = true; } },
-        { id: 'vamp1', apply(p) { p.bonuses.vampiric = 0.02; } },
-        { id: 'orbital1', apply(p) { p.bonuses.orbitalBlades = 1; } },
-        { id: 'shield1', apply(p) { p.bonuses.shieldMax += 20; p.bonuses.shieldRegen += 3; p.shield = 20; } },
-    ],
-
-    applyStartingBuffs(player) {
-        const level = this.data.permUpgrades.startBuff || 0;
-        for (let i = 0; i < Math.min(level, this.startingBuffs.length); i++) {
-            const buff = this.startingBuffs[i];
-            buff.apply(player);
-            // 将已拥有的起始buff注册到升级池，防止升级时重复出现
-            if (typeof UpgradePool !== 'undefined') {
-                UpgradePool._chosenIds.add(buff.id);
-                UpgradePool._chosenCounts[buff.id] = (UpgradePool._chosenCounts[buff.id] || 0) + 1;
-            }
-        }
     },
 
     // 购买永久升级
     buyUpgrade(type) {
         const d = this.data;
-        const costs = { maxHp: 50, attack: 80, moveSpeed: 60, pickupRange: 40, expGain: 70, critRate: 90, armor: 60, hpRegen: 50, cooldown: 100, startBuff: 200 };
-        const maxLevels = { maxHp: 10, attack: 10, moveSpeed: 8, pickupRange: 8, expGain: 8, critRate: 6, armor: 8, hpRegen: 8, cooldown: 5, startBuff: 5 };
+        const costs = { maxHp: 50, attack: 80, moveSpeed: 60, pickupRange: 40, expGain: 70, critRate: 90, armor: 60, hpRegen: 50, cooldown: 100 };
+        const maxLevels = { maxHp: 10, attack: 10, moveSpeed: 8, pickupRange: 8, expGain: 8, critRate: 6, armor: 8, hpRegen: 8, cooldown: 5 };
         const cost = (costs[type] || 100) * (1 + d.permUpgrades[type]);
         if (d.gold >= cost && d.permUpgrades[type] < (maxLevels[type] || 10)) {
             d.gold -= cost;
@@ -916,3 +927,73 @@ const DailyLeaderboard = {
         return entries && entries.length > 0;
     },
 };
+
+// ============================================
+// 战斗日志 / DPS 统计系统
+// ============================================
+class CombatLog {
+    constructor() {
+        this.sources = {};
+        this._dpsEntries = [];
+        this.currentDPS = 0;
+        this.peakDPS = 0;
+        this.entries = [];
+        this.visible = false;
+    }
+
+    record(source, amount, isCrit, isKill) {
+        if (!this.sources[source]) {
+            this.sources[source] = { total: 0, hits: 0, crits: 0, kills: 0 };
+        }
+        const s = this.sources[source];
+        s.total += amount;
+        s.hits++;
+        if (isCrit) s.crits++;
+        if (isKill) s.kills++;
+        this._dpsEntries.push({ time: performance.now(), amount });
+    }
+
+    addEntry(text, color = '#ccc') {
+        this.entries.push({ text, color, time: performance.now() });
+        if (this.entries.length > 12) this.entries.shift();
+    }
+
+    updateDPS() {
+        const now = performance.now();
+        const window = 5000;
+        // 移除过期条目（使用指针而非shift减少数组操作）
+        let startIdx = 0;
+        while (startIdx < this._dpsEntries.length && now - this._dpsEntries[startIdx].time > window) {
+            startIdx++;
+        }
+        if (startIdx > 0) this._dpsEntries.splice(0, startIdx);
+
+        let sum = 0;
+        for (let i = 0; i < this._dpsEntries.length; i++) sum += this._dpsEntries[i].amount;
+        this.currentDPS = sum / (window / 1000);
+        if (this.currentDPS > this.peakDPS) this.peakDPS = this.currentDPS;
+    }
+
+    getTotalDamage() {
+        let total = 0;
+        for (const key in this.sources) total += this.sources[key].total;
+        return total;
+    }
+
+    getSorted() {
+        const arr = [];
+        for (const key in this.sources) {
+            arr.push({ name: key, ...this.sources[key] });
+        }
+        arr.sort((a, b) => b.total - a.total);
+        return arr;
+    }
+
+    reset() {
+        this.sources = {};
+        this._dpsEntries = [];
+        this.currentDPS = 0;
+        this.peakDPS = 0;
+        this.entries = [];
+    }
+}

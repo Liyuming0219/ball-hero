@@ -225,7 +225,7 @@ class Enemy {
         this.knockbackX = 0;
         this.knockbackY = 0;
         this.hitStun = 0;
-        this.bodyBob = Math.random() * Math.PI * 2;
+        this.bodyBob = Math.random() * TWO_PI;
         this.slowTimer = 0;
         this.slowMult = 1;
 
@@ -501,7 +501,7 @@ class Enemy {
             ctx.fillStyle = this.damageFlash > 0 ? '#ffffff' : this.color;
             const r = this.radius;
             ctx.beginPath();
-            ctx.arc(sx, sy, r, 0, Math.PI * 2);
+            ctx.arc(sx, sy, r, 0, TWO_PI);
             ctx.fill();
             if (this.hp < this.maxHp) {
                 const barW = r * 2.5, barH = 4;
@@ -529,7 +529,7 @@ class Enemy {
             // 身体
             ctx.fillStyle = this.damageFlash > 0 ? '#ffffff' : this.color;
             ctx.beginPath();
-            ctx.arc(sx, sy + bob, r, 0, Math.PI * 2);
+            ctx.arc(sx, sy + bob, r, 0, TWO_PI);
             ctx.fill();
             // 眼睛用 fillRect
             ctx.fillStyle = this.isBoss ? '#ffaa00' : '#ff4444';
@@ -571,7 +571,7 @@ class Enemy {
                     ctx.globalAlpha = 0.6;
                     ctx.fillStyle = '#ffffff';
                     ctx.beginPath();
-                    ctx.arc(sx, sy + bob, this.radius + 2, 0, Math.PI * 2);
+                    ctx.arc(sx, sy + bob, this.radius + 2, 0, TWO_PI);
                     ctx.fill();
                     ctx.globalAlpha = 1;
                 } else {
@@ -582,7 +582,7 @@ class Enemy {
                     ctx.globalAlpha = 0.25;
                     ctx.fillStyle = '#ff4444';
                     ctx.beginPath();
-                    ctx.arc(sx, sy + bob, this.radius + 5, 0, Math.PI * 2);
+                    ctx.arc(sx, sy + bob, this.radius + 5, 0, TWO_PI);
                     ctx.fill();
                     ctx.globalAlpha = 1;
                 }
@@ -602,14 +602,14 @@ class Enemy {
             // — 身体 —
             ctx.fillStyle = this.damageFlash > 0 ? '#ffffff' : this.color;
             ctx.beginPath();
-            ctx.arc(sx, sy + bob, this.radius, 0, Math.PI * 2);
+            ctx.arc(sx, sy + bob, this.radius, 0, TWO_PI);
             ctx.fill();
             // 受伤闪白
             if (this.damageFlash > 0) {
                 ctx.globalAlpha = 0.4;
                 ctx.fillStyle = '#ffffff';
                 ctx.beginPath();
-                ctx.arc(sx, sy + bob, this.radius + 4, 0, Math.PI * 2);
+                ctx.arc(sx, sy + bob, this.radius + 4, 0, TWO_PI);
                 ctx.fill();
                 ctx.globalAlpha = 1;
             }
@@ -618,7 +618,7 @@ class Enemy {
                 ctx.globalAlpha = 0.3;
                 ctx.fillStyle = '#ff4444';
                 ctx.beginPath();
-                ctx.arc(sx, sy + bob, this.radius + 6, 0, Math.PI * 2);
+                ctx.arc(sx, sy + bob, this.radius + 6, 0, TWO_PI);
                 ctx.fill();
                 ctx.globalAlpha = 1;
             }
@@ -626,17 +626,17 @@ class Enemy {
             ctx.fillStyle = '#fff';
             ctx.globalAlpha = 0.2;
             ctx.beginPath();
-            ctx.arc(sx - this.radius * 0.2, sy - this.radius * 0.2 + bob, this.radius * 0.5, 0, Math.PI * 2);
+            ctx.arc(sx - this.radius * 0.2, sy - this.radius * 0.2 + bob, this.radius * 0.5, 0, TWO_PI);
             ctx.fill();
             ctx.globalAlpha = 1;
             // — 眼睛 —
             ctx.fillStyle = '#ff4444';
             const eyeS = this.radius * 0.2;
             ctx.beginPath();
-            ctx.arc(sx - this.radius * 0.25, sy - this.radius * 0.1 + bob, eyeS, 0, Math.PI * 2);
+            ctx.arc(sx - this.radius * 0.25, sy - this.radius * 0.1 + bob, eyeS, 0, TWO_PI);
             ctx.fill();
             ctx.beginPath();
-            ctx.arc(sx + this.radius * 0.25, sy - this.radius * 0.1 + bob, eyeS, 0, Math.PI * 2);
+            ctx.arc(sx + this.radius * 0.25, sy - this.radius * 0.1 + bob, eyeS, 0, TWO_PI);
             ctx.fill();
             // — 血条 —
             if (this.hp < this.maxHp) {
@@ -659,7 +659,7 @@ class Enemy {
             ctx.globalAlpha = 0.25 + Math.sin(this.bodyBob * 3) * 0.1;
             ctx.fillStyle = this.affixColor;
             ctx.beginPath();
-            ctx.arc(sx, sy + bob, this.radius + 10, 0, Math.PI * 2);
+            ctx.arc(sx, sy + bob, this.radius + 10, 0, TWO_PI);
             ctx.fill();
             ctx.globalAlpha = 1;
         }
@@ -669,7 +669,7 @@ class Enemy {
             ctx.globalAlpha = 0.2 + Math.sin(this.bodyBob * 2) * 0.1;
             ctx.fillStyle = this.isBoss ? '#ff4444' : '#ffaa00';
             ctx.beginPath();
-            ctx.arc(sx, sy + bob, this.radius + 8, 0, Math.PI * 2);
+            ctx.arc(sx, sy + bob, this.radius + 8, 0, TWO_PI);
             ctx.fill();
             ctx.globalAlpha = 1;
         }
@@ -692,7 +692,7 @@ class Enemy {
             ctx.strokeStyle = '#8888ff';
             ctx.lineWidth = 3;
             ctx.beginPath();
-            ctx.arc(sx, sy + bob, this.radius + 6, 0, Math.PI * 2);
+            ctx.arc(sx, sy + bob, this.radius + 6, 0, TWO_PI);
             ctx.stroke();
             ctx.globalAlpha = 1;
         }
@@ -704,12 +704,12 @@ class Enemy {
             ctx.strokeStyle = '#ff2244';
             ctx.lineWidth = 2 + cr * 2;
             ctx.beginPath();
-            ctx.arc(sx, sy + bob, this.radius + 4 + cr * 12, 0, Math.PI * 2);
+            ctx.arc(sx, sy + bob, this.radius + 4 + cr * 12, 0, TWO_PI);
             ctx.stroke();
             ctx.globalAlpha = cr * 0.2;
             ctx.fillStyle = '#ff4466';
             ctx.beginPath();
-            ctx.arc(sx, sy + bob, this.radius + cr * 8, 0, Math.PI * 2);
+            ctx.arc(sx, sy + bob, this.radius + cr * 8, 0, TWO_PI);
             ctx.fill();
             ctx.globalAlpha = 1;
         }
@@ -719,7 +719,7 @@ class Enemy {
             ctx.globalAlpha = 0.3;
             ctx.fillStyle = '#ff4444';
             ctx.beginPath();
-            ctx.arc(sx, sy + bob, this.radius + 6, 0, Math.PI * 2);
+            ctx.arc(sx, sy + bob, this.radius + 6, 0, TWO_PI);
             ctx.fill();
             ctx.globalAlpha = 1;
         }
@@ -736,7 +736,7 @@ class Enemy {
                 ctx.globalAlpha = 0.5;
                 ctx.fillStyle = '#ffffff';
                 ctx.beginPath();
-                ctx.arc(sx, sy + bob, this.radius + 3, 0, Math.PI * 2);
+                ctx.arc(sx, sy + bob, this.radius + 3, 0, TWO_PI);
                 ctx.fill();
                 ctx.globalAlpha = 1;
             } else {
@@ -746,14 +746,14 @@ class Enemy {
             // 回退：圆形身体
             ctx.fillStyle = this.damageFlash > 0 ? '#ffffff' : this.color;
             ctx.beginPath();
-            ctx.arc(sx, sy + bob, this.radius, 0, Math.PI * 2);
+            ctx.arc(sx, sy + bob, this.radius, 0, TWO_PI);
             ctx.fill();
             // 受伤闪白外圈
             if (this.damageFlash > 0) {
                 ctx.globalAlpha = 0.4;
                 ctx.fillStyle = '#ffffff';
                 ctx.beginPath();
-                ctx.arc(sx, sy + bob, this.radius + 4, 0, Math.PI * 2);
+                ctx.arc(sx, sy + bob, this.radius + 4, 0, TWO_PI);
                 ctx.fill();
                 ctx.globalAlpha = 1;
             }
@@ -761,17 +761,17 @@ class Enemy {
             ctx.fillStyle = '#fff';
             ctx.globalAlpha = 0.2;
             ctx.beginPath();
-            ctx.arc(sx - this.radius * 0.2, sy - this.radius * 0.2 + bob, this.radius * 0.5, 0, Math.PI * 2);
+            ctx.arc(sx - this.radius * 0.2, sy - this.radius * 0.2 + bob, this.radius * 0.5, 0, TWO_PI);
             ctx.fill();
             ctx.globalAlpha = 1;
             // 眼睛
             ctx.fillStyle = this.isBoss ? '#ffaa00' : '#ff4444';
             const eyeSize = this.radius * 0.2;
             ctx.beginPath();
-            ctx.arc(sx - this.radius * 0.25, sy - this.radius * 0.1 + bob, eyeSize, 0, Math.PI * 2);
+            ctx.arc(sx - this.radius * 0.25, sy - this.radius * 0.1 + bob, eyeSize, 0, TWO_PI);
             ctx.fill();
             ctx.beginPath();
-            ctx.arc(sx + this.radius * 0.25, sy - this.radius * 0.1 + bob, eyeSize, 0, Math.PI * 2);
+            ctx.arc(sx + this.radius * 0.25, sy - this.radius * 0.1 + bob, eyeSize, 0, TWO_PI);
             ctx.fill();
         }
 
@@ -780,7 +780,7 @@ class Enemy {
             ctx.globalAlpha = 0.3 + Math.sin(this.bodyBob * 6) * 0.15;
             ctx.fillStyle = '#ff4422';
             ctx.beginPath();
-            ctx.arc(sx, sy + bob, this.radius + 5, 0, Math.PI * 2);
+            ctx.arc(sx, sy + bob, this.radius + 5, 0, TWO_PI);
             ctx.fill();
             ctx.globalAlpha = 1;
         }
@@ -829,13 +829,13 @@ class Enemy {
                 ctx.strokeStyle = this.colors[r % this.colors.length];
                 ctx.lineWidth = 4 * (1 - rt);
                 ctx.beginPath();
-                ctx.arc(sx, sy, this.radius * (1 + rt * 4), 0, Math.PI * 2);
+                ctx.arc(sx, sy, this.radius * (1 + rt * 4), 0, TWO_PI);
                 ctx.stroke();
             }
             ctx.globalAlpha = (1 - t) * 0.8;
             ctx.fillStyle = '#ffffff';
             ctx.beginPath();
-            ctx.arc(sx, sy, this.radius * (1 - t * 0.5), 0, Math.PI * 2);
+            ctx.arc(sx, sy, this.radius * (1 - t * 0.5), 0, TWO_PI);
             ctx.fill();
         } else {
             // 普通/精英死亡：碎片扩散 + 闪白收缩
@@ -844,7 +844,7 @@ class Enemy {
                 ctx.globalAlpha = (1 - t / 0.15) * 0.5;
                 ctx.fillStyle = '#ffffff';
                 ctx.beginPath();
-                ctx.arc(sx, sy, this.radius * (1 + t * 2), 0, Math.PI * 2);
+                ctx.arc(sx, sy, this.radius * (1 + t * 2), 0, TWO_PI);
                 ctx.fill();
             }
             // 碎片
@@ -852,11 +852,11 @@ class Enemy {
             ctx.fillStyle = this.color;
             const pieces = this.isElite ? 8 : 4;
             for (let i = 0; i < pieces; i++) {
-                const angle = (i / pieces) * Math.PI * 2 + t * 3;
+                const angle = (i / pieces) * TWO_PI + t * 3;
                 const dist = this.radius * t * (this.isElite ? 3 : 2);
                 const size = this.radius * (this.isElite ? 0.35 : 0.3) * (1 - t);
                 ctx.beginPath();
-                ctx.arc(sx + Math.cos(angle) * dist, sy + Math.sin(angle) * dist, size, 0, Math.PI * 2);
+                ctx.arc(sx + Math.cos(angle) * dist, sy + Math.sin(angle) * dist, size, 0, TWO_PI);
                 ctx.fill();
             }
             // 精英额外：残影缩小光环
@@ -865,7 +865,7 @@ class Enemy {
                 ctx.strokeStyle = this.color;
                 ctx.lineWidth = 2;
                 ctx.beginPath();
-                ctx.arc(sx, sy, this.radius * (1 + t * 3), 0, Math.PI * 2);
+                ctx.arc(sx, sy, this.radius * (1 + t * 3), 0, TWO_PI);
                 ctx.stroke();
             }
         }
@@ -1038,7 +1038,7 @@ class WaveManager {
             const eliteTypes = ['eliteSkeleton', 'eliteDemon'];
             const eliteType = this.siegeCount >= 3 ? 'eliteDemon' : 'eliteSkeleton';
             for (let i = 0; i < siegeEliteCount; i++) {
-                const angle = (Math.PI * 2 / siegeEliteCount) * i + Math.random() * 0.3;
+                const angle = (TWO_PI / siegeEliteCount) * i + Math.random() * 0.3;
                 const ex = playerX + Math.cos(angle) * siegeRadius;
                 const ey = playerY + Math.sin(angle) * siegeRadius;
                 const mult = config.mult * this.difficulty * this.difficultyMultiplier * (1 + this.siegeCount * 0.15);
@@ -1063,7 +1063,7 @@ class WaveManager {
     }
 
     _getSpawnPos(playerX, playerY) {
-        const angle = this.rng ? this.rng() * Math.PI * 2 : Utils.rand(0, Math.PI * 2);
+        const angle = this.rng ? this.rng() * TWO_PI : Utils.rand(0, TWO_PI);
         const dist = this.rng ? 500 + this.rng() * 200 : Utils.rand(500, 700);
         return {
             x: playerX + Math.cos(angle) * dist,
@@ -1082,7 +1082,7 @@ class ExpGem {
         this.color = color;
         this.alive = true;
         this.sparkleTimer = 0;
-        this.bobPhase = Math.random() * Math.PI * 2;
+        this.bobPhase = Math.random() * TWO_PI;
         this.attractSpeed = 0;
         this.attracted = false;
     }
@@ -1091,25 +1091,28 @@ class ExpGem {
         this.bobPhase += 3 * dt;
         this.sparkleTimer += dt;
 
-        const dist = Utils.dist(this.x, this.y, playerX, playerY);
+        const dx = playerX - this.x;
+        const dy = playerY - this.y;
+        const distSq = dx * dx + dy * dy;
 
-        // 吸引范围
-        if (dist < pickupRange) {
+        // 吸引范围（用平方比较避免 sqrt）
+        if (distSq < pickupRange * pickupRange) {
             this.attracted = true;
         }
 
         if (this.attracted) {
             this.attractSpeed = Math.min(this.attractSpeed + 800 * dt, 600);
-            const angle = Utils.angle(this.x, this.y, playerX, playerY);
-            this.x += Math.cos(angle) * this.attractSpeed * dt;
-            this.y += Math.sin(angle) * this.attractSpeed * dt;
+            const dist = Math.sqrt(distSq);
+            const invDist = dist > 0.001 ? 1 / dist : 0;
+            this.x += dx * invDist * this.attractSpeed * dt;
+            this.y += dy * invDist * this.attractSpeed * dt;
 
             // 吸附拖尾（速度>200时才产生，避免过多粒子）
             if (this.attractSpeed > 200 && Math.random() < 0.3) {
                 particles.addTrail(this.x, this.y, this.color, 2.5, 0.15);
             }
 
-            if (dist < 15) {
+            if (distSq < 225) { // 15^2
                 this.alive = false;
                 // 拾取爆发效果
                 particles.addGemSparkle(this.x, this.y, this.color);
@@ -1158,7 +1161,7 @@ class ExpGem {
         ctx.globalAlpha = 0.3;
         ctx.fillStyle = this.color;
         ctx.beginPath();
-        ctx.arc(sx, sy, r + 6, 0, Math.PI * 2);
+        ctx.arc(sx, sy, r + 6, 0, TWO_PI);
         ctx.fill();
 
         ctx.globalAlpha = 1;
@@ -1224,7 +1227,7 @@ class DropItem {
         this.radius = 14;
         this.alive = true;
         this.life = 15;        // 15秒后消失
-        this.bobPhase = Math.random() * Math.PI * 2;
+        this.bobPhase = Math.random() * TWO_PI;
         this.sparkleTimer = 0;
         this.attracted = false;
         this.attractSpeed = 0;
@@ -1240,22 +1243,26 @@ class DropItem {
             return false;
         }
 
-        const dist = Utils.dist(this.x, this.y, playerX, playerY);
+        const dx = playerX - this.x;
+        const dy = playerY - this.y;
+        const distSq = dx * dx + dy * dy;
 
-        // 靠近时吸引
-        if (dist < pickupRange + 20) {
+        // 靠近时吸引（用平方比较避免 sqrt）
+        const attractR = pickupRange + 20;
+        if (distSq < attractR * attractR) {
             this.attracted = true;
         }
 
         if (this.attracted) {
             this.attractSpeed = Math.min(this.attractSpeed + 600 * dt, 500);
-            const angle = Utils.angle(this.x, this.y, playerX, playerY);
-            this.x += Math.cos(angle) * this.attractSpeed * dt;
-            this.y += Math.sin(angle) * this.attractSpeed * dt;
+            const dist = Math.sqrt(distSq);
+            const invDist = dist > 0.001 ? 1 / dist : 0;
+            this.x += dx * invDist * this.attractSpeed * dt;
+            this.y += dy * invDist * this.attractSpeed * dt;
         }
 
         // 拾取
-        if (dist < 20) {
+        if (distSq < 400) { // 20^2
             this.alive = false;
             return true; // 拾取成功
         }
@@ -1278,14 +1285,14 @@ class DropItem {
         ctx.globalAlpha *= 0.25;
         ctx.fillStyle = this.glowColor;
         ctx.beginPath();
-        ctx.arc(sx, sy, this.radius + 10, 0, Math.PI * 2);
+        ctx.arc(sx, sy, this.radius + 10, 0, TWO_PI);
         ctx.fill();
 
         // 主体圆
         ctx.globalAlpha = this.life < 3 ? (0.5 + Math.sin(this.life * 10) * 0.5) : 1;
         ctx.fillStyle = this.color;
         ctx.beginPath();
-        ctx.arc(sx, sy, this.radius, 0, Math.PI * 2);
+        ctx.arc(sx, sy, this.radius, 0, TWO_PI);
         ctx.fill();
 
         // 图标
@@ -1330,8 +1337,10 @@ class MapHazard {
         this.life -= dt;
         if (this.life <= 0) { this.alive = false; return 0; }
 
-        const dist = Utils.dist(this.x, this.y, player.x, player.y);
-        if (dist < this.radius + player.radius) {
+        const dx = this.x - player.x;
+        const dy = this.y - player.y;
+        const r = this.radius + player.radius;
+        if (dx * dx + dy * dy < r * r) {
             if (this.type === 'slow') {
                 player._hazardSlow = 0.5;
                 return 0;
@@ -1358,13 +1367,13 @@ class MapHazard {
         ctx.globalAlpha = 0.12 * fadeAlpha;
         ctx.fillStyle = this.glowColor;
         ctx.beginPath();
-        ctx.arc(sx, sy, this.radius * pulse + 10, 0, Math.PI * 2);
+        ctx.arc(sx, sy, this.radius * pulse + 10, 0, TWO_PI);
         ctx.fill();
 
         ctx.globalAlpha = 0.18 * fadeAlpha;
         ctx.fillStyle = this.color;
         ctx.beginPath();
-        ctx.arc(sx, sy, this.radius * pulse, 0, Math.PI * 2);
+        ctx.arc(sx, sy, this.radius * pulse, 0, TWO_PI);
         ctx.fill();
 
         ctx.globalAlpha = 0.3 * fadeAlpha;
@@ -1372,7 +1381,7 @@ class MapHazard {
         ctx.lineWidth = 2;
         ctx.setLineDash([6, 4]);
         ctx.beginPath();
-        ctx.arc(sx, sy, this.radius * pulse, 0, Math.PI * 2);
+        ctx.arc(sx, sy, this.radius * pulse, 0, TWO_PI);
         ctx.stroke();
         ctx.setLineDash([]);
 
@@ -1422,12 +1431,16 @@ class EnvObject {
         if (this.life <= 0) { this.alive = false; return null; }
         if (this.teleportCD > 0) this.teleportCD -= dt;
 
-        const dist = Utils.dist(this.x, this.y, player.x, player.y);
+        const dx = this.x - player.x;
+        const dy = this.y - player.y;
+        const distSq = dx * dx + dy * dy;
+        const r = this.radius + player.radius;
+        const inRange = distSq < r * r;
 
         switch (this.type) {
             case 'speed':
                 // 在范围内加速
-                if (dist < this.radius + player.radius) {
+                if (inRange) {
                     player._envSpeedBuff = 1.5; // 50%加速
                     return { type: 'speed' };
                 }
@@ -1435,7 +1448,7 @@ class EnvObject {
 
             case 'portal':
                 // 进入传送门范围
-                if (dist < this.radius + player.radius && this.linkedPortal && this.linkedPortal.alive && this.teleportCD <= 0) {
+                if (inRange && this.linkedPortal && this.linkedPortal.alive && this.teleportCD <= 0) {
                     this.teleportCD = 3.0;            // 3秒冷却
                     this.linkedPortal.teleportCD = 3.0;
                     // 传送粒子
@@ -1449,7 +1462,7 @@ class EnvObject {
 
             case 'trap':
                 // 在范围内：减速 + 伤害
-                if (dist < this.radius + player.radius) {
+                if (inRange) {
                     player._envTrapSlow = 0.6; // 40%减速
                     this.damageTimer += dt;
                     if (this.damageTimer >= 0.8) { // 每0.8秒伤害
@@ -1476,14 +1489,14 @@ class EnvObject {
         ctx.globalAlpha = 0.1 * fadeAlpha * cdAlpha;
         ctx.fillStyle = this.glowColor;
         ctx.beginPath();
-        ctx.arc(sx, sy, this.radius * pulse + 12, 0, Math.PI * 2);
+        ctx.arc(sx, sy, this.radius * pulse + 12, 0, TWO_PI);
         ctx.fill();
 
         // 主区域
         ctx.globalAlpha = 0.2 * fadeAlpha * cdAlpha;
         ctx.fillStyle = this.color;
         ctx.beginPath();
-        ctx.arc(sx, sy, this.radius * pulse, 0, Math.PI * 2);
+        ctx.arc(sx, sy, this.radius * pulse, 0, TWO_PI);
         ctx.fill();
 
         // 边框（虚线动画）
@@ -1493,7 +1506,7 @@ class EnvObject {
         ctx.setLineDash([8, 5]);
         ctx.lineDashOffset = -this.timer * 30;
         ctx.beginPath();
-        ctx.arc(sx, sy, this.radius * pulse, 0, Math.PI * 2);
+        ctx.arc(sx, sy, this.radius * pulse, 0, TWO_PI);
         ctx.stroke();
         ctx.setLineDash([]);
 
@@ -1548,7 +1561,7 @@ class RelicDrop {
         this.radius = 18;
         this.alive = true;
         this.life = 30;
-        this.bobPhase = Math.random() * Math.PI * 2;
+        this.bobPhase = Math.random() * TWO_PI;
         this.attracted = false;
         this.attractSpeed = 0;
     }
@@ -1559,15 +1572,19 @@ class RelicDrop {
         this.life -= dt;
         if (this.life <= 0) { this.alive = false; return false; }
 
-        const dist = Utils.dist(this.x, this.y, playerX, playerY);
-        if (dist < pickupRange + 30) this.attracted = true;
+        const dx = playerX - this.x;
+        const dy = playerY - this.y;
+        const distSq = dx * dx + dy * dy;
+        const attractR = pickupRange + 30;
+        if (distSq < attractR * attractR) this.attracted = true;
         if (this.attracted) {
             this.attractSpeed = Math.min(this.attractSpeed + 500 * dt, 400);
-            const angle = Utils.angle(this.x, this.y, playerX, playerY);
-            this.x += Math.cos(angle) * this.attractSpeed * dt;
-            this.y += Math.sin(angle) * this.attractSpeed * dt;
+            const dist = Math.sqrt(distSq);
+            const invDist = dist > 0.001 ? 1 / dist : 0;
+            this.x += dx * invDist * this.attractSpeed * dt;
+            this.y += dy * invDist * this.attractSpeed * dt;
         }
-        if (dist < 25) { this.alive = false; return true; }
+        if (distSq < 625) { this.alive = false; return true; } // 25^2
         return false;
     }
 
@@ -1590,14 +1607,14 @@ class RelicDrop {
         ctx.fillStyle = this.color;
         ctx.globalAlpha *= 0.3;
         ctx.beginPath();
-        ctx.arc(sx, sy, this.radius + 12, 0, Math.PI * 2);
+        ctx.arc(sx, sy, this.radius + 12, 0, TWO_PI);
         ctx.fill();
 
         // 主体
         ctx.globalAlpha = this.life < 5 ? (0.5 + Math.sin(this.life * 8) * 0.5) : 1;
         ctx.fillStyle = this.color;
         ctx.beginPath();
-        ctx.arc(sx, sy, this.radius, 0, Math.PI * 2);
+        ctx.arc(sx, sy, this.radius, 0, TWO_PI);
         ctx.fill();
 
         // 图标
@@ -1666,7 +1683,7 @@ class EnemyBullet {
             const alpha = (i / len) * 0.3;
             ctx.globalAlpha = alpha;
             ctx.beginPath();
-            ctx.arc(tx, ty, this.radius * (0.3 + 0.7 * i / len), 0, Math.PI * 2);
+            ctx.arc(tx, ty, this.radius * (0.3 + 0.7 * i / len), 0, TWO_PI);
             ctx.fill();
         }
         // 脉动外光——更大更明显
@@ -1674,19 +1691,19 @@ class EnemyBullet {
         ctx.globalAlpha = 0.35;
         ctx.fillStyle = this.color;
         ctx.beginPath();
-        ctx.arc(sx, sy, this.radius * 2.5 * pulse, 0, Math.PI * 2);
+        ctx.arc(sx, sy, this.radius * 2.5 * pulse, 0, TWO_PI);
         ctx.fill();
         // 弹体
         ctx.globalAlpha = 1;
         ctx.fillStyle = this.color;
         ctx.beginPath();
-        ctx.arc(sx, sy, this.radius * pulse, 0, Math.PI * 2);
+        ctx.arc(sx, sy, this.radius * pulse, 0, TWO_PI);
         ctx.fill();
         // 高亮核心
         ctx.fillStyle = '#ffffff';
         ctx.globalAlpha = 0.8;
         ctx.beginPath();
-        ctx.arc(sx, sy, this.radius * 0.45, 0, Math.PI * 2);
+        ctx.arc(sx, sy, this.radius * 0.45, 0, TWO_PI);
         ctx.fill();
         ctx.restore();
     }

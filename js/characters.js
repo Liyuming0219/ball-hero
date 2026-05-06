@@ -646,12 +646,12 @@ class Player {
             ctx.globalAlpha = pulse;
             ctx.fillStyle = '#ffdd44';
             ctx.beginPath();
-            ctx.arc(sx, sy + bob, this.radius + 20, 0, Math.PI * 2);
+            ctx.arc(sx, sy + bob, this.radius + 20, 0, TWO_PI);
             ctx.fill();
             ctx.globalAlpha = pulse * 0.5;
             ctx.fillStyle = '#ffffff';
             ctx.beginPath();
-            ctx.arc(sx, sy + bob, this.radius + 12, 0, Math.PI * 2);
+            ctx.arc(sx, sy + bob, this.radius + 12, 0, TWO_PI);
             ctx.fill();
             // 旋转光点（4个，极低开销）
             ctx.globalAlpha = 0.7;
@@ -660,7 +660,7 @@ class Player {
                 const a = now * 0.003 + i * Math.PI * 0.5;
                 const r = this.radius + 16;
                 ctx.beginPath();
-                ctx.arc(sx + Math.cos(a) * r, sy + bob + Math.sin(a) * r, 2.5, 0, Math.PI * 2);
+                ctx.arc(sx + Math.cos(a) * r, sy + bob + Math.sin(a) * r, 2.5, 0, TWO_PI);
                 ctx.fill();
             }
         }
@@ -674,15 +674,15 @@ class Player {
             ctx.lineWidth = 2.5;
             ctx.lineCap = 'round';
             ctx.beginPath();
-            ctx.arc(sx, sy + bob, arcR, -Math.PI * 0.5, -Math.PI * 0.5 + Math.PI * 2 * passiveProgress);
+            ctx.arc(sx, sy + bob, arcR, -Math.PI * 0.5, -Math.PI * 0.5 + TWO_PI * passiveProgress);
             ctx.stroke();
             // 弧线末端光点
             if (passiveProgress > 0.1) {
-                const endAngle = -Math.PI * 0.5 + Math.PI * 2 * passiveProgress;
+                const endAngle = -Math.PI * 0.5 + TWO_PI * passiveProgress;
                 ctx.globalAlpha = 0.8;
                 ctx.fillStyle = '#ffffff';
                 ctx.beginPath();
-                ctx.arc(sx + Math.cos(endAngle) * arcR, sy + bob + Math.sin(endAngle) * arcR, 3, 0, Math.PI * 2);
+                ctx.arc(sx + Math.cos(endAngle) * arcR, sy + bob + Math.sin(endAngle) * arcR, 3, 0, TWO_PI);
                 ctx.fill();
             }
         }
@@ -693,7 +693,7 @@ class Player {
         ctx.globalAlpha = 0.18 * footPulse;
         ctx.fillStyle = this.def.color;
         ctx.beginPath();
-        ctx.ellipse(sx, sy + this.radius + 2, this.radius * 1.2 * footPulse, 6, 0, 0, Math.PI * 2);
+        ctx.ellipse(sx, sy + this.radius + 2, this.radius * 1.2 * footPulse, 6, 0, 0, TWO_PI);
         ctx.fill();
         ctx.globalAlpha = this.invincibleTime > 0 && Math.floor(this.invincibleTime * 20) % 2 === 0 ? 0.4 : 1;
 
@@ -701,7 +701,7 @@ class Player {
         ctx.globalAlpha *= 0.25;
         ctx.fillStyle = this.def.color;
         ctx.beginPath();
-        ctx.arc(sx, sy + bob, this.radius + 8, 0, Math.PI * 2);
+        ctx.arc(sx, sy + bob, this.radius + 8, 0, TWO_PI);
         ctx.fill();
         ctx.globalAlpha = this.invincibleTime > 0 && Math.floor(this.invincibleTime * 20) % 2 === 0 ? 0.4 : 1;
 
@@ -715,7 +715,7 @@ class Player {
         bodyGrad.addColorStop(1, this._darken(this.def.color, 0.6));
         ctx.fillStyle = bodyGrad;
         ctx.beginPath();
-        ctx.arc(sx, sy + bob, this.radius, 0, Math.PI * 2);
+        ctx.arc(sx, sy + bob, this.radius, 0, TWO_PI);
         ctx.fill();
 
         // 受伤/回血闪光效果
@@ -723,7 +723,7 @@ class Player {
             ctx.globalAlpha = 0.4 * (this.damageFlash / 0.2);
             ctx.fillStyle = '#ff0000';
             ctx.beginPath();
-            ctx.arc(sx, sy + bob, this.radius + 6, 0, Math.PI * 2);
+            ctx.arc(sx, sy + bob, this.radius + 6, 0, TWO_PI);
             ctx.fill();
             ctx.globalAlpha = 1;
         }
@@ -731,7 +731,7 @@ class Player {
             ctx.globalAlpha = 0.35 * (this.healFlash / 0.3);
             ctx.fillStyle = '#44ff88';
             ctx.beginPath();
-            ctx.arc(sx, sy + bob, this.radius + 5, 0, Math.PI * 2);
+            ctx.arc(sx, sy + bob, this.radius + 5, 0, TWO_PI);
             ctx.fill();
             ctx.globalAlpha = 1;
         }
@@ -746,7 +746,7 @@ class Player {
         hlGrad.addColorStop(1, 'rgba(255,255,255,0)');
         ctx.fillStyle = hlGrad;
         ctx.beginPath();
-        ctx.arc(sx - this.radius * 0.28, sy + bob - this.radius * 0.3, this.radius * 0.5, 0, Math.PI * 2);
+        ctx.arc(sx - this.radius * 0.28, sy + bob - this.radius * 0.3, this.radius * 0.5, 0, TWO_PI);
         ctx.fill();
 
         // 眼睛方向
@@ -756,19 +756,19 @@ class Player {
         const eyeY = sy + Math.sin(this.facingAngle) * eyeDist + bob;
         ctx.fillStyle = '#fff';
         ctx.beginPath();
-        ctx.arc(eyeX - 3, eyeY - 2, 4, 0, Math.PI * 2);
+        ctx.arc(eyeX - 3, eyeY - 2, 4, 0, TWO_PI);
         ctx.fill();
         ctx.beginPath();
-        ctx.arc(eyeX + 3, eyeY - 2, 4, 0, Math.PI * 2);
+        ctx.arc(eyeX + 3, eyeY - 2, 4, 0, TWO_PI);
         ctx.fill();
         // 瞳孔
         ctx.fillStyle = '#111';
         const pupilOff = 1.5;
         ctx.beginPath();
-        ctx.arc(eyeX - 3 + Math.cos(this.facingAngle) * pupilOff, eyeY - 2 + Math.sin(this.facingAngle) * pupilOff, 2, 0, Math.PI * 2);
+        ctx.arc(eyeX - 3 + Math.cos(this.facingAngle) * pupilOff, eyeY - 2 + Math.sin(this.facingAngle) * pupilOff, 2, 0, TWO_PI);
         ctx.fill();
         ctx.beginPath();
-        ctx.arc(eyeX + 3 + Math.cos(this.facingAngle) * pupilOff, eyeY - 2 + Math.sin(this.facingAngle) * pupilOff, 2, 0, Math.PI * 2);
+        ctx.arc(eyeX + 3 + Math.cos(this.facingAngle) * pupilOff, eyeY - 2 + Math.sin(this.facingAngle) * pupilOff, 2, 0, TWO_PI);
         ctx.fill();
 
         ctx.restore();

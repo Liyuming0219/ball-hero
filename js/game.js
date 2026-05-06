@@ -1,7 +1,31 @@
 ﻿// ============================================
 // 游戏版本号
 // ============================================
-var GAME_VERSION = 'v1.3.1';
+var GAME_VERSION = 'v1.3.3';
+
+// 性能常量（避免每帧重复创建）
+const RECYCLE_DIST_SQ = 1500 * 1500; // 超出此距离回收敌人
+const COMBO_MILESTONE_PARTICLES = {
+    colors: ['#ffdd44', '#ff8800', '#ffffff'],
+    speedMin: 4, speedMax: 10,
+    sizeMin: 3, sizeMax: 8,
+    lifeMin: 0.5, lifeMax: 1.0,
+    glow: true,
+};
+const LEVELUP_PARTICLES = {
+    colors: ['#44aaff', '#88ddff', '#ffffff', '#aaeeff'],
+    speedMin: 3, speedMax: 8,
+    sizeMin: 2, sizeMax: 7,
+    lifeMin: 0.4, lifeMax: 1.0,
+    glow: true, glowSize: 10,
+};
+const LEVELUP_STAR_PARTICLES = {
+    colors: ['#ffffff', '#ffffaa'],
+    speedMin: 4, speedMax: 10,
+    sizeMin: 3, sizeMax: 6,
+    lifeMin: 0.3, lifeMax: 0.6,
+    shape: 'star', glow: true,
+};
 
 // ============================================
 // 游戏主循环
@@ -407,58 +431,7 @@ class Game {
         }
 
         // 战斗日志 / DPS 统计系统（必须在 WeaponSystem 之前初始化）
-        this.combatLog = {
-            sources: {},
-            _dpsEntries: [],
-            currentDPS: 0,
-            peakDPS: 0,
-            entries: [],
-            visible: false,
-
-            record(source, amount, isCrit, isKill) {
-                if (!this.sources[source]) {
-                    this.sources[source] = { total: 0, hits: 0, crits: 0, kills: 0 };
-                }
-                const s = this.sources[source];
-                s.total += amount;
-                s.hits++;
-                if (isCrit) s.crits++;
-                if (isKill) s.kills++;
-                this._dpsEntries.push({ time: performance.now(), amount });
-            },
-
-            addEntry(text, color = '#ccc') {
-                this.entries.push({ text, color, time: performance.now() });
-                if (this.entries.length > 12) this.entries.shift();
-            },
-
-            updateDPS() {
-                const now = performance.now();
-                const window = 5000;
-                while (this._dpsEntries.length > 0 && now - this._dpsEntries[0].time > window) {
-                    this._dpsEntries.shift();
-                }
-                let sum = 0;
-                for (let i = 0; i < this._dpsEntries.length; i++) sum += this._dpsEntries[i].amount;
-                this.currentDPS = sum / (window / 1000);
-                if (this.currentDPS > this.peakDPS) this.peakDPS = this.currentDPS;
-            },
-
-            getTotalDamage() {
-                let total = 0;
-                for (const key in this.sources) total += this.sources[key].total;
-                return total;
-            },
-
-            getSorted() {
-                const arr = [];
-                for (const key in this.sources) {
-                    arr.push({ name: key, ...this.sources[key] });
-                }
-                arr.sort((a, b) => b.total - a.total);
-                return arr;
-            },
-        };
+        this.combatLog = new CombatLog();
         this.showCombatLog = false;
 
         this.weapons = new WeaponSystem(this.player, this.particles, this.combatLog);
@@ -526,7 +499,6 @@ class Game {
         // 应用永久升级（天赋商店加成）
         if (typeof MetaProgress !== 'undefined') {
             MetaProgress.applyPermUpgrades(this.player);
-            MetaProgress.applyStartingBuffs(this.player);
         }
 
         // 应用每日挑战修饰符
@@ -601,7 +573,6 @@ class Game {
         this.weapons.update(dt, this.enemies, this.camera, this._enemySpatialHash);
 
         // 更新怪物
-        const RECYCLE_DIST_SQ = 1500 * 1500; // 超过1500px回收
         for (let i = this.enemies.length - 1; i >= 0; i--) {
             const enemy = this.enemies[i];
 
@@ -609,7 +580,7 @@ class Game {
             if (!enemy.isBoss) {
                 const rdx = enemy.x - this.player.x, rdy = enemy.y - this.player.y;
                 if (rdx * rdx + rdy * rdy > RECYCLE_DIST_SQ) {
-                    this.enemies[i] = this.enemies[this.enemies.length - 1]; this.enemies.pop();
+                    swapRemove(this.enemies, i);
                     continue;
                 }
             }
@@ -641,13 +612,7 @@ class Game {
                 if (this.player._comboMilestone > 0) {
                     SFX.comboMilestone();
                     this.particles.addShockwave(this.player.x, this.player.y, this.player.getComboColor(), 200, 0.5);
-                    this.particles.emit(this.player.x, this.player.y, 30, {
-                        colors: ['#ffdd44', '#ff8800', '#ffffff'],
-                        speedMin: 4, speedMax: 10,
-                        sizeMin: 3, sizeMax: 8,
-                        lifeMin: 0.5, lifeMax: 1.0,
-                        glow: true,
-                    });
+                    this.particles.emit(this.player.x, this.player.y, 30, COMBO_MILESTONE_PARTICLES);
                     Utils.shake(6);
                     this.player._comboMilestone = 0;
                 }
@@ -685,7 +650,7 @@ class Game {
                     this.combatLog.addEntry(`⭐ 精英击杀！${enemy.type}`, '#ffaa00');
                 }
 
-                this.enemies[i] = this.enemies[this.enemies.length - 1]; this.enemies.pop();
+                swapRemove(this.enemies, i);
                 continue;
             }
 
@@ -810,7 +775,7 @@ class Game {
             const bullet = this.enemyBullets[i];
             bullet.update(dt);
             if (!bullet.alive) {
-                this.enemyBullets[i] = this.enemyBullets[this.enemyBullets.length - 1]; this.enemyBullets.pop();
+                swapRemove(this.enemyBullets, i);
                 continue;
             }
             // 碰撞玩家
@@ -859,7 +824,7 @@ class Game {
             }
             // 清理合并掉的宝石
             for (let i = this.expGems.length - 1; i >= 0; i--) {
-                if (this.expGems[i]._merged) { this.expGems[i] = this.expGems[this.expGems.length - 1]; this.expGems.pop(); }
+                if (this.expGems[i]._merged) { swapRemove(this.expGems, i); }
             }
         }
 
@@ -876,29 +841,9 @@ class Game {
                     this.particles.addShockwave(this.player.x, this.player.y, '#44aaff', 120, 0.4);
                     this.particles.addShockwave(this.player.x, this.player.y, '#ffffff', 60, 0.25);
                     this.particles.addFlash(this.player.x, this.player.y, '#88ddff', 80, 0.2);
-                    this.particles.emit(this.player.x, this.player.y, 25, {
-                        colors: ['#44aaff', '#88ddff', '#ffffff', '#aaeeff'],
-                        speedMin: 3,
-                        speedMax: 8,
-                        sizeMin: 2,
-                        sizeMax: 7,
-                        lifeMin: 0.4,
-                        lifeMax: 1.0,
-                        glow: true,
-                        glowSize: 10,
-                    });
+                    this.particles.emit(this.player.x, this.player.y, 25, LEVELUP_PARTICLES);
                     // 星形散射粒子
-                    this.particles.emit(this.player.x, this.player.y, 8, {
-                        colors: ['#ffffff', '#ffffaa'],
-                        speedMin: 4,
-                        speedMax: 10,
-                        sizeMin: 3,
-                        sizeMax: 6,
-                        lifeMin: 0.3,
-                        lifeMax: 0.6,
-                        shape: 'star',
-                        glow: true,
-                    });
+                    this.particles.emit(this.player.x, this.player.y, 8, LEVELUP_STAR_PARTICLES);
                     this.screenFlash = { color: '#88ddff', alpha: 0.25 };
                     Utils.shake(4);
                     SFX.levelUp();
@@ -906,7 +851,7 @@ class Game {
                 }
             }
             if (!gem.alive) {
-                this.expGems[i] = this.expGems[this.expGems.length - 1]; this.expGems.pop();
+                swapRemove(this.expGems, i);
             }
         }
 
@@ -920,7 +865,7 @@ class Game {
                 this.battleStats.itemsCollected++;
             }
             if (!item.alive) {
-                this.dropItems[i] = this.dropItems[this.dropItems.length - 1]; this.dropItems.pop();
+                swapRemove(this.dropItems, i);
             }
         }
 
@@ -974,7 +919,7 @@ class Game {
         if (this.damageVignette > 0) this.damageVignette -= dt * 1.5;
         for (let i = this.damageIndicators.length - 1; i >= 0; i--) {
             this.damageIndicators[i].life -= dt;
-            if (this.damageIndicators[i].life <= 0) { this.damageIndicators[i] = this.damageIndicators[this.damageIndicators.length - 1]; this.damageIndicators.pop(); }
+            if (this.damageIndicators[i].life <= 0) { swapRemove(this.damageIndicators, i); }
         }
 
         // 粒子更新
@@ -1177,12 +1122,12 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
             ctx.globalAlpha = alpha;
             ctx.fillStyle = '#ff4422';
             ctx.beginPath();
-            ctx.arc(fx, fy, 10, 0, Math.PI * 2);
+            ctx.arc(fx, fy, 10, 0, TWO_PI);
             ctx.fill();
             ctx.globalAlpha = alpha * 0.6;
             ctx.fillStyle = '#ffaa00';
             ctx.beginPath();
-            ctx.arc(fx, fy, 15, 0, Math.PI * 2);
+            ctx.arc(fx, fy, 15, 0, TWO_PI);
             ctx.fill();
             }
             ctx.globalAlpha = 1;
@@ -1195,7 +1140,7 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
         const orbCount = this.player.bonuses.orbitalBlades;
         if (orbCount > 0) {
             for (let i = 0; i < orbCount; i++) {
-                const angle = this.orbitalAngle + (i / orbCount) * Math.PI * 2;
+                const angle = this.orbitalAngle + (i / orbCount) * TWO_PI;
                 const bx = this.player.x + Math.cos(angle) * 70 - cam.x;
                 const by = this.player.y + Math.sin(angle) * 70 - cam.y;
                 ctx.save();
@@ -1205,7 +1150,7 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
                 ctx.globalAlpha = 0.3;
                 ctx.fillStyle = this.player.def.color;
                 ctx.beginPath();
-                ctx.arc(0, 0, 14, 0, Math.PI * 2);
+                ctx.arc(0, 0, 14, 0, TWO_PI);
                 ctx.fill();
                 // 刀刃形状
                 ctx.globalAlpha = 1;
@@ -1236,7 +1181,7 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
             ctx.globalAlpha = 0.18;
             ctx.fillStyle = '#88ccff';
             ctx.beginPath();
-            ctx.arc(this.player.x - cam.x, this.player.y - cam.y, 150, 0, Math.PI * 2);
+            ctx.arc(this.player.x - cam.x, this.player.y - cam.y, 150, 0, TWO_PI);
             ctx.fill();
             ctx.globalAlpha = 1;
         }
@@ -1247,13 +1192,13 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
             ctx.globalAlpha = 0.18;
             ctx.fillStyle = '#ff4422';
             ctx.beginPath();
-            ctx.arc(this.player.x - cam.x, this.player.y - cam.y, 120 * pulse, 0, Math.PI * 2);
+            ctx.arc(this.player.x - cam.x, this.player.y - cam.y, 120 * pulse, 0, TWO_PI);
             ctx.fill();
             ctx.globalAlpha = 0.35;
             ctx.strokeStyle = '#ff6644';
             ctx.lineWidth = 2;
             ctx.beginPath();
-            ctx.arc(this.player.x - cam.x, this.player.y - cam.y, 120 * pulse, 0, Math.PI * 2);
+            ctx.arc(this.player.x - cam.x, this.player.y - cam.y, 120 * pulse, 0, TWO_PI);
             ctx.stroke();
             ctx.globalAlpha = 1;
         }
@@ -1265,12 +1210,12 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
             ctx.strokeStyle = '#6688ff';
             ctx.lineWidth = 2.5 + shieldRatio * 2.5;
             ctx.beginPath();
-            ctx.arc(this.player.x - cam.x, this.player.y - cam.y, this.player.radius + 8, 0, Math.PI * 2);
+            ctx.arc(this.player.x - cam.x, this.player.y - cam.y, this.player.radius + 8, 0, TWO_PI);
             ctx.stroke();
             ctx.globalAlpha = 0.15 * shieldRatio + 0.05;
             ctx.fillStyle = '#6688ff';
             ctx.beginPath();
-            ctx.arc(this.player.x - cam.x, this.player.y - cam.y, this.player.radius + 8, 0, Math.PI * 2);
+            ctx.arc(this.player.x - cam.x, this.player.y - cam.y, this.player.radius + 8, 0, TWO_PI);
             ctx.fill();
             ctx.globalAlpha = 1;
         }
@@ -1465,7 +1410,7 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
             // 底座
             ctx.globalAlpha = 0.25;
             ctx.beginPath();
-            ctx.arc(bx, by, jr, 0, Math.PI * 2);
+            ctx.arc(bx, by, jr, 0, TWO_PI);
             ctx.fillStyle = '#ffffff';
             ctx.fill();
             ctx.lineWidth = 2;
@@ -1475,7 +1420,7 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
             // 摇杆头
             ctx.globalAlpha = 0.5;
             ctx.beginPath();
-            ctx.arc(sx, sy, jr * 0.45, 0, Math.PI * 2);
+            ctx.arc(sx, sy, jr * 0.45, 0, TWO_PI);
             ctx.fillStyle = '#aabbff';
             ctx.fill();
             ctx.lineWidth = 2;
@@ -1598,7 +1543,7 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
                     r: 0.4 + Math.random() * 1.0,
                     a: 0.08 + Math.random() * 0.18,
                     twinkleSpeed: 1 + Math.random() * 2,
-                    twinklePhase: Math.random() * Math.PI * 2,
+                    twinklePhase: Math.random() * TWO_PI,
                 });
             }
         }
@@ -1624,7 +1569,7 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
                 ctx.globalAlpha = alpha;
                 ctx.fillStyle = theme.starColor;
                 ctx.beginPath();
-                ctx.arc(sx, sy, star.r, 0, Math.PI * 2);
+                ctx.arc(sx, sy, star.r, 0, TWO_PI);
                 ctx.fill();
             }
         }
@@ -1669,7 +1614,7 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
                     wx: Math.random() * 5000 - 500,
                     wy: Math.random() * 5000 - 500,
                     scale: 0.5 + Math.random() * 0.8,
-                    rot: Math.random() * Math.PI * 2,
+                    rot: Math.random() * TWO_PI,
                     variant: Math.floor(Math.random() * 3),
                 });
             }
@@ -1746,13 +1691,13 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
                 ctx.fillStyle = theme.decorColor;
                 ctx.globalAlpha = 0.12 + 0.04 * Math.sin(gt + d.rot * 2);
                 ctx.beginPath();
-                ctx.arc(0, -8, 10, 0, Math.PI * 2);
+                ctx.arc(0, -8, 10, 0, TWO_PI);
                 ctx.fill();
                 // 腐化粒子
                 ctx.fillStyle = '#88ff44';
                 ctx.globalAlpha = 0.2 * Math.abs(Math.sin(gt * 2 + d.rot));
                 ctx.beginPath();
-                ctx.arc(4 * Math.sin(gt + d.rot), -12 + 3 * Math.cos(gt * 0.7), 1.5, 0, Math.PI * 2);
+                ctx.arc(4 * Math.sin(gt + d.rot), -12 + 3 * Math.cos(gt * 0.7), 1.5, 0, TWO_PI);
                 ctx.fill();
             }
             ctx.restore();
@@ -1924,7 +1869,7 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
         const damage = this.player.getAttack() * 0.5;
 
         for (let i = 0; i < count; i++) {
-            const angle = this.orbitalAngle + (i / count) * Math.PI * 2;
+            const angle = this.orbitalAngle + (i / count) * TWO_PI;
             const bx = this.player.x + Math.cos(angle) * orbitRadius;
             const by = this.player.y + Math.sin(angle) * orbitRadius;
 
@@ -1975,7 +1920,7 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
             const fire = this.fireTrails[i];
             fire.life -= dt;
             if (fire.life <= 0) {
-                this.fireTrails[i] = this.fireTrails[this.fireTrails.length - 1]; this.fireTrails.pop();
+                swapRemove(this.fireTrails, i);
                 continue;
             }
 
@@ -2142,7 +2087,7 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
                 const count = event.count || 4;
                 const waveMult = this.waveManager ? (this.waveManager.wave || 1) * 0.5 : 1;
                 for (let i = 0; i < count; i++) {
-                    const angle = (i / count) * Math.PI * 2;
+                    const angle = (i / count) * TWO_PI;
                     const dist = 80;
                     const ex = boss.x + Math.cos(angle) * dist;
                     const ey = boss.y + Math.sin(angle) * dist;
@@ -2173,7 +2118,7 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
                 // Boss弹幕：环形子弹
                 const bulletCount = event.count || 12;
                 for (let i = 0; i < bulletCount; i++) {
-                    const angle = (i / bulletCount) * Math.PI * 2;
+                    const angle = (i / bulletCount) * TWO_PI;
                     this.enemyBullets.push(new EnemyBullet(boss.x, boss.y, angle, 150, boss.damage * 0.8, '#ff44aa'));
                 }
                 this.particles.emit(boss.x, boss.y, 12, {
@@ -2193,7 +2138,7 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
             const hz = this.mapHazards[i];
             const dmg = hz.update(dt, this.player);
             if (!hz.alive) {
-                this.mapHazards[i] = this.mapHazards[this.mapHazards.length - 1]; this.mapHazards.pop();
+                swapRemove(this.mapHazards, i);
                 continue;
             }
             // 对玩家造成伤害
@@ -2224,7 +2169,7 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
             const result = eo.update(dt, this.player, this.particles);
 
             if (!eo.alive) {
-                this.envObjects[i] = this.envObjects[this.envObjects.length - 1]; this.envObjects.pop();
+                swapRemove(this.envObjects, i);
                 continue;
             }
 
@@ -2271,7 +2216,7 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
         else type = 'portal';
 
         // 随机位置（在玩家附近但不太近）
-        const angle = Math.random() * Math.PI * 2;
+        const angle = Math.random() * TWO_PI;
         const dist = minDist + Math.random() * (maxDist - minDist);
         const x = px + Math.cos(angle) * dist;
         const y = py + Math.sin(angle) * dist;
@@ -2315,9 +2260,9 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
                     this.achievementTimer = 3.0;
                     this.combatLog.addEntry(`🔮 获得遗物: ${relic.name}`, '#ffaa00');
                 }
-                this.relicDrops[i] = this.relicDrops[this.relicDrops.length - 1]; this.relicDrops.pop();
+                swapRemove(this.relicDrops, i);
             } else if (!rd.alive) {
-                this.relicDrops[i] = this.relicDrops[this.relicDrops.length - 1]; this.relicDrops.pop();
+                swapRemove(this.relicDrops, i);
             }
         }
     }
@@ -2340,7 +2285,7 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
         for (let i = this.deathAnimEnemies.length - 1; i >= 0; i--) {
             const de = this.deathAnimEnemies[i];
             if (!de.dying) {
-                this.deathAnimEnemies[i] = this.deathAnimEnemies[this.deathAnimEnemies.length - 1]; this.deathAnimEnemies.pop();
+                swapRemove(this.deathAnimEnemies, i);
             }
         }
     }

@@ -25,8 +25,8 @@ class SpriteLoader {
     getFrame(type, bodyBob) {
         var frames = this.sprites[type];
         if (!frames) return null;
-        var norm = ((bodyBob % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
-        var frameIndex = Math.floor(norm / (Math.PI * 2) * this.frameCount) % this.frameCount;
+        var norm = ((bodyBob % (TWO_PI)) + TWO_PI) % (TWO_PI);
+        var frameIndex = Math.floor(norm / (TWO_PI) * this.frameCount) % this.frameCount;
         return frames[frameIndex];
     }
 
@@ -85,7 +85,7 @@ class SpriteLoader {
         ctx.save();
         ctx.fillStyle = 'rgba(0,0,0,0.35)';
         ctx.beginPath();
-        ctx.ellipse(cx, cy + r * 0.9, r * 0.75, r * 0.18, 0, 0, Math.PI * 2);
+        ctx.ellipse(cx, cy + r * 0.9, r * 0.75, r * 0.18, 0, 0, TWO_PI);
         ctx.fill();
         ctx.restore();
     }
@@ -106,7 +106,7 @@ class SpriteLoader {
         ctx.globalAlpha = 0.08;
         ctx.fillStyle = color || '#000000';
         for (var i = 0; i < density; i++) {
-            var angle = (i / density) * Math.PI * 2;
+            var angle = (i / density) * TWO_PI;
             var dist = (0.3 + (i * 7 % 13) / 13 * 0.55) * r;
             var nx = cx + Math.cos(angle) * dist;
             var ny = cy + Math.sin(angle) * dist;
@@ -120,7 +120,7 @@ class SpriteLoader {
     // ============================================
     _drawSkeleton(ctx, cx, cy, r, phase, def) {
         this._shadow(ctx, cx, cy, r);
-        var breathe = Math.sin(phase * Math.PI * 2) * r * 0.02;
+        var breathe = Math.sin(phase * TWO_PI) * r * 0.02;
 
         // 脊椎
         ctx.strokeStyle = '#b0c8a0';
@@ -135,7 +135,7 @@ class SpriteLoader {
         for (var v = 0; v < 4; v++) {
             var vy = cy + r * 0.05 + v * r * 0.17;
             ctx.beginPath();
-            ctx.ellipse(cx, vy, r * 0.07, r * 0.04, 0, 0, Math.PI * 2);
+            ctx.ellipse(cx, vy, r * 0.07, r * 0.04, 0, 0, TWO_PI);
             ctx.fill();
         }
 
@@ -161,16 +161,16 @@ class SpriteLoader {
         skullGrad.addColorStop(1, '#88b868');
         ctx.fillStyle = skullGrad;
         ctx.beginPath();
-        ctx.arc(cx, headCy, headR, 0, Math.PI * 2);
+        ctx.arc(cx, headCy, headR, 0, TWO_PI);
         ctx.fill();
 
         // 颧骨突起
         ctx.fillStyle = 'rgba(200,200,180,0.4)';
         ctx.beginPath();
-        ctx.ellipse(cx - headR * 0.5, headCy + headR * 0.1, headR * 0.2, headR * 0.15, -0.3, 0, Math.PI * 2);
+        ctx.ellipse(cx - headR * 0.5, headCy + headR * 0.1, headR * 0.2, headR * 0.15, -0.3, 0, TWO_PI);
         ctx.fill();
         ctx.beginPath();
-        ctx.ellipse(cx + headR * 0.5, headCy + headR * 0.1, headR * 0.2, headR * 0.15, 0.3, 0, Math.PI * 2);
+        ctx.ellipse(cx + headR * 0.5, headCy + headR * 0.1, headR * 0.2, headR * 0.15, 0.3, 0, TWO_PI);
         ctx.fill();
 
         // 眼眶（深凹）
@@ -180,24 +180,24 @@ class SpriteLoader {
         eyeGrad1.addColorStop(1, '#4a5a4a');
         ctx.fillStyle = eyeGrad1;
         ctx.beginPath();
-        ctx.ellipse(cx - headR * 0.32, headCy - headR * 0.05, headR * 0.2, headR * 0.22, 0, 0, Math.PI * 2);
+        ctx.ellipse(cx - headR * 0.32, headCy - headR * 0.05, headR * 0.2, headR * 0.22, 0, 0, TWO_PI);
         ctx.fill();
         ctx.beginPath();
-        ctx.ellipse(cx + headR * 0.32, headCy - headR * 0.05, headR * 0.2, headR * 0.22, 0, 0, Math.PI * 2);
+        ctx.ellipse(cx + headR * 0.32, headCy - headR * 0.05, headR * 0.2, headR * 0.22, 0, 0, TWO_PI);
         ctx.fill();
 
         // 红光瞳孔
-        var eyeGlow = 0.5 + Math.sin(phase * Math.PI * 2) * 0.4;
+        var eyeGlow = 0.5 + Math.sin(phase * TWO_PI) * 0.4;
         ctx.save();
         ctx.globalAlpha = eyeGlow;
         ctx.shadowColor = '#ff2200';
         ctx.shadowBlur = r * 0.15;
         ctx.fillStyle = '#ff3300';
         ctx.beginPath();
-        ctx.arc(cx - headR * 0.32, headCy - headR * 0.05, headR * 0.08, 0, Math.PI * 2);
+        ctx.arc(cx - headR * 0.32, headCy - headR * 0.05, headR * 0.08, 0, TWO_PI);
         ctx.fill();
         ctx.beginPath();
-        ctx.arc(cx + headR * 0.32, headCy - headR * 0.05, headR * 0.08, 0, Math.PI * 2);
+        ctx.arc(cx + headR * 0.32, headCy - headR * 0.05, headR * 0.08, 0, TWO_PI);
         ctx.fill();
         ctx.restore();
 
@@ -235,7 +235,7 @@ class SpriteLoader {
         // 短骨刀（右手）
         ctx.save();
         ctx.translate(cx + r * 0.6, cy + r * 0.2);
-        ctx.rotate(-0.4 + Math.sin(phase * Math.PI * 2) * 0.1);
+        ctx.rotate(-0.4 + Math.sin(phase * TWO_PI) * 0.1);
         ctx.fillStyle = '#aabbaa';
         ctx.fillRect(-r * 0.03, -r * 0.5, r * 0.06, r * 0.5);
         ctx.fillStyle = '#887766';
@@ -249,7 +249,7 @@ class SpriteLoader {
     // 蝙蝠 - 膜翼骨架 + 毛皮纹理 + 尖牙
     // ============================================
     _drawBat(ctx, cx, cy, r, phase, def) {
-        var wingAngle = Math.sin(phase * Math.PI * 2) * 0.5;
+        var wingAngle = Math.sin(phase * TWO_PI) * 0.5;
         var wingSpan = r * 2.0;
         this._shadow(ctx, cx, cy, r);
 
@@ -325,14 +325,14 @@ class SpriteLoader {
         bodyGrad.addColorStop(1, '#4a2277');
         ctx.fillStyle = bodyGrad;
         ctx.beginPath();
-        ctx.ellipse(cx, cy, r * 0.55, r * 0.7, 0, 0, Math.PI * 2);
+        ctx.ellipse(cx, cy, r * 0.55, r * 0.7, 0, 0, TWO_PI);
         ctx.fill();
 
         // 毛皮纹理线
         ctx.strokeStyle = 'rgba(120,60,150,0.5)';
         ctx.lineWidth = 0.7;
         for (var i = 0; i < 12; i++) {
-            var fa = (i / 12) * Math.PI * 2;
+            var fa = (i / 12) * TWO_PI;
             var fl = r * (0.3 + (i % 3) * 0.08);
             ctx.beginPath();
             ctx.moveTo(cx + Math.cos(fa) * r * 0.2, cy + Math.sin(fa) * r * 0.25);
@@ -370,26 +370,26 @@ class SpriteLoader {
         ctx.fill();
 
         // 眼睛（发光黄色 + 瞳孔）
-        var eyeGlow = 0.7 + Math.sin(phase * Math.PI * 2) * 0.2;
+        var eyeGlow = 0.7 + Math.sin(phase * TWO_PI) * 0.2;
         ctx.save();
         ctx.globalAlpha = eyeGlow;
         ctx.shadowColor = '#ffcc00';
         ctx.shadowBlur = r * 0.12;
         ctx.fillStyle = '#ffdd22';
         ctx.beginPath();
-        ctx.ellipse(cx - r * 0.2, cy - r * 0.08, r * 0.13, r * 0.09, -0.2, 0, Math.PI * 2);
+        ctx.ellipse(cx - r * 0.2, cy - r * 0.08, r * 0.13, r * 0.09, -0.2, 0, TWO_PI);
         ctx.fill();
         ctx.beginPath();
-        ctx.ellipse(cx + r * 0.2, cy - r * 0.08, r * 0.13, r * 0.09, 0.2, 0, Math.PI * 2);
+        ctx.ellipse(cx + r * 0.2, cy - r * 0.08, r * 0.13, r * 0.09, 0.2, 0, TWO_PI);
         ctx.fill();
         ctx.restore();
         // 瞳孔
         ctx.fillStyle = '#110800';
         ctx.beginPath();
-        ctx.ellipse(cx - r * 0.2, cy - r * 0.08, r * 0.04, r * 0.07, 0, 0, Math.PI * 2);
+        ctx.ellipse(cx - r * 0.2, cy - r * 0.08, r * 0.04, r * 0.07, 0, 0, TWO_PI);
         ctx.fill();
         ctx.beginPath();
-        ctx.ellipse(cx + r * 0.2, cy - r * 0.08, r * 0.04, r * 0.07, 0, 0, Math.PI * 2);
+        ctx.ellipse(cx + r * 0.2, cy - r * 0.08, r * 0.04, r * 0.07, 0, 0, TWO_PI);
         ctx.fill();
 
         // 吸血尖牙
@@ -420,8 +420,8 @@ class SpriteLoader {
     // ============================================
     _drawSlime(ctx, cx, cy, r, phase, def) {
         this._shadow(ctx, cx, cy, r);
-        var wobble = Math.sin(phase * Math.PI * 2) * r * 0.08;
-        var wobble2 = Math.cos(phase * Math.PI * 2 + 1) * r * 0.05;
+        var wobble = Math.sin(phase * TWO_PI) * r * 0.08;
+        var wobble2 = Math.cos(phase * TWO_PI + 1) * r * 0.05;
 
         // 身体底层（深色）
         var bodyGrad = ctx.createRadialGradient(cx - r * 0.3, cy - r * 0.4, r * 0.1, cx, cy + r * 0.2, r * 1.2);
@@ -447,9 +447,9 @@ class SpriteLoader {
         var bubbles = [[0.2, 0.3, 0.08], [-0.3, 0.15, 0.06], [0.05, -0.2, 0.05], [-0.15, 0.45, 0.07], [0.3, -0.1, 0.04]];
         for (var b = 0; b < bubbles.length; b++) {
             var bx = cx + bubbles[b][0] * r;
-            var by = cy + bubbles[b][1] * r + Math.sin(phase * Math.PI * 2 + b) * r * 0.04;
+            var by = cy + bubbles[b][1] * r + Math.sin(phase * TWO_PI + b) * r * 0.04;
             ctx.beginPath();
-            ctx.arc(bx, by, bubbles[b][2] * r, 0, Math.PI * 2);
+            ctx.arc(bx, by, bubbles[b][2] * r, 0, TWO_PI);
             ctx.fill();
         }
         ctx.restore();
@@ -463,52 +463,52 @@ class SpriteLoader {
         shineGrad.addColorStop(1, 'rgba(255,255,255,0)');
         ctx.fillStyle = shineGrad;
         ctx.beginPath();
-        ctx.ellipse(cx - r * 0.1, cy - r * 0.2, r * 0.7, r * 0.5, -0.2, 0, Math.PI * 2);
+        ctx.ellipse(cx - r * 0.1, cy - r * 0.2, r * 0.7, r * 0.5, -0.2, 0, TWO_PI);
         ctx.fill();
         ctx.restore();
 
         // 主高光
         ctx.fillStyle = 'rgba(255,255,255,0.6)';
         ctx.beginPath();
-        ctx.ellipse(cx - r * 0.3, cy - r * 0.5, r * 0.18, r * 0.12, -0.4, 0, Math.PI * 2);
+        ctx.ellipse(cx - r * 0.3, cy - r * 0.5, r * 0.18, r * 0.12, -0.4, 0, TWO_PI);
         ctx.fill();
         // 次高光
         ctx.fillStyle = 'rgba(255,255,255,0.3)';
         ctx.beginPath();
-        ctx.ellipse(cx - r * 0.1, cy - r * 0.35, r * 0.08, r * 0.05, -0.3, 0, Math.PI * 2);
+        ctx.ellipse(cx - r * 0.1, cy - r * 0.35, r * 0.08, r * 0.05, -0.3, 0, TWO_PI);
         ctx.fill();
 
         // 眼睛（大瞳孔 Q 弹）
         ctx.fillStyle = '#ffffff';
         ctx.beginPath();
-        ctx.arc(cx - r * 0.28, cy - r * 0.15, r * 0.22, 0, Math.PI * 2);
+        ctx.arc(cx - r * 0.28, cy - r * 0.15, r * 0.22, 0, TWO_PI);
         ctx.fill();
         ctx.beginPath();
-        ctx.arc(cx + r * 0.28, cy - r * 0.15, r * 0.22, 0, Math.PI * 2);
+        ctx.arc(cx + r * 0.28, cy - r * 0.15, r * 0.22, 0, TWO_PI);
         ctx.fill();
         // 虹膜
         ctx.fillStyle = '#116622';
         ctx.beginPath();
-        ctx.arc(cx - r * 0.25, cy - r * 0.12, r * 0.13, 0, Math.PI * 2);
+        ctx.arc(cx - r * 0.25, cy - r * 0.12, r * 0.13, 0, TWO_PI);
         ctx.fill();
         ctx.beginPath();
-        ctx.arc(cx + r * 0.31, cy - r * 0.12, r * 0.13, 0, Math.PI * 2);
+        ctx.arc(cx + r * 0.31, cy - r * 0.12, r * 0.13, 0, TWO_PI);
         ctx.fill();
         // 瞳孔
         ctx.fillStyle = '#001100';
         ctx.beginPath();
-        ctx.arc(cx - r * 0.24, cy - r * 0.11, r * 0.07, 0, Math.PI * 2);
+        ctx.arc(cx - r * 0.24, cy - r * 0.11, r * 0.07, 0, TWO_PI);
         ctx.fill();
         ctx.beginPath();
-        ctx.arc(cx + r * 0.32, cy - r * 0.11, r * 0.07, 0, Math.PI * 2);
+        ctx.arc(cx + r * 0.32, cy - r * 0.11, r * 0.07, 0, TWO_PI);
         ctx.fill();
         // 眼高光
         ctx.fillStyle = 'rgba(255,255,255,0.8)';
         ctx.beginPath();
-        ctx.arc(cx - r * 0.3, cy - r * 0.18, r * 0.06, 0, Math.PI * 2);
+        ctx.arc(cx - r * 0.3, cy - r * 0.18, r * 0.06, 0, TWO_PI);
         ctx.fill();
         ctx.beginPath();
-        ctx.arc(cx + r * 0.26, cy - r * 0.18, r * 0.06, 0, Math.PI * 2);
+        ctx.arc(cx + r * 0.26, cy - r * 0.18, r * 0.06, 0, TWO_PI);
         ctx.fill();
 
         // 微笑嘴巴
@@ -525,7 +525,7 @@ class SpriteLoader {
     // ============================================
     _drawSkeletonMage(ctx, cx, cy, r, phase, def) {
         this._shadow(ctx, cx, cy, r);
-        var floatY = Math.sin(phase * Math.PI * 2) * r * 0.06;
+        var floatY = Math.sin(phase * TWO_PI) * r * 0.06;
 
         // 法袍（梯形 + 渐变）
         var robeGrad = ctx.createLinearGradient(cx, cy - r * 0.5, cx, cy + r);
@@ -555,7 +555,7 @@ class SpriteLoader {
 
         // 符文（袍子上）
         ctx.save();
-        ctx.globalAlpha = 0.35 + Math.sin(phase * Math.PI * 2) * 0.15;
+        ctx.globalAlpha = 0.35 + Math.sin(phase * TWO_PI) * 0.15;
         ctx.strokeStyle = '#aa66ff';
         ctx.lineWidth = r * 0.025;
         // 三角符文
@@ -567,7 +567,7 @@ class SpriteLoader {
         ctx.stroke();
         // 圆形符文
         ctx.beginPath();
-        ctx.arc(cx, cy + r * 0.22 + floatY, r * 0.08, 0, Math.PI * 2);
+        ctx.arc(cx, cy + r * 0.22 + floatY, r * 0.08, 0, TWO_PI);
         ctx.stroke();
         ctx.restore();
 
@@ -580,7 +580,7 @@ class SpriteLoader {
         skGrad.addColorStop(1, '#888866');
         ctx.fillStyle = skGrad;
         ctx.beginPath();
-        ctx.arc(cx, headCy, headR, 0, Math.PI * 2);
+        ctx.arc(cx, headCy, headR, 0, TWO_PI);
         ctx.fill();
 
         // 兜帽
@@ -598,15 +598,15 @@ class SpriteLoader {
 
         // 紫色发光眼
         ctx.save();
-        ctx.globalAlpha = 0.7 + Math.sin(phase * Math.PI * 2) * 0.3;
+        ctx.globalAlpha = 0.7 + Math.sin(phase * TWO_PI) * 0.3;
         ctx.shadowColor = '#bb44ff';
         ctx.shadowBlur = r * 0.15;
         ctx.fillStyle = '#cc55ff';
         ctx.beginPath();
-        ctx.arc(cx - headR * 0.3, headCy + headR * 0.1, headR * 0.15, 0, Math.PI * 2);
+        ctx.arc(cx - headR * 0.3, headCy + headR * 0.1, headR * 0.15, 0, TWO_PI);
         ctx.fill();
         ctx.beginPath();
-        ctx.arc(cx + headR * 0.3, headCy + headR * 0.1, headR * 0.15, 0, Math.PI * 2);
+        ctx.arc(cx + headR * 0.3, headCy + headR * 0.1, headR * 0.15, 0, TWO_PI);
         ctx.fill();
         ctx.restore();
 
@@ -626,7 +626,7 @@ class SpriteLoader {
         cGrad.addColorStop(1, '#7700aa');
         ctx.fillStyle = cGrad;
         ctx.beginPath();
-        ctx.arc(cx - r * 0.65, crystalY, r * 0.12, 0, Math.PI * 2);
+        ctx.arc(cx - r * 0.65, crystalY, r * 0.12, 0, TWO_PI);
         ctx.fill();
     }
 
@@ -635,7 +635,7 @@ class SpriteLoader {
     // ============================================
     _drawShadowWolf(ctx, cx, cy, r, phase, def) {
         this._shadow(ctx, cx, cy, r);
-        var runPhase = Math.sin(phase * Math.PI * 2);
+        var runPhase = Math.sin(phase * TWO_PI);
 
         // 身体（长椭圆 + 多层毛色）
         var bodyGrad = ctx.createRadialGradient(cx - r * 0.2, cy - r * 0.15, r * 0.1, cx, cy, r * 1.1);
@@ -645,7 +645,7 @@ class SpriteLoader {
         bodyGrad.addColorStop(1, '#112255');
         ctx.fillStyle = bodyGrad;
         ctx.beginPath();
-        ctx.ellipse(cx, cy, r * 1.1, r * 0.6, 0, 0, Math.PI * 2);
+        ctx.ellipse(cx, cy, r * 1.1, r * 0.6, 0, 0, TWO_PI);
         ctx.fill();
 
         // 暗色毛纹
@@ -683,12 +683,12 @@ class SpriteLoader {
         headGrad.addColorStop(1, '#223388');
         ctx.fillStyle = headGrad;
         ctx.beginPath();
-        ctx.ellipse(headX, headY, r * 0.45, r * 0.35, -0.1, 0, Math.PI * 2);
+        ctx.ellipse(headX, headY, r * 0.45, r * 0.35, -0.1, 0, TWO_PI);
         ctx.fill();
         // 口吻（前突）
         ctx.fillStyle = '#2a3366';
         ctx.beginPath();
-        ctx.ellipse(headX - r * 0.35, headY + r * 0.08, r * 0.2, r * 0.13, -0.1, 0, Math.PI * 2);
+        ctx.ellipse(headX - r * 0.35, headY + r * 0.08, r * 0.2, r * 0.13, -0.1, 0, TWO_PI);
         ctx.fill();
 
         // 尖耳
@@ -712,19 +712,19 @@ class SpriteLoader {
         ctx.shadowBlur = r * 0.1;
         ctx.fillStyle = '#ffee22';
         ctx.beginPath();
-        ctx.ellipse(headX - r * 0.15, headY - r * 0.08, r * 0.1, r * 0.06, -0.15, 0, Math.PI * 2);
+        ctx.ellipse(headX - r * 0.15, headY - r * 0.08, r * 0.1, r * 0.06, -0.15, 0, TWO_PI);
         ctx.fill();
         ctx.beginPath();
-        ctx.ellipse(headX + r * 0.1, headY - r * 0.08, r * 0.1, r * 0.06, 0.15, 0, Math.PI * 2);
+        ctx.ellipse(headX + r * 0.1, headY - r * 0.08, r * 0.1, r * 0.06, 0.15, 0, TWO_PI);
         ctx.fill();
         ctx.restore();
         // 瞳孔（竖瞳）
         ctx.fillStyle = '#110800';
         ctx.beginPath();
-        ctx.ellipse(headX - r * 0.15, headY - r * 0.08, r * 0.03, r * 0.06, 0, 0, Math.PI * 2);
+        ctx.ellipse(headX - r * 0.15, headY - r * 0.08, r * 0.03, r * 0.06, 0, 0, TWO_PI);
         ctx.fill();
         ctx.beginPath();
-        ctx.ellipse(headX + r * 0.1, headY - r * 0.08, r * 0.03, r * 0.06, 0, 0, Math.PI * 2);
+        ctx.ellipse(headX + r * 0.1, headY - r * 0.08, r * 0.03, r * 0.06, 0, 0, TWO_PI);
         ctx.fill();
 
         // 獠牙
@@ -758,10 +758,10 @@ class SpriteLoader {
 
         // 利爪
         ctx.fillStyle = '#aaaaaa';
-        ctx.beginPath(); ctx.arc(cx - r * 0.42, cy + r * 0.87 + legOff, r * 0.04, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(cx - r * 0.12, cy + r * 0.87 - legOff, r * 0.04, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(cx + r * 0.27, cy + r * 0.87 - legOff, r * 0.04, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(cx + r * 0.57, cy + r * 0.87 + legOff, r * 0.04, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx - r * 0.42, cy + r * 0.87 + legOff, r * 0.04, 0, TWO_PI); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx - r * 0.12, cy + r * 0.87 - legOff, r * 0.04, 0, TWO_PI); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx + r * 0.27, cy + r * 0.87 - legOff, r * 0.04, 0, TWO_PI); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx + r * 0.57, cy + r * 0.87 + legOff, r * 0.04, 0, TWO_PI); ctx.fill();
     }
 
     // ============================================
@@ -769,7 +769,7 @@ class SpriteLoader {
     // ============================================
     _drawGargoyle(ctx, cx, cy, r, phase, def) {
         this._shadow(ctx, cx, cy, r);
-        var wingFlap = Math.sin(phase * Math.PI * 2) * 0.12;
+        var wingFlap = Math.sin(phase * TWO_PI) * 0.12;
 
         // 石翅
         ctx.save();
@@ -833,9 +833,9 @@ class SpriteLoader {
         ctx.save();
         ctx.globalAlpha = 0.3;
         ctx.fillStyle = '#4a7a3a';
-        ctx.beginPath(); ctx.arc(cx - r * 0.4, cy + r * 0.4, r * 0.08, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(cx + r * 0.5, cy + r * 0.3, r * 0.06, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(cx + r * 0.1, cy + r * 0.55, r * 0.05, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx - r * 0.4, cy + r * 0.4, r * 0.08, 0, TWO_PI); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx + r * 0.5, cy + r * 0.3, r * 0.06, 0, TWO_PI); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx + r * 0.1, cy + r * 0.55, r * 0.05, 0, TWO_PI); ctx.fill();
         ctx.restore();
 
         // 角（弯曲 + 环纹）
@@ -864,12 +864,12 @@ class SpriteLoader {
 
         // 发光眼
         ctx.save();
-        ctx.globalAlpha = 0.7 + Math.sin(phase * Math.PI * 2) * 0.25;
+        ctx.globalAlpha = 0.7 + Math.sin(phase * TWO_PI) * 0.25;
         ctx.shadowColor = '#ff6600';
         ctx.shadowBlur = r * 0.12;
         ctx.fillStyle = '#ff7700';
-        ctx.beginPath(); ctx.arc(cx - r * 0.25, cy - r * 0.15, r * 0.12, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(cx + r * 0.25, cy - r * 0.15, r * 0.12, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx - r * 0.25, cy - r * 0.15, r * 0.12, 0, TWO_PI); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx + r * 0.25, cy - r * 0.15, r * 0.12, 0, TWO_PI); ctx.fill();
         ctx.restore();
 
         // 嘴（石刻感）
@@ -921,7 +921,7 @@ class SpriteLoader {
         headGrad.addColorStop(1, '#550a1a');
         ctx.fillStyle = headGrad;
         ctx.beginPath();
-        ctx.arc(cx, cy - r * 0.4, r * 0.32, 0, Math.PI * 2);
+        ctx.arc(cx, cy - r * 0.4, r * 0.32, 0, TWO_PI);
         ctx.fill();
 
         // 恶魔角
@@ -945,14 +945,14 @@ class SpriteLoader {
         ctx.shadowColor = '#ffaa00';
         ctx.shadowBlur = r * 0.1;
         ctx.fillStyle = '#ffcc33';
-        ctx.beginPath(); ctx.arc(cx - r * 0.12, cy - r * 0.42, r * 0.07, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(cx + r * 0.12, cy - r * 0.42, r * 0.07, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx - r * 0.12, cy - r * 0.42, r * 0.07, 0, TWO_PI); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx + r * 0.12, cy - r * 0.42, r * 0.07, 0, TWO_PI); ctx.fill();
         ctx.restore();
 
         // 3个环绕法球
         ctx.save();
         for (var orb = 0; orb < 3; orb++) {
-            var orbAngle = phase * Math.PI * 2 + orb * (Math.PI * 2 / 3);
+            var orbAngle = phase * TWO_PI + orb * (TWO_PI / 3);
             var orbX = cx + Math.cos(orbAngle) * r * 0.7;
             var orbY = cy + r * 0.15 + Math.sin(orbAngle) * r * 0.35;
             var orbGrad = ctx.createRadialGradient(orbX, orbY, 0, orbX, orbY, r * 0.12);
@@ -961,7 +961,7 @@ class SpriteLoader {
             orbGrad.addColorStop(1, 'rgba(255,50,100,0)');
             ctx.fillStyle = orbGrad;
             ctx.beginPath();
-            ctx.arc(orbX, orbY, r * 0.12, 0, Math.PI * 2);
+            ctx.arc(orbX, orbY, r * 0.12, 0, TWO_PI);
             ctx.fill();
         }
         ctx.restore();
@@ -972,7 +972,7 @@ class SpriteLoader {
     // ============================================
     _drawExploder(ctx, cx, cy, r, phase, def) {
         this._shadow(ctx, cx, cy, r);
-        var pulse = 1 + Math.sin(phase * Math.PI * 2) * 0.12;
+        var pulse = 1 + Math.sin(phase * TWO_PI) * 0.12;
         var pr = r * pulse;
 
         // 外壳
@@ -983,7 +983,7 @@ class SpriteLoader {
         shellGrad.addColorStop(1, '#551a08');
         ctx.fillStyle = shellGrad;
         ctx.beginPath();
-        ctx.arc(cx, cy, pr * 0.85, 0, Math.PI * 2);
+        ctx.arc(cx, cy, pr * 0.85, 0, TWO_PI);
         ctx.fill();
 
         // 甲壳分节线
@@ -991,7 +991,7 @@ class SpriteLoader {
         ctx.lineWidth = r * 0.03;
         ctx.beginPath(); ctx.moveTo(cx, cy - pr * 0.8); ctx.lineTo(cx, cy + pr * 0.8); ctx.stroke();
         ctx.beginPath();
-        ctx.ellipse(cx, cy, pr * 0.5, pr * 0.82, 0, 0, Math.PI * 2);
+        ctx.ellipse(cx, cy, pr * 0.5, pr * 0.82, 0, 0, TWO_PI);
         ctx.stroke();
 
         // 能量裂纹（发光）
@@ -1002,7 +1002,7 @@ class SpriteLoader {
         ctx.strokeStyle = '#ffee66';
         ctx.lineWidth = r * 0.04;
         for (var i = 0; i < 6; i++) {
-            var a = (i / 6) * Math.PI * 2 + phase * Math.PI;
+            var a = (i / 6) * TWO_PI + phase * Math.PI;
             var midA = a + (Math.PI / 12) * ((i % 2) * 2 - 1);
             ctx.beginPath();
             ctx.moveTo(cx + Math.cos(a) * pr * 0.15, cy + Math.sin(a) * pr * 0.15);
@@ -1021,27 +1021,27 @@ class SpriteLoader {
         ctx.fillStyle = '#ffff88';
         ctx.globalAlpha = 0.5;
         for (var s = 0; s < 5; s++) {
-            var sa = (s / 5) * Math.PI * 2 + phase * Math.PI * 3;
+            var sa = (s / 5) * TWO_PI + phase * Math.PI * 3;
             var sd = pr * (0.85 + Math.sin(sa * 2 + s) * 0.1);
             ctx.beginPath();
-            ctx.arc(cx + Math.cos(sa) * sd, cy + Math.sin(sa) * sd, r * 0.04, 0, Math.PI * 2);
+            ctx.arc(cx + Math.cos(sa) * sd, cy + Math.sin(sa) * sd, r * 0.04, 0, TWO_PI);
             ctx.fill();
         }
         ctx.restore();
 
         // 小眼睛（警觉）
         ctx.fillStyle = '#ffff88';
-        ctx.beginPath(); ctx.arc(cx - r * 0.2, cy - r * 0.15, r * 0.12, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(cx + r * 0.2, cy - r * 0.15, r * 0.12, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx - r * 0.2, cy - r * 0.15, r * 0.12, 0, TWO_PI); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx + r * 0.2, cy - r * 0.15, r * 0.12, 0, TWO_PI); ctx.fill();
         ctx.fillStyle = '#220000';
-        ctx.beginPath(); ctx.arc(cx - r * 0.2, cy - r * 0.15, r * 0.05, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(cx + r * 0.2, cy - r * 0.15, r * 0.05, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx - r * 0.2, cy - r * 0.15, r * 0.05, 0, TWO_PI); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx + r * 0.2, cy - r * 0.15, r * 0.05, 0, TWO_PI); ctx.fill();
 
         // 短腿（甲虫）
         ctx.strokeStyle = '#663311';
         ctx.lineWidth = r * 0.05;
         ctx.lineCap = 'round';
-        var legP = Math.sin(phase * Math.PI * 2) * r * 0.05;
+        var legP = Math.sin(phase * TWO_PI) * r * 0.05;
         ctx.beginPath(); ctx.moveTo(cx - r * 0.5, cy + r * 0.4); ctx.lineTo(cx - r * 0.65, cy + r * 0.7 + legP); ctx.stroke();
         ctx.beginPath(); ctx.moveTo(cx + r * 0.5, cy + r * 0.4); ctx.lineTo(cx + r * 0.65, cy + r * 0.7 - legP); ctx.stroke();
         ctx.beginPath(); ctx.moveTo(cx - r * 0.6, cy + r * 0.15); ctx.lineTo(cx - r * 0.8, cy + r * 0.35 - legP); ctx.stroke();
@@ -1056,12 +1056,12 @@ class SpriteLoader {
 
         // 暗红光环
         ctx.save();
-        ctx.globalAlpha = 0.15 + Math.sin(phase * Math.PI * 2) * 0.05;
+        ctx.globalAlpha = 0.15 + Math.sin(phase * TWO_PI) * 0.05;
         var auraGrad = ctx.createRadialGradient(cx, cy, r * 0.7, cx, cy, r * 1.15);
         auraGrad.addColorStop(0, 'rgba(255,50,50,0.3)');
         auraGrad.addColorStop(1, 'rgba(255,50,50,0)');
         ctx.fillStyle = auraGrad;
-        ctx.beginPath(); ctx.arc(cx, cy, r * 1.15, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx, cy, r * 1.15, 0, TWO_PI); ctx.fill();
         ctx.restore();
 
         // 铠甲身体
@@ -1086,8 +1086,8 @@ class SpriteLoader {
         ctx.beginPath(); ctx.moveTo(cx - r * 0.5, cy); ctx.lineTo(cx + r * 0.5, cy); ctx.stroke();
         // 肩甲
         ctx.fillStyle = '#776655';
-        ctx.beginPath(); ctx.ellipse(cx - r * 0.55, cy - r * 0.3, r * 0.2, r * 0.12, -0.3, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.ellipse(cx + r * 0.55, cy - r * 0.3, r * 0.2, r * 0.12, 0.3, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(cx - r * 0.55, cy - r * 0.3, r * 0.2, r * 0.12, -0.3, 0, TWO_PI); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(cx + r * 0.55, cy - r * 0.3, r * 0.2, r * 0.12, 0.3, 0, TWO_PI); ctx.fill();
 
         // 头颅
         var headCy = cy - r * 0.55;
@@ -1097,11 +1097,11 @@ class SpriteLoader {
         skullGrad.addColorStop(0.6, '#ccaa88');
         skullGrad.addColorStop(1, '#886644');
         ctx.fillStyle = skullGrad;
-        ctx.beginPath(); ctx.arc(cx, headCy, headR, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx, headCy, headR, 0, TWO_PI); ctx.fill();
 
         // 火焰王冠
         ctx.save();
-        var flamePhase = phase * Math.PI * 2;
+        var flamePhase = phase * TWO_PI;
         ctx.fillStyle = '#ffaa00';
         ctx.beginPath();
         ctx.moveTo(cx - r * 0.4, headCy - headR * 0.3);
@@ -1115,23 +1115,23 @@ class SpriteLoader {
         ctx.fill();
         // 王冠宝石
         ctx.fillStyle = '#ff2222';
-        ctx.beginPath(); ctx.arc(cx, headCy - headR * 0.6, r * 0.06, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx, headCy - headR * 0.6, r * 0.06, 0, TWO_PI); ctx.fill();
         ctx.restore();
 
         // 火焰眼
         ctx.save();
-        ctx.globalAlpha = 0.8 + Math.sin(phase * Math.PI * 2) * 0.2;
+        ctx.globalAlpha = 0.8 + Math.sin(phase * TWO_PI) * 0.2;
         ctx.shadowColor = '#ff4400';
         ctx.shadowBlur = r * 0.12;
         ctx.fillStyle = '#ff3300';
-        ctx.beginPath(); ctx.arc(cx - headR * 0.4, headCy + headR * 0.1, headR * 0.2, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(cx + headR * 0.4, headCy + headR * 0.1, headR * 0.2, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx - headR * 0.4, headCy + headR * 0.1, headR * 0.2, 0, TWO_PI); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx + headR * 0.4, headCy + headR * 0.1, headR * 0.2, 0, TWO_PI); ctx.fill();
         ctx.restore();
 
         // 巨剑
         ctx.save();
         ctx.translate(cx + r * 0.7, cy - r * 0.1);
-        ctx.rotate(-0.5 + Math.sin(phase * Math.PI * 2) * 0.08);
+        ctx.rotate(-0.5 + Math.sin(phase * TWO_PI) * 0.08);
         // 剑身
         var swordGrad = ctx.createLinearGradient(0, -r * 0.9, r * 0.08, 0);
         swordGrad.addColorStop(0, '#dddddd');
@@ -1170,11 +1170,11 @@ class SpriteLoader {
         auraGrad.addColorStop(0, 'rgba(170,34,100,0.4)');
         auraGrad.addColorStop(1, 'rgba(100,20,60,0)');
         ctx.fillStyle = auraGrad;
-        ctx.beginPath(); ctx.arc(cx, cy, r * 1.2, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx, cy, r * 1.2, 0, TWO_PI); ctx.fill();
         ctx.restore();
 
         // 恶魔翅膀
-        var wf = Math.sin(phase * Math.PI * 2) * 0.1;
+        var wf = Math.sin(phase * TWO_PI) * 0.1;
         ctx.fillStyle = '#2a0a1a';
         ctx.beginPath();
         ctx.moveTo(cx - r * 0.4, cy - r * 0.2);
@@ -1196,13 +1196,13 @@ class SpriteLoader {
         bodyGrad.addColorStop(0.8, '#440a2a');
         bodyGrad.addColorStop(1, '#220515');
         ctx.fillStyle = bodyGrad;
-        ctx.beginPath(); ctx.arc(cx, cy, r * 0.8, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx, cy, r * 0.8, 0, TWO_PI); ctx.fill();
 
         // 铠甲刻纹
         ctx.strokeStyle = 'rgba(255,100,180,0.25)';
         ctx.lineWidth = r * 0.02;
         ctx.beginPath(); ctx.moveTo(cx, cy - r * 0.7); ctx.lineTo(cx, cy + r * 0.7); ctx.stroke();
-        ctx.beginPath(); ctx.ellipse(cx, cy, r * 0.45, r * 0.45, 0, 0, Math.PI * 2); ctx.stroke();
+        ctx.beginPath(); ctx.ellipse(cx, cy, r * 0.45, r * 0.45, 0, 0, TWO_PI); ctx.stroke();
 
         // 弯角
         ctx.fillStyle = '#330a15';
@@ -1221,7 +1221,7 @@ class SpriteLoader {
 
         // 旋转符文环
         ctx.save();
-        var runeAngle = phase * Math.PI * 2;
+        var runeAngle = phase * TWO_PI;
         ctx.globalAlpha = 0.5 + Math.sin(phase * Math.PI * 4) * 0.2;
         ctx.strokeStyle = '#ff55aa';
         ctx.lineWidth = r * 0.03;
@@ -1232,7 +1232,7 @@ class SpriteLoader {
         for (var rn = 0; rn < 4; rn++) {
             var ra = runeAngle + rn * (Math.PI / 2);
             ctx.beginPath();
-            ctx.arc(cx + Math.cos(ra) * r * 0.6, cy + Math.sin(ra) * r * 0.6, r * 0.04, 0, Math.PI * 2);
+            ctx.arc(cx + Math.cos(ra) * r * 0.6, cy + Math.sin(ra) * r * 0.6, r * 0.04, 0, TWO_PI);
             ctx.fill();
         }
         ctx.restore();
@@ -1243,8 +1243,8 @@ class SpriteLoader {
         ctx.shadowColor = '#ff88dd';
         ctx.shadowBlur = r * 0.12;
         ctx.fillStyle = '#ff88cc';
-        ctx.beginPath(); ctx.arc(cx - r * 0.2, cy - r * 0.15, r * 0.1, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(cx + r * 0.2, cy - r * 0.15, r * 0.1, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx - r * 0.2, cy - r * 0.15, r * 0.1, 0, TWO_PI); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx + r * 0.2, cy - r * 0.15, r * 0.1, 0, TWO_PI); ctx.fill();
         ctx.restore();
     }
 
@@ -1263,7 +1263,7 @@ class SpriteLoader {
         fireGrad.addColorStop(0.5, 'rgba(255,50,0,0.2)');
         fireGrad.addColorStop(1, 'rgba(255,30,0,0)');
         ctx.fillStyle = fireGrad;
-        ctx.beginPath(); ctx.arc(cx, cy, r * 1.3, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx, cy, r * 1.3, 0, TWO_PI); ctx.fill();
         ctx.restore();
 
         // 火焰披风（背后）
@@ -1276,8 +1276,8 @@ class SpriteLoader {
         ctx.fillStyle = capeGrad;
         ctx.beginPath();
         ctx.moveTo(cx - r * 0.5, cy - r * 0.3);
-        ctx.quadraticCurveTo(cx - r * 0.7, cy + r * 0.5, cx - r * 0.55 + Math.sin(phase * Math.PI * 2) * r * 0.05, cy + r * 0.95);
-        ctx.lineTo(cx + r * 0.55 - Math.sin(phase * Math.PI * 2) * r * 0.05, cy + r * 0.95);
+        ctx.quadraticCurveTo(cx - r * 0.7, cy + r * 0.5, cx - r * 0.55 + Math.sin(phase * TWO_PI) * r * 0.05, cy + r * 0.95);
+        ctx.lineTo(cx + r * 0.55 - Math.sin(phase * TWO_PI) * r * 0.05, cy + r * 0.95);
         ctx.quadraticCurveTo(cx + r * 0.7, cy + r * 0.5, cx + r * 0.5, cy - r * 0.3);
         ctx.closePath();
         ctx.fill();
@@ -1309,15 +1309,15 @@ class SpriteLoader {
         gemGrad.addColorStop(0.4, '#ff4444');
         gemGrad.addColorStop(1, '#880000');
         ctx.fillStyle = gemGrad;
-        ctx.beginPath(); ctx.arc(cx, cy - r * 0.05, r * 0.09, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx, cy - r * 0.05, r * 0.09, 0, TWO_PI); ctx.fill();
 
         // 肩甲（大型）
         var spGrad = ctx.createRadialGradient(cx - r * 0.55, cy - r * 0.35, 0, cx - r * 0.55, cy - r * 0.35, r * 0.22);
         spGrad.addColorStop(0, '#bb7744');
         spGrad.addColorStop(1, '#553311');
         ctx.fillStyle = spGrad;
-        ctx.beginPath(); ctx.ellipse(cx - r * 0.6, cy - r * 0.35, r * 0.22, r * 0.16, -0.3, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.ellipse(cx + r * 0.6, cy - r * 0.35, r * 0.22, r * 0.16, 0.3, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(cx - r * 0.6, cy - r * 0.35, r * 0.22, r * 0.16, -0.3, 0, TWO_PI); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(cx + r * 0.6, cy - r * 0.35, r * 0.22, r * 0.16, 0.3, 0, TWO_PI); ctx.fill();
         // 肩甲尖刺
         ctx.fillStyle = '#443322';
         ctx.beginPath(); ctx.moveTo(cx - r * 0.7, cy - r * 0.4); ctx.lineTo(cx - r * 0.75, cy - r * 0.65); ctx.lineTo(cx - r * 0.6, cy - r * 0.42); ctx.fill();
@@ -1331,11 +1331,11 @@ class SpriteLoader {
         skGrad.addColorStop(0.5, '#ddbb88');
         skGrad.addColorStop(1, '#996633');
         ctx.fillStyle = skGrad;
-        ctx.beginPath(); ctx.arc(cx, headCy, headR, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx, headCy, headR, 0, TWO_PI); ctx.fill();
 
         // 巨型火焰王冠
         ctx.save();
-        var fp = phase * Math.PI * 2;
+        var fp = phase * TWO_PI;
         // 王冠底座
         ctx.fillStyle = '#cc8800';
         ctx.beginPath();
@@ -1359,24 +1359,24 @@ class SpriteLoader {
         ctx.fill();
         // 王冠宝石
         ctx.fillStyle = '#ff0000';
-        ctx.beginPath(); ctx.arc(cx, headCy - headR * 0.35, r * 0.05, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx, headCy - headR * 0.35, r * 0.05, 0, TWO_PI); ctx.fill();
         ctx.fillStyle = '#0044ff';
-        ctx.beginPath(); ctx.arc(cx - r * 0.2, headCy - headR * 0.35, r * 0.035, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(cx + r * 0.2, headCy - headR * 0.35, r * 0.035, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx - r * 0.2, headCy - headR * 0.35, r * 0.035, 0, TWO_PI); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx + r * 0.2, headCy - headR * 0.35, r * 0.035, 0, TWO_PI); ctx.fill();
         ctx.restore();
 
         // 燃烧眼
         ctx.save();
-        ctx.globalAlpha = 0.85 + Math.sin(phase * Math.PI * 2) * 0.15;
+        ctx.globalAlpha = 0.85 + Math.sin(phase * TWO_PI) * 0.15;
         ctx.shadowColor = '#ff6600';
         ctx.shadowBlur = r * 0.2;
         ctx.fillStyle = '#ffaa00';
-        ctx.beginPath(); ctx.arc(cx - headR * 0.5, headCy + headR * 0.15, headR * 0.22, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(cx + headR * 0.5, headCy + headR * 0.15, headR * 0.22, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx - headR * 0.5, headCy + headR * 0.15, headR * 0.22, 0, TWO_PI); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx + headR * 0.5, headCy + headR * 0.15, headR * 0.22, 0, TWO_PI); ctx.fill();
         // 内核
         ctx.fillStyle = '#ffffff';
-        ctx.beginPath(); ctx.arc(cx - headR * 0.5, headCy + headR * 0.15, headR * 0.08, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(cx + headR * 0.5, headCy + headR * 0.15, headR * 0.08, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx - headR * 0.5, headCy + headR * 0.15, headR * 0.08, 0, TWO_PI); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx + headR * 0.5, headCy + headR * 0.15, headR * 0.08, 0, TWO_PI); ctx.fill();
         ctx.restore();
 
         // 下颚骨齿
@@ -1395,7 +1395,7 @@ class SpriteLoader {
         ctx.strokeStyle = 'rgba(255,150,80,0.2)';
         ctx.lineWidth = r * 0.02;
         for (var k = 0; k < 3; k++) {
-            var ba = phase * 0.5 + k * (Math.PI * 2 / 3);
+            var ba = phase * 0.5 + k * (TWO_PI / 3);
             ctx.beginPath();
             ctx.arc(cx, cy + r * 0.1, r * (0.35 + k * 0.13), ba, ba + Math.PI * 0.6);
             ctx.stroke();
@@ -1413,7 +1413,7 @@ class SpriteLoader {
         grad.addColorStop(1, '#111111');
         ctx.fillStyle = grad;
         ctx.beginPath();
-        ctx.arc(cx, cy, r * 0.88, 0, Math.PI * 2);
+        ctx.arc(cx, cy, r * 0.88, 0, TWO_PI);
         ctx.fill();
 
         // 表面纹理
@@ -1424,13 +1424,13 @@ class SpriteLoader {
         ctx.shadowColor = '#ff4444';
         ctx.shadowBlur = r * 0.1;
         ctx.fillStyle = '#ff4444';
-        ctx.beginPath(); ctx.arc(cx - r * 0.25, cy - r * 0.1, r * 0.14, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(cx + r * 0.25, cy - r * 0.1, r * 0.14, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx - r * 0.25, cy - r * 0.1, r * 0.14, 0, TWO_PI); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx + r * 0.25, cy - r * 0.1, r * 0.14, 0, TWO_PI); ctx.fill();
         ctx.restore();
         // 瞳孔
         ctx.fillStyle = '#000000';
-        ctx.beginPath(); ctx.arc(cx - r * 0.25, cy - r * 0.1, r * 0.06, 0, Math.PI * 2); ctx.fill();
-        ctx.beginPath(); ctx.arc(cx + r * 0.25, cy - r * 0.1, r * 0.06, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx - r * 0.25, cy - r * 0.1, r * 0.06, 0, TWO_PI); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx + r * 0.25, cy - r * 0.1, r * 0.06, 0, TWO_PI); ctx.fill();
 
         this._rimLight(ctx, cx, cy, r, '#ffffff', 0.15);
     }

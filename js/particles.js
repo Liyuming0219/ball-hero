@@ -39,7 +39,7 @@ class ParticleSystem {
         for (let i = 0; i < count; i++) {
             const angle = config.angle !== undefined
                 ? config.angle + Utils.rand(-config.spread || 0, config.spread || 0)
-                : Utils.rand(0, Math.PI * 2);
+                : Utils.rand(0, TWO_PI);
             const speed = Utils.rand(config.speedMin || 1, config.speedMax || 5);
             const size = Utils.rand(config.sizeMin || 2, config.sizeMax || 6);
             const life = Utils.rand(config.lifeMin || 0.3, config.lifeMax || 1.0);
@@ -60,7 +60,7 @@ class ParticleSystem {
                 glow: config.glow || false,
                 glowSize: config.glowSize || 10,
                 shape: config.shape || 'circle', // circle, square, star, spark
-                rotation: Utils.rand(0, Math.PI * 2),
+                rotation: Utils.rand(0, TWO_PI),
                 rotSpeed: Utils.rand(-0.2, 0.2),
                 fadeOut: config.fadeOut !== false,
             });
@@ -400,11 +400,11 @@ class ParticleSystem {
                 // 大拖尾保留 glow arc
                 ctx.globalAlpha = alpha * 0.6;
                 ctx.beginPath();
-                ctx.arc(sx, sy, t.size * 2, 0, Math.PI * 2);
+                ctx.arc(sx, sy, t.size * 2, 0, TWO_PI);
                 ctx.fill();
                 ctx.globalAlpha = alpha;
                 ctx.beginPath();
-                ctx.arc(sx, sy, t.size, 0, Math.PI * 2);
+                ctx.arc(sx, sy, t.size, 0, TWO_PI);
                 ctx.fill();
             } else {
                 // 小拖尾用 fillRect（极快）
@@ -415,12 +415,13 @@ class ParticleSystem {
         }
 
         // 基础粒子 — 小粒子用 fillRect，大粒子保留 arc
+        let prevColor = '';
         for (const p of this.particles) {
             const sx = p.x - camera.x;
             const sy = p.y - camera.y;
             if (sx < -margin || sx > screenW + margin || sy < -margin || sy > screenH + margin) continue;
             const alpha = p.fadeOut ? (p.life / p.maxLife) : 1;
-            ctx.fillStyle = p.color;
+            if (p.color !== prevColor) { ctx.fillStyle = p.color; prevColor = p.color; }
 
             // 小圆形粒子快速路径：fillRect
             if (p.shape === 'circle' && p.size < 4) {
@@ -439,7 +440,7 @@ class ParticleSystem {
             if (p.glow) {
                 ctx.globalAlpha = alpha * 0.5;
                 ctx.beginPath();
-                ctx.arc(sx, sy, p.size + p.glowSize, 0, Math.PI * 2);
+                ctx.arc(sx, sy, p.size + p.glowSize, 0, TWO_PI);
                 ctx.fill();
             }
 
@@ -447,7 +448,7 @@ class ParticleSystem {
 
             if (p.shape === 'circle') {
                 ctx.beginPath();
-                ctx.arc(sx, sy, p.size, 0, Math.PI * 2);
+                ctx.arc(sx, sy, p.size, 0, TWO_PI);
                 ctx.fill();
             } else if (p.shape === 'square') {
                 ctx.save();
@@ -477,14 +478,14 @@ class ParticleSystem {
             ctx.strokeStyle = s.color;
             ctx.lineWidth = s.lineWidth;
             ctx.beginPath();
-            ctx.arc(sx, sy, r, 0, Math.PI * 2);
+            ctx.arc(sx, sy, r, 0, TWO_PI);
             ctx.stroke();
             // 内圈
             ctx.globalAlpha = alpha * 0.35;
             ctx.strokeStyle = '#fff';
             ctx.lineWidth = s.lineWidth * 0.5;
             ctx.beginPath();
-            ctx.arc(sx, sy, r * 0.8, 0, Math.PI * 2);
+            ctx.arc(sx, sy, r * 0.8, 0, TWO_PI);
             ctx.stroke();
         }
 
@@ -497,11 +498,11 @@ class ParticleSystem {
             ctx.fillStyle = f.color;
             ctx.globalAlpha = alpha * 0.25;
             ctx.beginPath();
-            ctx.arc(sx, sy, f.radius, 0, Math.PI * 2);
+            ctx.arc(sx, sy, f.radius, 0, TWO_PI);
             ctx.fill();
             ctx.globalAlpha = alpha * 0.65;
             ctx.beginPath();
-            ctx.arc(sx, sy, f.radius * 0.4, 0, Math.PI * 2);
+            ctx.arc(sx, sy, f.radius * 0.4, 0, TWO_PI);
             ctx.fill();
         }
 
