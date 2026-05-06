@@ -688,37 +688,78 @@ class Player {
         }
         ctx.globalAlpha = this.invincibleTime > 0 && Math.floor(this.invincibleTime * 20) % 2 === 0 ? 0.4 : 1;
 
-        // 脚下光圈（增强：脉冲效果）
-        const footPulse = 1 + Math.sin(now * 0.003) * 0.15;
-        ctx.globalAlpha = 0.18 * footPulse;
-        ctx.fillStyle = this.def.color;
-        ctx.beginPath();
-        ctx.ellipse(sx, sy + this.radius + 2, this.radius * 1.2 * footPulse, 6, 0, 0, TWO_PI);
-        ctx.fill();
-        ctx.globalAlpha = this.invincibleTime > 0 && Math.floor(this.invincibleTime * 20) % 2 === 0 ? 0.4 : 1;
+        // === 皮肤系统渲染（优先）===
+        const skinRendered = (typeof SkinManager !== 'undefined') && SkinManager.renderSkinBody(ctx, this, sx, sy, bob, now);
 
-        // 身体外圈光晕
-        ctx.globalAlpha *= 0.25;
-        ctx.fillStyle = this.def.color;
-        ctx.beginPath();
-        ctx.arc(sx, sy + bob, this.radius + 8, 0, TWO_PI);
-        ctx.fill();
-        ctx.globalAlpha = this.invincibleTime > 0 && Math.floor(this.invincibleTime * 20) % 2 === 0 ? 0.4 : 1;
+        if (!skinRendered) {
+            // 默认渲染（无皮肤）
+            // 脚下光圈（增强：脉冲效果）
+            const footPulse = 1 + Math.sin(now * 0.003) * 0.15;
+            ctx.globalAlpha = 0.18 * footPulse;
+            ctx.fillStyle = this.def.color;
+            ctx.beginPath();
+            ctx.ellipse(sx, sy + this.radius + 2, this.radius * 1.2 * footPulse, 6, 0, 0, TWO_PI);
+            ctx.fill();
+            ctx.globalAlpha = this.invincibleTime > 0 && Math.floor(this.invincibleTime * 20) % 2 === 0 ? 0.4 : 1;
 
-        // 身体（增强：径向渐变增加立体感）
-        const bodyGrad = ctx.createRadialGradient(
-            sx - this.radius * 0.25, sy + bob - this.radius * 0.25, this.radius * 0.05,
-            sx + this.radius * 0.1, sy + bob + this.radius * 0.1, this.radius
-        );
-        bodyGrad.addColorStop(0, this._lighten(this.def.color, 0.45));
-        bodyGrad.addColorStop(0.4, this.def.color);
-        bodyGrad.addColorStop(1, this._darken(this.def.color, 0.6));
-        ctx.fillStyle = bodyGrad;
-        ctx.beginPath();
-        ctx.arc(sx, sy + bob, this.radius, 0, TWO_PI);
-        ctx.fill();
+            // 身体外圈光晕
+            ctx.globalAlpha *= 0.25;
+            ctx.fillStyle = this.def.color;
+            ctx.beginPath();
+            ctx.arc(sx, sy + bob, this.radius + 8, 0, TWO_PI);
+            ctx.fill();
+            ctx.globalAlpha = this.invincibleTime > 0 && Math.floor(this.invincibleTime * 20) % 2 === 0 ? 0.4 : 1;
 
-        // 受伤/回血闪光效果
+            // 身体（增强：径向渐变增加立体感）
+            const bodyGrad = ctx.createRadialGradient(
+                sx - this.radius * 0.25, sy + bob - this.radius * 0.25, this.radius * 0.05,
+                sx + this.radius * 0.1, sy + bob + this.radius * 0.1, this.radius
+            );
+            bodyGrad.addColorStop(0, this._lighten(this.def.color, 0.45));
+            bodyGrad.addColorStop(0.4, this.def.color);
+            bodyGrad.addColorStop(1, this._darken(this.def.color, 0.6));
+            ctx.fillStyle = bodyGrad;
+            ctx.beginPath();
+            ctx.arc(sx, sy + bob, this.radius, 0, TWO_PI);
+            ctx.fill();
+
+            // 高光（增强：柔和径向渐变高光）
+            const hlGrad = ctx.createRadialGradient(
+                sx - this.radius * 0.28, sy + bob - this.radius * 0.3, 0,
+                sx - this.radius * 0.28, sy + bob - this.radius * 0.3, this.radius * 0.5
+            );
+            hlGrad.addColorStop(0, 'rgba(255,255,255,0.5)');
+            hlGrad.addColorStop(0.5, 'rgba(255,255,255,0.12)');
+            hlGrad.addColorStop(1, 'rgba(255,255,255,0)');
+            ctx.fillStyle = hlGrad;
+            ctx.beginPath();
+            ctx.arc(sx - this.radius * 0.28, sy + bob - this.radius * 0.3, this.radius * 0.5, 0, TWO_PI);
+            ctx.fill();
+
+            // 眼睛方向
+            ctx.globalAlpha = 1;
+            const eyeDist = 6;
+            const eyeX = sx + Math.cos(this.facingAngle) * eyeDist;
+            const eyeY = sy + Math.sin(this.facingAngle) * eyeDist + bob;
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(eyeX - 3, eyeY - 2, 4, 0, TWO_PI);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(eyeX + 3, eyeY - 2, 4, 0, TWO_PI);
+            ctx.fill();
+            // 瞳孔
+            ctx.fillStyle = '#111';
+            const pupilOff = 1.5;
+            ctx.beginPath();
+            ctx.arc(eyeX - 3 + Math.cos(this.facingAngle) * pupilOff, eyeY - 2 + Math.sin(this.facingAngle) * pupilOff, 2, 0, TWO_PI);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(eyeX + 3 + Math.cos(this.facingAngle) * pupilOff, eyeY - 2 + Math.sin(this.facingAngle) * pupilOff, 2, 0, TWO_PI);
+            ctx.fill();
+        }
+
+        // 受伤/回血闪光效果（皮肤与默认共用）
         if (this.damageFlash > 0) {
             ctx.globalAlpha = 0.4 * (this.damageFlash / 0.2);
             ctx.fillStyle = '#ff0000';
@@ -735,41 +776,6 @@ class Player {
             ctx.fill();
             ctx.globalAlpha = 1;
         }
-
-        // 高光（增强：柔和径向渐变高光）
-        const hlGrad = ctx.createRadialGradient(
-            sx - this.radius * 0.28, sy + bob - this.radius * 0.3, 0,
-            sx - this.radius * 0.28, sy + bob - this.radius * 0.3, this.radius * 0.5
-        );
-        hlGrad.addColorStop(0, 'rgba(255,255,255,0.5)');
-        hlGrad.addColorStop(0.5, 'rgba(255,255,255,0.12)');
-        hlGrad.addColorStop(1, 'rgba(255,255,255,0)');
-        ctx.fillStyle = hlGrad;
-        ctx.beginPath();
-        ctx.arc(sx - this.radius * 0.28, sy + bob - this.radius * 0.3, this.radius * 0.5, 0, TWO_PI);
-        ctx.fill();
-
-        // 眼睛方向
-        ctx.globalAlpha = 1;
-        const eyeDist = 6;
-        const eyeX = sx + Math.cos(this.facingAngle) * eyeDist;
-        const eyeY = sy + Math.sin(this.facingAngle) * eyeDist + bob;
-        ctx.fillStyle = '#fff';
-        ctx.beginPath();
-        ctx.arc(eyeX - 3, eyeY - 2, 4, 0, TWO_PI);
-        ctx.fill();
-        ctx.beginPath();
-        ctx.arc(eyeX + 3, eyeY - 2, 4, 0, TWO_PI);
-        ctx.fill();
-        // 瞳孔
-        ctx.fillStyle = '#111';
-        const pupilOff = 1.5;
-        ctx.beginPath();
-        ctx.arc(eyeX - 3 + Math.cos(this.facingAngle) * pupilOff, eyeY - 2 + Math.sin(this.facingAngle) * pupilOff, 2, 0, TWO_PI);
-        ctx.fill();
-        ctx.beginPath();
-        ctx.arc(eyeX + 3 + Math.cos(this.facingAngle) * pupilOff, eyeY - 2 + Math.sin(this.facingAngle) * pupilOff, 2, 0, TWO_PI);
-        ctx.fill();
 
         ctx.restore();
     }

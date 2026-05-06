@@ -322,6 +322,9 @@ const MetaProgress = {
             for (const key in def.permUpgrades) {
                 if (this._data.permUpgrades[key] === undefined) this._data.permUpgrades[key] = 0;
             }
+            // 皮肤系统数据迁移
+            if (!this._data.ownedSkins) this._data.ownedSkins = [];
+            if (!this._data.equippedSkins) this._data.equippedSkins = {};
         } catch (e) {
             this._data = this._defaults();
         }

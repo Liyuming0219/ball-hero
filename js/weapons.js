@@ -1335,7 +1335,11 @@ class WeaponSystem {
             if (sx < -margin || sx > screenW + margin || sy < -margin || sy > screenH + margin) continue;
 
             if (p.type === 'fireball') {
-                // 火球 — 无需 save/restore（无坐标变换）
+                // 皮肤特效覆盖
+                if (typeof SkinManager !== 'undefined' && SkinManager.renderSkinProjectile(ctx, p, sx, sy, this.player.def.id)) {
+                    continue;
+                }
+                // 火球 — 默认渲染
                 ctx.globalAlpha = 0.5;
                 ctx.fillStyle = '#ffaa00';
                 ctx.beginPath();
@@ -1354,7 +1358,11 @@ class WeaponSystem {
             }
 
             if (p.type === 'necro_bolt') {
-                // 灵魂弹 — 无需 save/restore（无坐标变换）
+                // 皮肤特效覆盖
+                if (typeof SkinManager !== 'undefined' && SkinManager.renderSkinProjectile(ctx, p, sx, sy, this.player.def.id)) {
+                    continue;
+                }
+                // 灵魂弹 — 默认渲染
                 ctx.globalAlpha = 0.5;
                 ctx.fillStyle = '#66eedd';
                 ctx.beginPath();
@@ -1378,9 +1386,11 @@ class WeaponSystem {
             ctx.save();
 
             if (p.type === 'arrow' || p.type === 'rain_arrow') {
+                // 皮肤覆盖箭矢颜色
+                const _skinFx = (typeof SkinManager !== 'undefined') ? SkinManager.getEffects(this.player.def.id) : null;
                 ctx.translate(sx, sy);
                 ctx.rotate(p.angle || Math.atan2(p.vy, p.vx));
-                ctx.fillStyle = p.color;
+                ctx.fillStyle = _skinFx ? _skinFx.projectileColor : p.color;
                 // 箭头
                 ctx.beginPath();
                 ctx.moveTo(p.radius * 2.5, 0);

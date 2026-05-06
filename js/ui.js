@@ -28,6 +28,11 @@ class UISystem {
         // 天赋商店
         this._shopOpen = false;
 
+        // 皮肤商店
+        this._skinShopOpen = false;
+        this._skinShopChar = 0; // 当前查看的角色索引
+        this._skinShopScroll = 0;
+
         // 游戏设置
         this.settings = {
             soundEnabled: true,
@@ -160,6 +165,10 @@ class UISystem {
         // 如果在商店界面，渲染商店
         if (this._shopOpen) {
             return this._renderShop(dt);
+        }
+        // 如果在皮肤商店界面
+        if (this._skinShopOpen) {
+            return this._renderSkinShop(dt);
         }
 
         const ctx = this.ctx;
@@ -503,11 +512,11 @@ class UISystem {
         ctx.fillStyle = '#feca57';
         ctx.fillText(`💰 ${gold} 金币`, W / 2, btnAreaY - 14 * S);
 
-        // === 按钮区域：开始战斗 + 每日挑战 + 天赋商店 ===
-        const btnW = Math.round(150 * S);
+        // === 按钮区域：开始战斗 + 每日挑战 + 天赋商店 + 皮肤商店 ===
+        const btnW = Math.round(130 * S);
         const btnH = Math.round(50 * S);
-        const btnGap = Math.round(16 * S);
-        const totalBtnW = btnW * 3 + btnGap * 2;
+        const btnGap = Math.round(12 * S);
+        const totalBtnW = btnW * 4 + btnGap * 3;
         const btnStartX = (W - totalBtnW) / 2;
         const btnY = btnAreaY;
 
@@ -590,10 +599,34 @@ class UISystem {
         this._roundRect(ctx, shopBtnX, btnY, btnW, btnH, 25 * S);
         ctx.stroke();
 
-        ctx.font = this._font('bold', 18);
+        ctx.font = this._font('bold', 16);
         ctx.fillStyle = shopHover ? '#feca57' : 'rgba(255,255,255,0.7)';
         ctx.textAlign = 'center';
         ctx.fillText('天赋商店', shopBtnX + btnW / 2, btnY + btnH / 2 + 1);
+
+        // --- 皮肤商店按钮（紫色渐变） ---
+        const skinBtnX = shopBtnX + btnW + btnGap;
+        const skinHover = this.mouseX >= skinBtnX && this.mouseX <= skinBtnX + btnW && this.mouseY >= btnY && this.mouseY <= btnY + btnH;
+
+        const skinGrad = ctx.createLinearGradient(skinBtnX, btnY, skinBtnX + btnW, btnY + btnH);
+        skinGrad.addColorStop(0, skinHover ? '#bb66ff' : '#9944dd');
+        skinGrad.addColorStop(1, skinHover ? '#8844cc' : '#6622aa');
+        ctx.fillStyle = skinGrad;
+        this._roundRect(ctx, skinBtnX, btnY, btnW, btnH, 25 * S);
+        ctx.fill();
+
+        if (skinHover) {
+            ctx.shadowColor = '#aa44ff';
+            ctx.shadowBlur = 15;
+            this._roundRect(ctx, skinBtnX, btnY, btnW, btnH, 25 * S);
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        }
+
+        ctx.font = this._font('bold', 16);
+        ctx.fillStyle = '#fff';
+        ctx.textAlign = 'center';
+        ctx.fillText('皮肤商店', skinBtnX + btnW / 2, btnY + btnH / 2 + 1);
 
         // 返回按钮（左下角）
         const backW = Math.round(100 * S);
@@ -636,6 +669,11 @@ class UISystem {
         }
         if (shopHover && this.consumeClick()) {
             this._shopOpen = true;
+            return null;
+        }
+        if (skinHover && this.consumeClick()) {
+            this._skinShopOpen = true;
+            this._skinShopChar = this.selectedCharacter;
             return null;
         }
         this.clicked = false;
@@ -862,6 +900,264 @@ class UISystem {
         ctx.font = this._font(null, 12);
         ctx.fillStyle = '#555566';
         ctx.fillText('击杀敌人获得金币，永久升级在每局开始时自动生效', W / 2, backY + backH + 20 * S);
+
+        this.clicked = false;
+        return null;
+    }
+
+    // --- 皮肤商店界面 ---
+    _renderSkinShop(dt) {
+        const ctx = this.ctx;
+        const W = this.W;
+        const H = this.H;
+        const S = this.scale;
+
+        // 背景
+        ctx.fillStyle = '#0a0812';
+        ctx.fillRect(0, 0, W, H);
+
+        // 标题
+        ctx.font = this._font('bold', 28);
+        ctx.fillStyle = '#cc88ff';
+        ctx.textAlign = 'center';
+        ctx.fillText('✨ 皮肤商店', W / 2, 40 * S);
+
+        // 金币显示
+        const gold = (typeof MetaProgress !== 'undefined') ? MetaProgress.data.gold : 0;
+        ctx.font = this._font('bold', 16);
+        ctx.fillStyle = '#feca57';
+        ctx.fillText(`💰 ${gold} 金币`, W / 2, 68 * S);
+
+        // 角色切换标签
+        const charList = this.characterList;
+        const tabW = Math.round(90 * S);
+        const tabH = Math.round(32 * S);
+        const tabGap = Math.round(6 * S);
+        const totalTabW = charList.length * tabW + (charList.length - 1) * tabGap;
+        const tabStartX = (W - totalTabW) / 2;
+        const tabY = 82 * S;
+
+        for (let i = 0; i < charList.length; i++) {
+            const tx = tabStartX + i * (tabW + tabGap);
+            const isActive = i === this._skinShopChar;
+            const tabHover = this.mouseX >= tx && this.mouseX <= tx + tabW && this.mouseY >= tabY && this.mouseY <= tabY + tabH;
+
+            ctx.fillStyle = isActive ? 'rgba(170,68,255,0.3)' : (tabHover ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.04)');
+            ctx.strokeStyle = isActive ? '#aa44ff' : 'rgba(255,255,255,0.2)';
+            ctx.lineWidth = isActive ? 2 : 1;
+            this._roundRect(ctx, tx, tabY, tabW, tabH, 16 * S);
+            ctx.fill();
+            this._roundRect(ctx, tx, tabY, tabW, tabH, 16 * S);
+            ctx.stroke();
+
+            const charDef = CharacterDefs[charList[i]];
+            ctx.font = this._font(isActive ? 'bold' : null, 12);
+            ctx.fillStyle = isActive ? '#cc88ff' : '#888899';
+            ctx.textAlign = 'center';
+            ctx.fillText(charDef ? charDef.name.split('·')[0] : charList[i], tx + tabW / 2, tabY + tabH / 2 + 1);
+
+            if (tabHover && this.consumeClick()) {
+                this._skinShopChar = i;
+            }
+        }
+
+        // 当前角色的皮肤列表
+        const charId = charList[this._skinShopChar];
+        const skins = (typeof SkinManager !== 'undefined') ? SkinManager.getSkinsForChar(charId) : [];
+
+        const cardW = Math.round(180 * S);
+        const cardH = Math.round(280 * S);
+        const cardGap = Math.round(16 * S);
+        const cardStartY = tabY + tabH + 24 * S;
+        const maxCards = Math.min(skins.length, 3); // 一行最多3个
+        const totalCardW = maxCards * cardW + (maxCards - 1) * cardGap;
+        const cardStartX = (W - totalCardW) / 2;
+
+        for (let i = 0; i < skins.length; i++) {
+            const skin = skins[i];
+            const col = i % 3;
+            const row = Math.floor(i / 3);
+            const cx = cardStartX + col * (cardW + cardGap);
+            const cy = cardStartY + row * (cardH + cardGap);
+            const isHover = this.mouseX >= cx && this.mouseX <= cx + cardW && this.mouseY >= cy && this.mouseY <= cy + cardH;
+            const isOwned = (typeof SkinManager !== 'undefined') && SkinManager.isOwned(skin.id);
+            const isEquipped = (typeof SkinManager !== 'undefined') && SkinManager.isEquipped(charId, skin.id);
+            const price = SkinRarity[skin.rarity].price;
+            const rarityInfo = SkinRarity[skin.rarity];
+
+            // 卡片背景
+            ctx.fillStyle = isHover ? 'rgba(170,68,255,0.12)' : 'rgba(255,255,255,0.04)';
+            ctx.strokeStyle = isEquipped ? '#44ff88' : (isOwned ? 'rgba(255,255,255,0.3)' : rarityInfo.color);
+            ctx.lineWidth = isEquipped ? 2.5 : 1.5;
+            this._roundRect(ctx, cx, cy, cardW, cardH, 12 * S);
+            ctx.fill();
+            this._roundRect(ctx, cx, cy, cardW, cardH, 12 * S);
+            ctx.stroke();
+
+            // 稀有度标签
+            ctx.font = this._font('bold', 10);
+            ctx.fillStyle = rarityInfo.color;
+            ctx.textAlign = 'center';
+            ctx.fillText(rarityInfo.name, cx + cardW / 2, cy + 20 * S);
+
+            // 皮肤预览球（展示皮肤配色）
+            const previewR = 28 * S;
+            const previewX = cx + cardW / 2;
+            const previewY = cy + 70 * S;
+
+            // 外层光晕
+            ctx.globalAlpha = 0.3;
+            ctx.fillStyle = skin.glowColor;
+            ctx.beginPath();
+            ctx.arc(previewX, previewY, previewR + 10 * S, 0, TWO_PI);
+            ctx.fill();
+
+            // 主体球
+            ctx.globalAlpha = 1;
+            const prevGrad = ctx.createRadialGradient(
+                previewX - previewR * 0.25, previewY - previewR * 0.25, previewR * 0.05,
+                previewX + previewR * 0.1, previewY + previewR * 0.1, previewR
+            );
+            prevGrad.addColorStop(0, skin.bodyColors[2] || skin.bodyColors[0]);
+            prevGrad.addColorStop(0.4, skin.bodyColors[0]);
+            prevGrad.addColorStop(1, skin.bodyColors[1]);
+            ctx.fillStyle = prevGrad;
+            ctx.beginPath();
+            ctx.arc(previewX, previewY, previewR, 0, TWO_PI);
+            ctx.fill();
+
+            // 眼睛
+            ctx.fillStyle = skin.eyeColor;
+            ctx.beginPath();
+            ctx.arc(previewX - 4 * S, previewY - 3 * S, 4 * S, 0, TWO_PI);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(previewX + 4 * S, previewY - 3 * S, 4 * S, 0, TWO_PI);
+            ctx.fill();
+            ctx.fillStyle = '#111';
+            ctx.beginPath();
+            ctx.arc(previewX - 3 * S, previewY - 3 * S, 2 * S, 0, TWO_PI);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(previewX + 5 * S, previewY - 3 * S, 2 * S, 0, TWO_PI);
+            ctx.fill();
+
+            // 传说特效预览（旋转光点）
+            if (skin.rarity === 'LEGENDARY') {
+                const now = performance.now();
+                ctx.globalAlpha = 0.7;
+                for (let j = 0; j < 4; j++) {
+                    const a = now * 0.003 + j * (TWO_PI / 4);
+                    ctx.fillStyle = skin.effects.trailColors[j % skin.effects.trailColors.length];
+                    ctx.beginPath();
+                    ctx.arc(previewX + Math.cos(a) * (previewR + 6 * S), previewY + Math.sin(a) * (previewR + 6 * S), 2.5 * S, 0, TWO_PI);
+                    ctx.fill();
+                }
+                ctx.globalAlpha = 1;
+            }
+
+            // 皮肤名称
+            ctx.font = this._font('bold', 14);
+            ctx.fillStyle = '#ffffff';
+            ctx.textAlign = 'center';
+            ctx.fillText(skin.name, cx + cardW / 2, cy + 130 * S);
+
+            // 描述
+            ctx.font = this._font(null, 11);
+            ctx.fillStyle = '#8888aa';
+            ctx.fillText(skin.desc, cx + cardW / 2, cy + 152 * S);
+
+            // 特效说明
+            if (skin.effects.legendaryTrail) {
+                ctx.font = this._font(null, 10);
+                ctx.fillStyle = '#ffaa44';
+                ctx.fillText('★ 专属攻击尾迹特效', cx + cardW / 2, cy + 170 * S);
+            }
+
+            // 按钮区域
+            const btnBuyW = cardW - 24 * S;
+            const btnBuyH = 32 * S;
+            const btnBuyX = cx + 12 * S;
+            const btnBuyY = cy + cardH - 50 * S;
+            const btnBuyHover = isHover && this.mouseY >= btnBuyY && this.mouseY <= btnBuyY + btnBuyH;
+
+            if (isEquipped) {
+                // 已装备
+                ctx.fillStyle = 'rgba(68,255,136,0.15)';
+                this._roundRect(ctx, btnBuyX, btnBuyY, btnBuyW, btnBuyH, 16 * S);
+                ctx.fill();
+                ctx.font = this._font('bold', 13);
+                ctx.fillStyle = '#44ff88';
+                ctx.textAlign = 'center';
+                ctx.fillText('已装备 ✓', cx + cardW / 2, btnBuyY + btnBuyH / 2 + 1);
+
+                // 点击卸下
+                if (btnBuyHover && this.consumeClick()) {
+                    SkinManager.unequip(charId);
+                }
+            } else if (isOwned) {
+                // 已拥有，可装备
+                ctx.fillStyle = btnBuyHover ? 'rgba(68,136,255,0.3)' : 'rgba(68,136,255,0.15)';
+                this._roundRect(ctx, btnBuyX, btnBuyY, btnBuyW, btnBuyH, 16 * S);
+                ctx.fill();
+                ctx.font = this._font('bold', 13);
+                ctx.fillStyle = btnBuyHover ? '#88ccff' : '#4488ff';
+                ctx.textAlign = 'center';
+                ctx.fillText('装备', cx + cardW / 2, btnBuyY + btnBuyH / 2 + 1);
+
+                if (btnBuyHover && this.consumeClick()) {
+                    SkinManager.equip(charId, skin.id);
+                }
+            } else {
+                // 未拥有，可购买
+                const canBuy = gold >= price;
+                ctx.fillStyle = btnBuyHover && canBuy ? 'rgba(254,202,87,0.3)' : (canBuy ? 'rgba(254,202,87,0.12)' : 'rgba(100,100,100,0.12)');
+                this._roundRect(ctx, btnBuyX, btnBuyY, btnBuyW, btnBuyH, 16 * S);
+                ctx.fill();
+                ctx.font = this._font('bold', 13);
+                ctx.fillStyle = canBuy ? (btnBuyHover ? '#ffdd66' : '#feca57') : '#555555';
+                ctx.textAlign = 'center';
+                ctx.fillText(`💰 ${price}`, cx + cardW / 2, btnBuyY + btnBuyH / 2 + 1);
+
+                if (btnBuyHover && canBuy && this.consumeClick()) {
+                    SkinManager.buy(skin.id);
+                }
+            }
+        }
+
+        // "默认皮肤" 提示
+        if (skins.length > 0) {
+            const equipped = (typeof SkinManager !== 'undefined') ? SkinManager.getEquippedSkin(charId) : null;
+            if (equipped) {
+                ctx.font = this._font(null, 12);
+                ctx.fillStyle = 'rgba(255,255,255,0.4)';
+                ctx.textAlign = 'center';
+                ctx.fillText('点击已装备的皮肤可卸下恢复默认外观', W / 2, H - 60 * S);
+            }
+        }
+
+        // 返回按钮
+        const backW = Math.round(100 * S);
+        const backH = Math.round(38 * S);
+        const backX = Math.round(20 * S);
+        const backY = H - 60 * S;
+        const backHover = this.mouseX >= backX && this.mouseX <= backX + backW &&
+                          this.mouseY >= backY && this.mouseY <= backY + backH;
+        ctx.fillStyle = backHover ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)';
+        ctx.strokeStyle = backHover ? '#ffffff' : 'rgba(255,255,255,0.25)';
+        ctx.lineWidth = 1.5;
+        this._roundRect(ctx, backX, backY, backW, backH, 19 * S);
+        ctx.fill();
+        this._roundRect(ctx, backX, backY, backW, backH, 19 * S);
+        ctx.stroke();
+        ctx.font = this._font('bold', 14);
+        ctx.fillStyle = backHover ? '#fff' : '#8899aa';
+        ctx.textAlign = 'center';
+        ctx.fillText('← 返回', backX + backW / 2, backY + backH / 2 + 1);
+
+        if (backHover && this.consumeClick()) {
+            this._skinShopOpen = false;
+        }
 
         this.clicked = false;
         return null;
