@@ -693,7 +693,7 @@ class Player {
         ctx.globalAlpha = this.invincibleTime > 0 && Math.floor(this.invincibleTime * 20) % 2 === 0 ? 0.4 : 1;
 
         // === 皮肤系统渲染（优先）===
-        const skinRendered = (typeof SkinManager !== 'undefined') && SkinManager.renderSkinBody(ctx, this, sx, sy, bob, now);
+        const skinRendered = skin && skinRenderer && skinRenderer.renderBody(ctx, skin, sx, sy, this.radius, this.facingAngle, bob, ctx.globalAlpha);
 
         if (!skinRendered) {
             // 默认渲染（无皮肤）
