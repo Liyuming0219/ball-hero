@@ -559,6 +559,47 @@ class Enemy {
             || this._burnTimer > 0
             || this.bossCharging;
         if (!hasSpecial) {
+            // === 尝试使用精灵图渲染 ===
+            const spriteFrame = spriteLoader && spriteLoader.ready ? spriteLoader.getFrame(this.type, this.bodyBob) : null;
+            if (spriteFrame) {
+                const sprSize = spriteLoader.getSpriteSize(this.type);
+                const drawX = sx - sprSize / 2;
+                const drawY = sy + bob - sprSize / 2;
+                // 受伤闪白：先画精灵再叠白色
+                if (this.damageFlash > 0) {
+                    ctx.globalAlpha = 0.5;
+                    ctx.drawImage(spriteFrame, drawX, drawY, sprSize, sprSize);
+                    ctx.globalAlpha = 0.6;
+                    ctx.fillStyle = '#ffffff';
+                    ctx.beginPath();
+                    ctx.arc(sx, sy + bob, this.radius + 2, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.globalAlpha = 1;
+                } else {
+                    ctx.drawImage(spriteFrame, drawX, drawY, sprSize, sprSize);
+                }
+                // 近战冷却指示
+                if (!this.ranged && this.attackCooldown > 0.3) {
+                    ctx.globalAlpha = 0.25;
+                    ctx.fillStyle = '#ff4444';
+                    ctx.beginPath();
+                    ctx.arc(sx, sy + bob, this.radius + 5, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.globalAlpha = 1;
+                }
+                // 血条
+                if (this.hp < this.maxHp) {
+                    const barW = this.radius * 2.5, barH = 4;
+                    const barY = sy - this.radius - 10 + bob;
+                    ctx.fillStyle = 'rgba(0,0,0,0.6)';
+                    ctx.fillRect(sx - barW / 2, barY, barW, barH);
+                    const ratio = this.hp / this.maxHp;
+                    ctx.fillStyle = ratio > 0.5 ? '#44ff44' : (ratio > 0.25 ? '#ffaa00' : '#ff4444');
+                    ctx.fillRect(sx - barW / 2, barY, barW * ratio, barH);
+                }
+                return;
+            }
+            // === 回退：原有圆形渲染 ===
             // — 身体 —
             ctx.fillStyle = this.damageFlash > 0 ? '#ffffff' : this.color;
             ctx.beginPath();
@@ -684,20 +725,55 @@ class Enemy {
             ctx.globalAlpha = 1;
         }
 
-        // 身体
-        ctx.fillStyle = this.damageFlash > 0 ? '#ffffff' : this.color;
-        ctx.beginPath();
-        ctx.arc(sx, sy + bob, this.radius, 0, Math.PI * 2);
-        ctx.fill();
-
-        // 受伤闪白外圈
-        if (this.damageFlash > 0) {
-            ctx.globalAlpha = 0.4;
-            ctx.fillStyle = '#ffffff';
+        // 身体 - 尝试使用精灵图
+        const eliteSpriteFrame = spriteLoader && spriteLoader.ready ? spriteLoader.getFrame(this.type, this.bodyBob) : null;
+        if (eliteSpriteFrame) {
+            const eSprSize = spriteLoader.getSpriteSize(this.type);
+            const eDrawX = sx - eSprSize / 2;
+            const eDrawY = sy + bob - eSprSize / 2;
+            if (this.damageFlash > 0) {
+                ctx.globalAlpha = 0.5;
+                ctx.drawImage(eliteSpriteFrame, eDrawX, eDrawY, eSprSize, eSprSize);
+                ctx.globalAlpha = 0.5;
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(sx, sy + bob, this.radius + 3, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            } else {
+                ctx.drawImage(eliteSpriteFrame, eDrawX, eDrawY, eSprSize, eSprSize);
+            }
+        } else {
+            // 回退：圆形身体
+            ctx.fillStyle = this.damageFlash > 0 ? '#ffffff' : this.color;
             ctx.beginPath();
-            ctx.arc(sx, sy + bob, this.radius + 4, 0, Math.PI * 2);
+            ctx.arc(sx, sy + bob, this.radius, 0, Math.PI * 2);
+            ctx.fill();
+            // 受伤闪白外圈
+            if (this.damageFlash > 0) {
+                ctx.globalAlpha = 0.4;
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(sx, sy + bob, this.radius + 4, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            }
+            // 高光
+            ctx.fillStyle = '#fff';
+            ctx.globalAlpha = 0.2;
+            ctx.beginPath();
+            ctx.arc(sx - this.radius * 0.2, sy - this.radius * 0.2 + bob, this.radius * 0.5, 0, Math.PI * 2);
             ctx.fill();
             ctx.globalAlpha = 1;
+            // 眼睛
+            ctx.fillStyle = this.isBoss ? '#ffaa00' : '#ff4444';
+            const eyeSize = this.radius * 0.2;
+            ctx.beginPath();
+            ctx.arc(sx - this.radius * 0.25, sy - this.radius * 0.1 + bob, eyeSize, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(sx + this.radius * 0.25, sy - this.radius * 0.1 + bob, eyeSize, 0, Math.PI * 2);
+            ctx.fill();
         }
 
         // 灼烧效果
@@ -709,24 +785,6 @@ class Enemy {
             ctx.fill();
             ctx.globalAlpha = 1;
         }
-
-        // 高光
-        ctx.fillStyle = '#fff';
-        ctx.globalAlpha = 0.2;
-        ctx.beginPath();
-        ctx.arc(sx - this.radius * 0.2, sy - this.radius * 0.2 + bob, this.radius * 0.5, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.globalAlpha = 1;
-
-        // 眼睛
-        ctx.fillStyle = this.isBoss ? '#ffaa00' : '#ff4444';
-        const eyeSize = this.radius * 0.2;
-        ctx.beginPath();
-        ctx.arc(sx - this.radius * 0.25, sy - this.radius * 0.1 + bob, eyeSize, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.beginPath();
-        ctx.arc(sx + this.radius * 0.25, sy - this.radius * 0.1 + bob, eyeSize, 0, Math.PI * 2);
-        ctx.fill();
 
         // 血条 (Boss血条在UI层绘制)
         if (this.hp < this.maxHp && !this.isBoss) {

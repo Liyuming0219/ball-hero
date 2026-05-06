@@ -265,6 +265,10 @@ class Game {
     }
 
     start() {
+        // 初始化精灵图系统：程序化生成所有怪物精灵帧（~10ms，一次性开销）
+        spriteLoader = new SpriteLoader();
+        spriteLoader.generateAll();
+
         this.lastTime = performance.now();
         requestAnimationFrame((t) => this.loop(t));
     }
