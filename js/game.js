@@ -855,6 +855,11 @@ class Game {
                     Utils.shake(4);
                     SFX.levelUp();
                     this.combatLog.addEntry(`⬆ 升级! Lv.${this.player.level}`, '#44aaff');
+                    // 皮肤技能释放特效
+                    if (window._skinFxSystem && typeof skinManager !== 'undefined') {
+                        const _sk = skinManager.getEquippedSkin(this.player.def.id);
+                        if (_sk) window._skinFxSystem.onSkillCast(this.player.x, this.player.y, _sk);
+                    }
                 }
             }
             if (!gem.alive) {

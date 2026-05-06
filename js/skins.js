@@ -165,12 +165,20 @@ const SkinSeries = {
 };
 
 // --- 皮肤管理器 ---
+// 金币与 MetaProgress 共享（统一经济系统）
 class SkinManager {
     constructor() {
         this.ownedSkins = this._load('ownedSkins', []);
         this.equippedSkins = this._load('equippedSkins', {});
-        this.gold = parseInt(localStorage.getItem('playerGold') || '0', 10);
         this.qualityLevel = this._loadQuality();
+    }
+    // 金币属性：直接读写 MetaProgress 的金币（统一金币池）
+    get gold() {
+        if (typeof MetaProgress !== 'undefined') return MetaProgress.data.gold;
+        return 0;
+    }
+    set gold(val) {
+        if (typeof MetaProgress !== 'undefined') { MetaProgress.data.gold = val; MetaProgress.save(); }
     }
     getQuality() { return QualityLevels[this.qualityLevel] || QualityLevels.high; }
     setQuality(level) { if (QualityLevels[level]) { this.qualityLevel = level; localStorage.setItem('skinQuality', level); } }
@@ -187,16 +195,35 @@ class SkinManager {
     buySkin(skinId) {
         const skin = this.getSkinById(skinId);
         if (!skin || this.ownedSkins.includes(skinId) || this.gold < skin.price) return false;
-        this.gold -= skin.price; this.ownedSkins.push(skinId);
-        this._save('ownedSkins', this.ownedSkins); localStorage.setItem('playerGold', this.gold);
+        this.gold -= skin.price;
+        this.ownedSkins.push(skinId);
+        this._save('ownedSkins', this.ownedSkins);
         return true;
     }
     equipSkin(charId, skinId) {
         if (skinId && !this.ownedSkins.includes(skinId)) return false;
-        this.equippedSkins[charId] = skinId || null;
-        this._save('equippedSkins', this.equippedSkins); return true;
+        // 全职业通用：同一皮肤装备到所有角色
+        if (skinId) {
+            for (const cid of Object.keys(CharacterDefs || {})) {
+                this.equippedSkins[cid] = skinId;
+            }
+        } else {
+            this.equippedSkins[charId] = null;
+        }
+        this._save('equippedSkins', this.equippedSkins);
+        return true;
     }
-    unequipSkin(charId) { this.equippedSkins[charId] = null; this._save('equippedSkins', this.equippedSkins); }
+    unequipAll() {
+        for (const cid of Object.keys(this.equippedSkins)) this.equippedSkins[cid] = null;
+        this._save('equippedSkins', this.equippedSkins);
+    }
+    // 获取当前装备的皮肤（任意角色，用于UI显示）
+    getAnyEquippedSkinId() {
+        for (const cid of Object.keys(this.equippedSkins)) {
+            if (this.equippedSkins[cid]) return this.equippedSkins[cid];
+        }
+        return null;
+    }
     _load(key, def) { try { return JSON.parse(localStorage.getItem(key)) || def; } catch { return def; } }
     _save(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
     _loadQuality() { const q = localStorage.getItem('skinQuality'); return QualityLevels[q] ? q : (window.innerWidth > 1200 ? 'high' : 'medium'); }

@@ -1342,8 +1342,9 @@ class WeaponSystem {
 
             if (p.type === 'fireball') {
                 // 皮肤特效覆盖
-                if (typeof SkinManager !== 'undefined' && SkinManager.renderSkinProjectile(ctx, p, sx, sy, this.player.def.id)) {
-                    continue;
+                if (typeof skinManager !== 'undefined' && typeof skinRenderer !== 'undefined') {
+                    const _sk = skinManager.getEquippedSkin(this.player.def.id);
+                    if (_sk && skinRenderer.renderProjectile(ctx, _sk, sx, sy, p.radius, p.angle || 0)) continue;
                 }
                 // 火球 — 默认渲染
                 ctx.globalAlpha = 0.5;
@@ -1365,8 +1366,9 @@ class WeaponSystem {
 
             if (p.type === 'necro_bolt') {
                 // 皮肤特效覆盖
-                if (typeof SkinManager !== 'undefined' && SkinManager.renderSkinProjectile(ctx, p, sx, sy, this.player.def.id)) {
-                    continue;
+                if (typeof skinManager !== 'undefined' && typeof skinRenderer !== 'undefined') {
+                    const _sk = skinManager.getEquippedSkin(this.player.def.id);
+                    if (_sk && skinRenderer.renderProjectile(ctx, _sk, sx, sy, p.radius, p.angle || 0)) continue;
                 }
                 // 灵魂弹 — 默认渲染
                 ctx.globalAlpha = 0.5;
@@ -1393,10 +1395,14 @@ class WeaponSystem {
 
             if (p.type === 'arrow' || p.type === 'rain_arrow') {
                 // 皮肤覆盖箭矢颜色
-                const _skinFx = (typeof SkinManager !== 'undefined') ? SkinManager.getEffects(this.player.def.id) : null;
+                let _arrowColor = p.color;
+                if (typeof skinManager !== 'undefined') {
+                    const _sk = skinManager.getEquippedSkin(this.player.def.id);
+                    if (_sk && _sk.attackFx && _sk.attackFx.projectileColor) _arrowColor = _sk.attackFx.projectileColor;
+                }
                 ctx.translate(sx, sy);
                 ctx.rotate(p.angle || Math.atan2(p.vy, p.vx));
-                ctx.fillStyle = _skinFx ? _skinFx.projectileColor : p.color;
+                ctx.fillStyle = _arrowColor;
                 // 箭头
                 ctx.beginPath();
                 ctx.moveTo(p.radius * 2.5, 0);

@@ -895,18 +895,23 @@ class UISystem {
         ctx.fillStyle = '#fff';
         ctx.fillText('✨ 皮肤商店', W / 2, 36 * S);
 
+        // 副标题（全职业通用提示）
+        ctx.font = this._font(null, 11);
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.fillText('皮肤全职业通用，装备后所有角色共享', W / 2, 52 * S);
+
         // 金币
         const gold = (typeof skinManager !== 'undefined') ? skinManager.gold : 0;
         ctx.font = this._font(null, 14);
         ctx.fillStyle = '#feca57';
-        ctx.fillText(`💰 ${gold} 金币`, W / 2, 56 * S);
+        ctx.fillText(`💰 ${gold} 金币`, W / 2, 68 * S);
 
         // 系列标签
         const seriesKeys = Object.keys(SkinSeries);
         const tabW = Math.min(90 * S, (W - 40 * S) / seriesKeys.length - 6 * S);
         const tabH = 30 * S;
         const tabStartX = (W - seriesKeys.length * (tabW + 6 * S)) / 2;
-        const tabY = 70 * S;
+        const tabY = 82 * S;
 
         for (let i = 0; i < seriesKeys.length; i++) {
             const series = SkinSeries[seriesKeys[i]];
@@ -1007,8 +1012,7 @@ class UISystem {
                 const btnW2 = 65 * S;
                 const btnH2 = 28 * S;
                 if (owned) {
-                    const charId = this._skinShopCharId || 'swordsman';
-                    const isEquipped = skinManager.equippedSkins[charId] === skin.id;
+                    const isEquipped = skinManager.getAnyEquippedSkinId() === skin.id;
                     const equipBtnHover = this.mouseX >= btnX && this.mouseX <= btnX + btnW2 &&
                                           this.mouseY >= btnY2 && this.mouseY <= btnY2 + btnH2;
                     ctx.fillStyle = isEquipped ? 'rgba(68,255,136,0.25)' : (equipBtnHover ? 'rgba(100,200,255,0.2)' : 'rgba(68,255,136,0.1)');
@@ -1018,17 +1022,20 @@ class UISystem {
                     ctx.fillStyle = isEquipped ? '#44ff88' : (equipBtnHover ? '#88ddff' : '#88cc88');
                     ctx.fillText(isEquipped ? '已装备' : '装备', btnX + btnW2 / 2, btnY2 + btnH2 / 2 + 1);
                     if (equipBtnHover && this.consumeClick()) {
-                        skinManager.equipSkin(charId, isEquipped ? null : skin.id);
+                        if (isEquipped) { skinManager.unequipAll(); }
+                        else { skinManager.equipSkin('swordsman', skin.id); }
                     }
                 } else {
                     const canBuy = gold >= skin.price;
-                    ctx.fillStyle = canBuy ? 'rgba(254,202,87,0.2)' : 'rgba(100,100,100,0.2)';
+                    const buyBtnHover = this.mouseX >= btnX && this.mouseX <= btnX + btnW2 &&
+                                       this.mouseY >= btnY2 && this.mouseY <= btnY2 + btnH2;
+                    ctx.fillStyle = canBuy ? (buyBtnHover ? 'rgba(254,202,87,0.3)' : 'rgba(254,202,87,0.2)') : 'rgba(100,100,100,0.2)';
                     this._roundRect(ctx, btnX, btnY2, btnW2, btnH2, 10 * S); ctx.fill();
                     ctx.font = this._font('bold', 11);
                     ctx.textAlign = 'center';
                     ctx.fillStyle = canBuy ? '#feca57' : '#666';
                     ctx.fillText(`💰${skin.price}`, btnX + btnW2 / 2, btnY2 + btnH2 / 2 + 1);
-                    if (canBuy && cardHover && this.consumeClick()) {
+                    if (canBuy && buyBtnHover && this.consumeClick()) {
                         skinManager.buySkin(skin.id);
                     }
                 }
@@ -1072,9 +1079,9 @@ class UISystem {
                 const btnX = cx + (cardW - btnW2) / 2;
                 const btnY2 = cy + cardH - btnH2 - 12 * S;
                 if (owned) {
-                    const charId = this._skinShopCharId || 'swordsman';
-                    const isEquipped = skinManager.equippedSkins[charId] === skin.id;
-                    const equipBtnHover = cardHover && this.mouseY >= btnY2 && this.mouseY <= btnY2 + btnH2;
+                    const isEquipped = skinManager.getAnyEquippedSkinId() === skin.id;
+                    const equipBtnHover = cardHover && this.mouseX >= btnX && this.mouseX <= btnX + btnW2 &&
+                                          this.mouseY >= btnY2 && this.mouseY <= btnY2 + btnH2;
                     ctx.fillStyle = isEquipped ? 'rgba(68,255,136,0.2)' : (equipBtnHover ? 'rgba(100,200,255,0.2)' : 'rgba(68,255,136,0.08)');
                     this._roundRect(ctx, btnX, btnY2, btnW2, btnH2, 12 * S); ctx.fill();
                     ctx.strokeStyle = isEquipped ? '#44ff88' : '#88cc88';
@@ -1084,11 +1091,13 @@ class UISystem {
                     ctx.fillStyle = isEquipped ? '#44ff88' : (equipBtnHover ? '#88ddff' : '#88cc88');
                     ctx.fillText(isEquipped ? '✓ 已装备' : '装备', cx + cardW / 2, btnY2 + btnH2 / 2 + 1);
                     if (equipBtnHover && this.consumeClick()) {
-                        skinManager.equipSkin(charId, isEquipped ? null : skin.id);
+                        if (isEquipped) { skinManager.unequipAll(); }
+                        else { skinManager.equipSkin('swordsman', skin.id); }
                     }
                 } else {
                     const canBuy = gold >= skin.price;
-                    const btnHover2 = cardHover && this.mouseY >= btnY2 && this.mouseY <= btnY2 + btnH2;
+                    const btnHover2 = cardHover && this.mouseX >= btnX && this.mouseX <= btnX + btnW2 &&
+                                      this.mouseY >= btnY2 && this.mouseY <= btnY2 + btnH2;
                     ctx.fillStyle = canBuy ? (btnHover2 ? 'rgba(254,202,87,0.3)' : 'rgba(254,202,87,0.15)') : 'rgba(100,100,100,0.15)';
                     this._roundRect(ctx, btnX, btnY2, btnW2, btnH2, 12 * S); ctx.fill();
                     ctx.strokeStyle = canBuy ? '#feca57' : '#444';
