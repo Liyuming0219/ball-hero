@@ -484,16 +484,15 @@ class Enemy {
         const margin = this.radius + 40;
         if (sx < -margin || sx > screenW + margin || sy < -margin || sy > screenH + margin) return;
 
-        // === LOD分级渲染：根据离屏幕中心的距离简化绘制 ===
-        // 使用 screenW+screenH 对角线比例，移动端缩放后 screenW/H 较大时阈值自动扩大
+        // === LOD分级渲染 ===
+        // 有精灵图时：所有可见怪物统一用精灵图（drawImage单次调用，性能优秀）
+        // 无精灵图回退时：根据距离降级 LOD 0/1/2
         const cx = screenW * 0.5, cy = screenH * 0.5;
         const distSq = (sx - cx) * (sx - cx) + (sy - cy) * (sy - cy);
-        // 用 distSq vs (screenW*screenH) 的比例避免 sqrt
-        const diagHalfSq = cx * cx + cy * cy; // 半对角线的平方
-        const lodMidSq = diagHalfSq * 0.2025; // (0.45)^2
-        const lodLowSq = diagHalfSq * 0.3844; // (0.62)^2
-        // Boss和精英始终用最高细节
-        const lod = (this.isBoss || this.isElite) ? 0 : (distSq < lodMidSq ? 0 : (distSq < lodLowSq ? 1 : 2));
+        const diagHalfSq = cx * cx + cy * cy;
+        const hasSpriteReady = spriteLoader && spriteLoader.ready && spriteLoader.sprites[this.type];
+        // 有精灵图 → 全部LOD 0；无精灵图 → 按距离分级
+        const lod = hasSpriteReady ? 0 : ((this.isBoss || this.isElite) ? 0 : (distSq < diagHalfSq * 0.2025 ? 0 : (distSq < diagHalfSq * 0.3844 ? 1 : 2)));
 
         const bob = lod < 2 ? Math.sin(this.bodyBob) * 2 : 0; // 低LOD不算bob
 
