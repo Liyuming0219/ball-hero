@@ -6,8 +6,8 @@ const EnemyTypes = {
     // 普通小怪 - 骷髅
     skeleton: {
         name: '骷髅',
-        color: '#aabbaa',
-        colors: ['#aabbaa', '#88aa88'],
+        color: '#c8e0c0',
+        colors: ['#c8e0c0', '#a0d090'],
         radius: 12,
         hp: 15,
         damage: 5,
@@ -18,8 +18,8 @@ const EnemyTypes = {
     // 快速小怪 - 蝙蝠
     bat: {
         name: '蝙蝠',
-        color: '#8866aa',
-        colors: ['#8866aa', '#aa88cc'],
+        color: '#9955cc',
+        colors: ['#9955cc', '#cc88ff'],
         radius: 10,
         hp: 10,
         damage: 3,
@@ -30,8 +30,8 @@ const EnemyTypes = {
     // 肉盾 - 史莱姆
     slime: {
         name: '史莱姆',
-        color: '#44cc66',
-        colors: ['#44cc66', '#66ee88'],
+        color: '#22ee55',
+        colors: ['#22ee55', '#88ffaa'],
         radius: 18,
         hp: 45,
         damage: 8,
@@ -42,8 +42,8 @@ const EnemyTypes = {
     // 远程 - 骷髅法师
     skeletonMage: {
         name: '骷髅法师',
-        color: '#6644aa',
-        colors: ['#6644aa', '#8866cc'],
+        color: '#7733dd',
+        colors: ['#7733dd', '#aa66ff'],
         radius: 13,
         hp: 20,
         damage: 10,
@@ -56,8 +56,8 @@ const EnemyTypes = {
     // 中期快攻 - 暗影狼
     shadowWolf: {
         name: '暗影狼',
-        color: '#445566',
-        colors: ['#445566', '#667788'],
+        color: '#3355aa',
+        colors: ['#3355aa', '#5588dd'],
         radius: 11,
         hp: 25,
         damage: 7,
@@ -68,8 +68,8 @@ const EnemyTypes = {
     // 中期肉盾 - 石像鬼
     gargoyle: {
         name: '石像鬼',
-        color: '#887766',
-        colors: ['#887766', '#aa9988'],
+        color: '#bb8844',
+        colors: ['#bb8844', '#ddaa66'],
         radius: 20,
         hp: 80,
         damage: 12,
@@ -80,8 +80,8 @@ const EnemyTypes = {
     // 后期远程 - 恶魔术士
     demonCaster: {
         name: '恶魔术士',
-        color: '#cc3366',
-        colors: ['#cc3366', '#ee5588'],
+        color: '#ff2266',
+        colors: ['#ff2266', '#ff66aa'],
         radius: 14,
         hp: 40,
         damage: 18,
@@ -94,8 +94,8 @@ const EnemyTypes = {
     // 后期群攻 - 爆破虫
     exploder: {
         name: '爆破虫',
-        color: '#ff8800',
-        colors: ['#ff8800', '#ffaa22'],
+        color: '#ff6600',
+        colors: ['#ff6600', '#ffcc00'],
         radius: 9,
         hp: 18,
         damage: 25,
@@ -107,8 +107,8 @@ const EnemyTypes = {
     // 精英 - 大骷髅
     eliteSkeleton: {
         name: '骷髅将军',
-        color: '#cc4444',
-        colors: ['#cc4444', '#ff6644'],
+        color: '#ff3333',
+        colors: ['#ff3333', '#ff8844'],
         radius: 22,
         hp: 150,
         damage: 15,
@@ -120,8 +120,8 @@ const EnemyTypes = {
     // 后期精英 - 暗夜领主
     eliteDemon: {
         name: '暗夜领主',
-        color: '#aa2255',
-        colors: ['#aa2255', '#cc4477'],
+        color: '#dd22aa',
+        colors: ['#dd22aa', '#ff55cc'],
         radius: 24,
         hp: 300,
         damage: 22,
