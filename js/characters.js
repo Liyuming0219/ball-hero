@@ -631,6 +631,7 @@ class Player {
         const sx = this.x - camera.x;
         const sy = this.y - camera.y;
         const bob = this.isMoving ? Math.sin(this.bodyBob) * 3 : 0;
+        const now = performance.now();
 
         ctx.save();
 
@@ -639,9 +640,9 @@ class Player {
             ctx.globalAlpha = 0.4;
         }
 
-        // 武器进化光环
+        // 武器进化光环（增强：双层呼吸光环 + 旋转光点）
         if (this.weaponEvolved) {
-            const pulse = 0.3 + Math.sin(Date.now() * 0.004) * 0.15;
+            const pulse = 0.3 + Math.sin(now * 0.004) * 0.15;
             ctx.globalAlpha = pulse;
             ctx.fillStyle = '#ffdd44';
             ctx.beginPath();
@@ -652,17 +653,51 @@ class Player {
             ctx.beginPath();
             ctx.arc(sx, sy + bob, this.radius + 12, 0, Math.PI * 2);
             ctx.fill();
+            // 旋转光点（4个，极低开销）
+            ctx.globalAlpha = 0.7;
+            ctx.fillStyle = '#ffffaa';
+            for (let i = 0; i < 4; i++) {
+                const a = now * 0.003 + i * Math.PI * 0.5;
+                const r = this.radius + 16;
+                ctx.beginPath();
+                ctx.arc(sx + Math.cos(a) * r, sy + bob + Math.sin(a) * r, 2.5, 0, Math.PI * 2);
+                ctx.fill();
+            }
         }
 
-        // 脚下光圈
-        ctx.globalAlpha = 0.15;
+        // 被动充能指示器（围绕英雄的弧线，显示被动进度）
+        const passiveProgress = this._getPassiveProgress();
+        if (passiveProgress > 0) {
+            const arcR = this.radius + 14;
+            ctx.globalAlpha = 0.55 + Math.sin(now * 0.005) * 0.15;
+            ctx.strokeStyle = this.def.color;
+            ctx.lineWidth = 2.5;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.arc(sx, sy + bob, arcR, -Math.PI * 0.5, -Math.PI * 0.5 + Math.PI * 2 * passiveProgress);
+            ctx.stroke();
+            // 弧线末端光点
+            if (passiveProgress > 0.1) {
+                const endAngle = -Math.PI * 0.5 + Math.PI * 2 * passiveProgress;
+                ctx.globalAlpha = 0.8;
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(sx + Math.cos(endAngle) * arcR, sy + bob + Math.sin(endAngle) * arcR, 3, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        ctx.globalAlpha = this.invincibleTime > 0 && Math.floor(this.invincibleTime * 20) % 2 === 0 ? 0.4 : 1;
+
+        // 脚下光圈（增强：脉冲效果）
+        const footPulse = 1 + Math.sin(now * 0.003) * 0.15;
+        ctx.globalAlpha = 0.18 * footPulse;
         ctx.fillStyle = this.def.color;
         ctx.beginPath();
-        ctx.ellipse(sx, sy + this.radius + 2, this.radius * 1.2, 6, 0, 0, Math.PI * 2);
+        ctx.ellipse(sx, sy + this.radius + 2, this.radius * 1.2 * footPulse, 6, 0, 0, Math.PI * 2);
         ctx.fill();
         ctx.globalAlpha = this.invincibleTime > 0 && Math.floor(this.invincibleTime * 20) % 2 === 0 ? 0.4 : 1;
 
-        // 身体外圈光晕（用半透明圆代替shadowBlur）
+        // 身体外圈光晕
         ctx.globalAlpha *= 0.25;
         ctx.fillStyle = this.def.color;
         ctx.beginPath();
@@ -670,15 +705,22 @@ class Player {
         ctx.fill();
         ctx.globalAlpha = this.invincibleTime > 0 && Math.floor(this.invincibleTime * 20) % 2 === 0 ? 0.4 : 1;
 
-        // 身体
-        ctx.fillStyle = this.def.color;
+        // 身体（增强：径向渐变增加立体感）
+        const bodyGrad = ctx.createRadialGradient(
+            sx - this.radius * 0.25, sy + bob - this.radius * 0.25, this.radius * 0.05,
+            sx + this.radius * 0.1, sy + bob + this.radius * 0.1, this.radius
+        );
+        bodyGrad.addColorStop(0, this._lighten(this.def.color, 0.45));
+        bodyGrad.addColorStop(0.4, this.def.color);
+        bodyGrad.addColorStop(1, this._darken(this.def.color, 0.6));
+        ctx.fillStyle = bodyGrad;
         ctx.beginPath();
         ctx.arc(sx, sy + bob, this.radius, 0, Math.PI * 2);
         ctx.fill();
 
-        // 受伤/回血闪光效果（用额外圆代替shadowBlur）
+        // 受伤/回血闪光效果
         if (this.damageFlash > 0) {
-            ctx.globalAlpha = 0.35;
+            ctx.globalAlpha = 0.4 * (this.damageFlash / 0.2);
             ctx.fillStyle = '#ff0000';
             ctx.beginPath();
             ctx.arc(sx, sy + bob, this.radius + 6, 0, Math.PI * 2);
@@ -686,19 +728,25 @@ class Player {
             ctx.globalAlpha = 1;
         }
         if (this.healFlash > 0) {
-            ctx.globalAlpha = 0.3;
-            ctx.fillStyle = '#00ff00';
+            ctx.globalAlpha = 0.35 * (this.healFlash / 0.3);
+            ctx.fillStyle = '#44ff88';
             ctx.beginPath();
             ctx.arc(sx, sy + bob, this.radius + 5, 0, Math.PI * 2);
             ctx.fill();
             ctx.globalAlpha = 1;
         }
 
-        // 内圈
-        ctx.fillStyle = '#fff';
-        ctx.globalAlpha *= 0.3;
+        // 高光（增强：柔和径向渐变高光）
+        const hlGrad = ctx.createRadialGradient(
+            sx - this.radius * 0.28, sy + bob - this.radius * 0.3, 0,
+            sx - this.radius * 0.28, sy + bob - this.radius * 0.3, this.radius * 0.5
+        );
+        hlGrad.addColorStop(0, 'rgba(255,255,255,0.5)');
+        hlGrad.addColorStop(0.5, 'rgba(255,255,255,0.12)');
+        hlGrad.addColorStop(1, 'rgba(255,255,255,0)');
+        ctx.fillStyle = hlGrad;
         ctx.beginPath();
-        ctx.arc(sx - 3, sy - 3 + bob, this.radius * 0.6, 0, Math.PI * 2);
+        ctx.arc(sx - this.radius * 0.28, sy + bob - this.radius * 0.3, this.radius * 0.5, 0, Math.PI * 2);
         ctx.fill();
 
         // 眼睛方向
@@ -724,5 +772,32 @@ class Player {
         ctx.fill();
 
         ctx.restore();
+    }
+
+    // 获取被动技能充能进度 (0~1)
+    _getPassiveProgress() {
+        const p = this.passive;
+        if (this.def.id === 'swordsman') return p.stacks / p.maxStacks;
+        if (this.def.id === 'mage') return Math.min(1, p.timer / p.interval);
+        if (this.def.id === 'assassin') return Math.min(1, p.timer / p.interval);
+        if (this.def.id === 'necromancer') return p.souls / p.maxSouls;
+        if (this.def.id === 'archer') return Math.min(1, p.timer / p.interval);
+        if (this.def.id === 'paladin') return 0; // 圣骑无充能
+        return 0;
+    }
+
+    // 颜色工具
+    _lighten(hex, amount) {
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        return `rgb(${Math.min(255, r + (255 - r) * amount)},${Math.min(255, g + (255 - g) * amount)},${Math.min(255, b + (255 - b) * amount)})`;
+    }
+
+    _darken(hex, amount) {
+        const r = parseInt(hex.slice(1, 3), 16);
+        const g = parseInt(hex.slice(3, 5), 16);
+        const b = parseInt(hex.slice(5, 7), 16);
+        return `rgb(${Math.floor(r * amount)},${Math.floor(g * amount)},${Math.floor(b * amount)})`;
     }
 }

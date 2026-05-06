@@ -781,16 +781,35 @@ class Enemy {
             ctx.arc(sx, sy, this.radius * (1 - t * 0.5), 0, Math.PI * 2);
             ctx.fill();
         } else {
-            // 普通/精英死亡：碎片扩散
-            ctx.globalAlpha = (1 - t) * 0.6;
-            ctx.fillStyle = this.color;
-            const pieces = this.isElite ? 6 : 4;
-            for (let i = 0; i < pieces; i++) {
-                const angle = (i / pieces) * Math.PI * 2 + t * 2;
-                const dist = this.radius * t * 2;
+            // 普通/精英死亡：碎片扩散 + 闪白收缩
+            // 初始闪白
+            if (t < 0.15) {
+                ctx.globalAlpha = (1 - t / 0.15) * 0.5;
+                ctx.fillStyle = '#ffffff';
                 ctx.beginPath();
-                ctx.arc(sx + Math.cos(angle) * dist, sy + Math.sin(angle) * dist, this.radius * 0.3 * (1 - t), 0, Math.PI * 2);
+                ctx.arc(sx, sy, this.radius * (1 + t * 2), 0, Math.PI * 2);
                 ctx.fill();
+            }
+            // 碎片
+            ctx.globalAlpha = (1 - t) * 0.7;
+            ctx.fillStyle = this.color;
+            const pieces = this.isElite ? 8 : 4;
+            for (let i = 0; i < pieces; i++) {
+                const angle = (i / pieces) * Math.PI * 2 + t * 3;
+                const dist = this.radius * t * (this.isElite ? 3 : 2);
+                const size = this.radius * (this.isElite ? 0.35 : 0.3) * (1 - t);
+                ctx.beginPath();
+                ctx.arc(sx + Math.cos(angle) * dist, sy + Math.sin(angle) * dist, size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            // 精英额外：残影缩小光环
+            if (this.isElite && t < 0.5) {
+                ctx.globalAlpha = (0.5 - t) * 0.6;
+                ctx.strokeStyle = this.color;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(sx, sy, this.radius * (1 + t * 3), 0, Math.PI * 2);
+                ctx.stroke();
             }
         }
         ctx.restore();
@@ -1028,9 +1047,22 @@ class ExpGem {
             this.x += Math.cos(angle) * this.attractSpeed * dt;
             this.y += Math.sin(angle) * this.attractSpeed * dt;
 
+            // 吸附拖尾（速度>200时才产生，避免过多粒子）
+            if (this.attractSpeed > 200 && Math.random() < 0.3) {
+                particles.addTrail(this.x, this.y, this.color, 2.5, 0.15);
+            }
+
             if (dist < 15) {
                 this.alive = false;
+                // 拾取爆发效果
                 particles.addGemSparkle(this.x, this.y, this.color);
+                particles.emit(this.x, this.y, 4, {
+                    colors: [this.color, '#ffffff'],
+                    speedMin: 2, speedMax: 5,
+                    sizeMin: 1, sizeMax: 3,
+                    lifeMin: 0.15, lifeMax: 0.3,
+                    glow: true,
+                });
                 return this.value;
             }
         }

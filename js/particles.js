@@ -21,12 +21,12 @@ class ParticleSystem {
             this.MAX_FLASH = 4;
             this.MAX_LIGHTNING = 2;
         } else {
-            this.MAX_PARTICLES = 300;
-            this.MAX_TEXT = 50;
-            this.MAX_TRAIL = 100;
-            this.MAX_SHOCKWAVES = 15;
-            this.MAX_FLASH = 15;
-            this.MAX_LIGHTNING = 8;
+            this.MAX_PARTICLES = 400;
+            this.MAX_TEXT = 60;
+            this.MAX_TRAIL = 150;
+            this.MAX_SHOCKWAVES = 20;
+            this.MAX_FLASH = 20;
+            this.MAX_LIGHTNING = 12;
         }
     }
 

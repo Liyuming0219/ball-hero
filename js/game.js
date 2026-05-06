@@ -120,6 +120,16 @@ class Game {
         if (this.ui) this.ui.resize(w, h, dpr, this.isMobile);
     }
 
+    // 将屏幕clientX/Y转换为canvas逻辑坐标
+    _screenToLogic(clientX, clientY) {
+        const w = window.innerWidth;
+        const h = window.innerHeight;
+        return {
+            x: clientX * (this.logicWidth / w),
+            y: clientY * (this.logicHeight / h)
+        };
+    }
+
     _setupInput() {
         window.addEventListener('keydown', (e) => {
             this.keys[e.code] = true;
@@ -185,12 +195,13 @@ class Game {
             for (const t of e.changedTouches) {
                 if (!this.joystick.active) {
                     // 第一根手指：启动摇杆（无论触摸位置）
+                    const pos = this._screenToLogic(t.clientX, t.clientY);
                     this.joystick.active = true;
                     this.joystick.touchId = t.identifier;
-                    this.joystick.baseX = t.clientX;
-                    this.joystick.baseY = t.clientY;
-                    this.joystick.stickX = t.clientX;
-                    this.joystick.stickY = t.clientY;
+                    this.joystick.baseX = pos.x;
+                    this.joystick.baseY = pos.y;
+                    this.joystick.stickX = pos.x;
+                    this.joystick.stickY = pos.y;
                     this.joystick.dx = 0;
                     this.joystick.dy = 0;
                 }
@@ -201,8 +212,9 @@ class Game {
             e.preventDefault();
             for (const t of e.changedTouches) {
                 if (this.joystick.active && t.identifier === this.joystick.touchId) {
-                    const dx = t.clientX - this.joystick.baseX;
-                    const dy = t.clientY - this.joystick.baseY;
+                    const pos = this._screenToLogic(t.clientX, t.clientY);
+                    const dx = pos.x - this.joystick.baseX;
+                    const dy = pos.y - this.joystick.baseY;
                     const dist = Math.sqrt(dx * dx + dy * dy);
                     const maxDist = this.joystick.radius;
 
@@ -539,6 +551,15 @@ class Game {
         this.player._gameTime = this.waveManager.gameTime;
         this.player.update(dt, this.inputDir, this.particles);
 
+        // 英雄移动拖尾（每3帧生成1个拖尾粒子，极低开销）
+        if (this.player.isMoving && (this.frameCount % 3 === 0)) {
+            this.particles.addTrail(
+                this.player.x - Math.cos(this.player.facingAngle) * 8,
+                this.player.y - Math.sin(this.player.facingAngle) * 8,
+                this.player.def.color, 5, 0.25
+            );
+        }
+
         // 更新相机（平滑跟随）
         this.camera.x = Utils.lerp(this.camera.x, this.player.x - this.logicWidth / 2, 0.1);
         this.camera.y = Utils.lerp(this.camera.y, this.player.y - this.logicHeight / 2, 0.1);
@@ -842,18 +863,35 @@ class Game {
                 const leveledUp = this.player.addExp(expAmount);
                 if (leveledUp) {
                     this.pendingLevelUps++;
-                    // 升级特效
-                    this.particles.addShockwave(this.player.x, this.player.y, '#44aaff', 100, 0.3);
-                    this.particles.emit(this.player.x, this.player.y, 20, {
-                        colors: ['#44aaff', '#88ddff', '#ffffff'],
-                        speedMin: 2,
-                        speedMax: 6,
+                    // 升级特效（增强：双层冲击波 + 屏幕闪白 + 星形粒子）
+                    this.particles.addShockwave(this.player.x, this.player.y, '#44aaff', 120, 0.4);
+                    this.particles.addShockwave(this.player.x, this.player.y, '#ffffff', 60, 0.25);
+                    this.particles.addFlash(this.player.x, this.player.y, '#88ddff', 80, 0.2);
+                    this.particles.emit(this.player.x, this.player.y, 25, {
+                        colors: ['#44aaff', '#88ddff', '#ffffff', '#aaeeff'],
+                        speedMin: 3,
+                        speedMax: 8,
                         sizeMin: 2,
+                        sizeMax: 7,
+                        lifeMin: 0.4,
+                        lifeMax: 1.0,
+                        glow: true,
+                        glowSize: 10,
+                    });
+                    // 星形散射粒子
+                    this.particles.emit(this.player.x, this.player.y, 8, {
+                        colors: ['#ffffff', '#ffffaa'],
+                        speedMin: 4,
+                        speedMax: 10,
+                        sizeMin: 3,
                         sizeMax: 6,
                         lifeMin: 0.3,
-                        lifeMax: 0.8,
+                        lifeMax: 0.6,
+                        shape: 'star',
                         glow: true,
                     });
+                    this.screenFlash = { color: '#88ddff', alpha: 0.25 };
+                    Utils.shake(4);
                     SFX.levelUp();
                     this.combatLog.addEntry(`⬆ 升级! Lv.${this.player.level}`, '#44aaff');
                 }

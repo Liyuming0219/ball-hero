@@ -328,6 +328,22 @@ class UISystem {
             const ballR = Math.min(28 * S, ballZoneH * 0.38);
             const ballBob = Math.sin(this._titleTime * 2.5 + i * 1.2) * 3 * S;
 
+            // 选中角色额外光效：旋转光粒子
+            if (isSelected) {
+                ctx.globalAlpha = 0.6;
+                ctx.fillStyle = ballColor;
+                for (let pi = 0; pi < 6; pi++) {
+                    const pa = this._titleTime * 2.5 + pi * Math.PI / 3;
+                    const pr = ballR + 10 * S;
+                    const ppx = ballCX + Math.cos(pa) * pr;
+                    const ppy = ballCY + ballBob + Math.sin(pa) * pr;
+                    const ps = 1.5 + Math.sin(this._titleTime * 4 + pi) * 0.5;
+                    ctx.beginPath();
+                    ctx.arc(ppx, ppy, ps * S, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+
             // 球球阴影
             ctx.globalAlpha = 0.12;
             ctx.fillStyle = '#000';
@@ -335,10 +351,10 @@ class UISystem {
             ctx.ellipse(ballCX, ballCY + ballR + 6 * S, ballR * 0.6, ballR * 0.15, 0, 0, Math.PI * 2);
             ctx.fill();
             // 球球光晕
-            ctx.globalAlpha = 0.25;
+            ctx.globalAlpha = isSelected ? 0.35 : 0.25;
             ctx.fillStyle = ballColor;
             ctx.beginPath();
-            ctx.arc(ballCX, ballCY + ballBob, ballR + 5 * S, 0, Math.PI * 2);
+            ctx.arc(ballCX, ballCY + ballBob, ballR + (isSelected ? 8 : 5) * S, 0, Math.PI * 2);
             ctx.fill();
             // 球球身体（径向渐变立体感）
             ctx.globalAlpha = 1;
@@ -2377,6 +2393,49 @@ _roundRect(ctx, x, y, w, h, r) {
             ctx.arc(sx, sy, sr, 0, Math.PI * 2);
             ctx.fill();
         }
+        // 流星效果（最多3条同时可见，极低开销）
+        if (!this._meteors) this._meteors = [];
+        // 按概率生成新流星
+        if (this._meteors.length < 3 && Math.random() < 0.008) {
+            this._meteors.push({
+                x: Math.random() * W * 0.8 + W * 0.1,
+                y: Math.random() * H * 0.3,
+                vx: 350 + Math.random() * 200,
+                vy: 180 + Math.random() * 120,
+                life: 0.6 + Math.random() * 0.5,
+                maxLife: 0.6 + Math.random() * 0.5,
+                size: 1.5 + Math.random() * 1.5,
+            });
+        }
+        for (let i = this._meteors.length - 1; i >= 0; i--) {
+            const m = this._meteors[i];
+            m.x += m.vx * dt;
+            m.y += m.vy * dt;
+            m.life -= dt;
+            if (m.life <= 0 || m.x > W || m.y > H) {
+                this._meteors.splice(i, 1);
+                continue;
+            }
+            const alpha = Math.min(1, m.life / m.maxLife * 2);
+            const tailLen = 40 + (1 - m.life / m.maxLife) * 30;
+            const angle = Math.atan2(m.vy, m.vx);
+            // 流星尾巴
+            ctx.globalAlpha = alpha * 0.6;
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = m.size;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(m.x, m.y);
+            ctx.lineTo(m.x - Math.cos(angle) * tailLen, m.y - Math.sin(angle) * tailLen);
+            ctx.stroke();
+            // 流星头部亮点
+            ctx.globalAlpha = alpha;
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(m.x, m.y, m.size * 1.2, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
         // 近景亮星 + 十字星芒
         for (let i = 0; i < 8; i++) {
             const sx = (Math.sin(i * 53.7 + 100) * 0.4 + 0.5) * W;

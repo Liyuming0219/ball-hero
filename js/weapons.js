@@ -305,8 +305,12 @@ class WeaponSystem {
         }
 
         if (hitCount > 0) {
-            Utils.shake(3);
-            this.particles.addFlash(px + Math.cos(angle) * range * 0.5, py + Math.sin(angle) * range * 0.5, this.player.def.color, 30, 0.1);
+            Utils.shake(3 + Math.min(hitCount, 4));
+            this.particles.addFlash(px + Math.cos(angle) * range * 0.5, py + Math.sin(angle) * range * 0.5, this.player.def.color, 35 + hitCount * 5, 0.12);
+            // 多段命中额外冲击波
+            if (hitCount >= 3) {
+                this.particles.addShockwave(px + Math.cos(angle) * range * 0.4, py + Math.sin(angle) * range * 0.4, '#ffffff', 50, 0.2);
+            }
         }
 
         // 叠加剑意
@@ -920,10 +924,16 @@ class WeaponSystem {
             this._triggerChainLightning(enemy, damage * 0.6, this.player.bonuses.chainLightning);
         }
 
-        // 爆裂暴击效果
-        if (isCrit && this.player.bonuses.critRateBonus > 0.07) {
-            // 如果拥有爆裂暴击（通过critRateBonus>0.07简单判断）
-            this.particles.explode(enemy.x, enemy.y, ['#ff4444', '#ffaa00', '#ffff44'], 8, 3);
+        // 暴击视觉反馈增强
+        if (isCrit) {
+            // 基础暴击闪光
+            this.particles.addFlash(enemy.x, enemy.y, '#ffaa00', 25, 0.12);
+            Utils.shake(2);
+            // 爆裂暴击（进阶效果）
+            if (this.player.bonuses.critRateBonus > 0.07) {
+                this.particles.explode(enemy.x, enemy.y, ['#ff4444', '#ffaa00', '#ffff44'], 10, 4);
+                this.particles.addShockwave(enemy.x, enemy.y, '#ffaa00', 40, 0.2);
+            }
         }
 
         // 分裂弹
