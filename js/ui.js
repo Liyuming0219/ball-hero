@@ -3008,7 +3008,7 @@ _roundRect(ctx, x, y, w, h, r) {
         ctx.font = this._font(null, 11);
         ctx.fillStyle = '#445566';
         ctx.textAlign = 'center';
-        ctx.fillText('v1.1  by CatDesk', W / 2, H - 18 * S);
+        ctx.fillText(GAME_VERSION + '  by CatDesk', W / 2, H - 18 * S);
 
         // 点击检测
         if (startHover && this.consumeClick()) {
