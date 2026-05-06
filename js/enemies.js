@@ -497,11 +497,13 @@ class Enemy {
 
         const bob = lod < 2 ? Math.sin(this.bodyBob) * 2 : 0; // 低LOD不算bob
 
-        // === LOD 2: 最简渲染 —— 纯 fillRect，零路径调用 ===
+        // === LOD 2: 简化渲染 —— 圆形身体 + 血条，无眼睛/特效 ===
         if (lod === 2) {
             ctx.fillStyle = this.damageFlash > 0 ? '#ffffff' : this.color;
             const r = this.radius;
-            ctx.fillRect(sx - r, sy - r, r * 2, r * 2);
+            ctx.beginPath();
+            ctx.arc(sx, sy, r, 0, Math.PI * 2);
+            ctx.fill();
             if (this.hp < this.maxHp) {
                 const barW = r * 2.5, barH = 4;
                 const barY = sy - r - 8;
