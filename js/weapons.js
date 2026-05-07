@@ -1342,9 +1342,9 @@ class WeaponSystem {
 
             if (p.type === 'fireball') {
                 // 皮肤特效覆盖
-                if (typeof skinManager !== 'undefined' && typeof skinRenderer !== 'undefined') {
+                if (typeof skinManager !== 'undefined' && window._skinRenderer) {
                     const _sk = skinManager.getEquippedSkin(this.player.def.id);
-                    if (_sk && skinRenderer.renderProjectile(ctx, _sk, sx, sy, p.radius, p.angle || 0)) continue;
+                    if (_sk && window._skinRenderer.renderProjectile(ctx, _sk, sx, sy, p.radius, p.angle || 0)) continue;
                 }
                 // 火球 — 默认渲染
                 ctx.globalAlpha = 0.5;
@@ -1366,9 +1366,9 @@ class WeaponSystem {
 
             if (p.type === 'necro_bolt') {
                 // 皮肤特效覆盖
-                if (typeof skinManager !== 'undefined' && typeof skinRenderer !== 'undefined') {
+                if (typeof skinManager !== 'undefined' && window._skinRenderer) {
                     const _sk = skinManager.getEquippedSkin(this.player.def.id);
-                    if (_sk && skinRenderer.renderProjectile(ctx, _sk, sx, sy, p.radius, p.angle || 0)) continue;
+                    if (_sk && window._skinRenderer.renderProjectile(ctx, _sk, sx, sy, p.radius, p.angle || 0)) continue;
                 }
                 // 灵魂弹 — 默认渲染
                 ctx.globalAlpha = 0.5;

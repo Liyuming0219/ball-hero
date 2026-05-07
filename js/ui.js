@@ -989,10 +989,10 @@ class UISystem {
                 const previewY = cy + cardH / 2;
 
                 // 皮肤预览
-                if (window._skinRenderer && skin.shape) {
-                    window._skinRenderer.renderBody(ctx, skin, previewX, previewY, previewR, 0, 0, 1);
+                if (window._skinRenderer && window._skinRenderer.renderBody(ctx, skin, previewX, previewY, previewR, 0, 0, 1)) {
+                    // 渲染成功
                 } else {
-                    ctx.fillStyle = skin.shape ? skin.shape.baseColor : '#888';
+                    ctx.fillStyle = '#888';
                     ctx.beginPath(); ctx.arc(previewX, previewY, previewR, 0, Math.PI * 2); ctx.fill();
                 }
 
@@ -1046,10 +1046,10 @@ class UISystem {
                 const previewY = cy + 60 * S;
 
                 // 皮肤预览球
-                if (window._skinRenderer && skin.shape) {
-                    window._skinRenderer.renderBody(ctx, skin, previewX, previewY, previewR, 0, 0, 1);
+                if (window._skinRenderer && window._skinRenderer.renderBody(ctx, skin, previewX, previewY, previewR, 0, 0, 1)) {
+                    // 渲染成功
                 } else {
-                    ctx.fillStyle = skin.shape ? skin.shape.baseColor : '#888';
+                    ctx.fillStyle = '#888';
                     ctx.beginPath(); ctx.arc(previewX, previewY, previewR, 0, Math.PI * 2); ctx.fill();
                 }
 
