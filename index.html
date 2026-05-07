@@ -55,6 +55,16 @@
     <canvas id="gameCanvas"></canvas>
     <div id="loadingMsg">加载中...</div>
     <script>
+        // 全局错误捕获
+        window._errors = [];
+        window.onerror = function(msg, src, line, col, err) {
+            window._errors.push({msg:msg, src:src, line:line, col:col});
+            var d = document.getElementById('errorDisplay');
+            if (!d) { d = document.createElement('div'); d.id='errorDisplay'; d.style.cssText='position:fixed;top:0;left:0;right:0;background:rgba(255,0,0,0.9);color:#fff;font-size:12px;padding:8px;z-index:99999;max-height:200px;overflow:auto;'; document.body.appendChild(d); }
+            d.innerHTML += '<div>'+msg+' ('+src+':'+line+')</div>';
+        };
+    </script>
+    <script>
         // 串行加载保证脚本依赖顺序正确
         // 带重试机制，防止网络波动导致加载链断裂
         (function() {
@@ -74,6 +84,7 @@
                     if (msg) msg.parentNode.removeChild(msg);
                     try {
                         var game = new Game('gameCanvas');
+                        window._game = game;
                         game.start();
                     } catch (e) {
                         showError('游戏启动失败: ' + e.message);

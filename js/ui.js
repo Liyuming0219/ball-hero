@@ -921,7 +921,7 @@ class UISystem {
                              this.mouseY >= tabY && this.mouseY <= tabY + tabH;
 
             // 不同tier对应不同颜色
-            const tierColors = ['#44aa66', '#4488ff', '#aa44ff', '#ff6644'];
+            const tierColors = ['#44aa66', '#4488ff', '#aa44ff', '#ff6644', '#ff44cc'];
             const tc = tierColors[series.tier - 1] || '#888';
 
             ctx.fillStyle = isActive ? tc : (tabHover ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.04)');
@@ -972,8 +972,8 @@ class UISystem {
                               this.mouseY >= cy && this.mouseY <= cy + cardH;
 
             // 卡片背景
-            const tierColors = ['#1a2a1a', '#1a2244', '#2a1a3a', '#2a1a1a'];
-            const borderColors = ['#44aa66', '#4488ff', '#aa44ff', '#ff6644'];
+            const tierColors = ['#1a2a1a', '#1a2244', '#2a1a3a', '#2a1a1a', '#2a0a2a'];
+            const borderColors = ['#44aa66', '#4488ff', '#aa44ff', '#ff6644', '#ff44cc'];
             ctx.fillStyle = cardHover ? 'rgba(255,255,255,0.08)' : (tierColors[skin.tier - 1] || '#1a1a2a');
             this._roundRect(ctx, cx, cy, cardW, cardH, 14 * S);
             ctx.fill();
@@ -1067,8 +1067,8 @@ class UISystem {
                 ctx.fillText(descText, previewX, previewY + previewR + 40 * S);
 
                 // 稀有度标签
-                const tierLabels = ['普通', '稀有', '史诗', '传说'];
-                const tierLabelColors = ['#44aa66', '#4488ff', '#aa44ff', '#ff6644'];
+                const tierLabels = ['普通', '稀有', '史诗', '传说', '神话'];
+                const tierLabelColors = ['#44aa66', '#4488ff', '#aa44ff', '#ff6644', '#ff44cc'];
                 ctx.font = this._font('bold', 10);
                 ctx.fillStyle = tierLabelColors[skin.tier - 1];
                 ctx.fillText(tierLabels[skin.tier - 1], cx + cardW / 2, cy + 16 * S);

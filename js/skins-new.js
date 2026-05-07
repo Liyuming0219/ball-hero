@@ -11,11 +11,11 @@ SkinRenderer.prototype._body_cyberpunk = function(ctx, x, y, r, angle) {
     const t = this._time;
     this._shadow(ctx, x, y, r); this._glow(ctx, x, y, r, '#00ffcc', 0.18);
     ctx.save(); ctx.translate(x, y); ctx.rotate(Math.sin(t) * 0.02);
-    // 鍏褰富浣?    ctx.fillStyle = '#1a1a2e'; ctx.beginPath();
+        ctx.fillStyle = '#1a1a2e'; ctx.beginPath();
     for (let i = 0; i < 6; i++) { const a = (i/6)*TWO_PI_NEW - Math.PI/6; if(i===0) ctx.moveTo(Math.cos(a)*r, Math.sin(a)*r); else ctx.lineTo(Math.cos(a)*r, Math.sin(a)*r); }
     ctx.closePath(); ctx.fill();
     ctx.strokeStyle = '#00ffcc'; ctx.lineWidth = 2; ctx.stroke();
-    // 鎵弿绾?    const scanY = ((t*1.5)%2-1)*r; ctx.globalAlpha = 0.6; ctx.strokeStyle = '#ff00ff'; ctx.lineWidth = 1.5;
+        const scanY = ((t*1.5)%2-1)*r; ctx.globalAlpha = 0.6; ctx.strokeStyle = '#ff00ff'; ctx.lineWidth = 1.5;
     ctx.beginPath(); ctx.moveTo(-r*0.8, scanY); ctx.lineTo(r*0.8, scanY); ctx.stroke();
     // 鐢佃矾绾硅矾
     ctx.globalAlpha = 0.4; ctx.strokeStyle = '#00ffcc'; ctx.lineWidth = 1;
@@ -71,10 +71,10 @@ SkinRenderer.prototype._body_nanocore = function(ctx, x, y, r, angle) {
     const t = this._time;
     this._shadow(ctx, x, y, r); this._glow(ctx, x, y, r, '#44ffaa', 0.15);
     ctx.save(); ctx.translate(x, y);
-    // 绾崇背绮掑瓙浜?    ctx.globalAlpha = 0.3; ctx.fillStyle = '#22ddaa';
+        ctx.globalAlpha = 0.3; ctx.fillStyle = '#22ddaa';
     for (let i=0;i<12;i++){const a=(i/12)*TWO_PI_NEW+Math.sin(t*2+i*0.8)*0.3; const d=r*(0.7+Math.sin(t*3+i*1.5)*0.25); ctx.beginPath(); ctx.arc(Math.cos(a)*d,Math.sin(a)*d,r*0.12+Math.sin(t*4+i)*r*0.04,0,TWO_PI_NEW); ctx.fill();}
-    // 杩炴帴绾?    if(this.quality.detailLevel>=1){ctx.globalAlpha=0.15; ctx.strokeStyle='#44ffaa'; ctx.lineWidth=0.5; for(let i=0;i<6;i++){const a1=(i/6)*TWO_PI_NEW+t*0.5; const a2=((i+2)/6)*TWO_PI_NEW+t*0.5; ctx.beginPath(); ctx.moveTo(Math.cos(a1)*r*0.6,Math.sin(a1)*r*0.6); ctx.lineTo(Math.cos(a2)*r*0.6,Math.sin(a2)*r*0.6); ctx.stroke();}}
-    // 鏍稿績鐞?    ctx.globalAlpha=0.9; const coreG=ctx.createRadialGradient(0,0,0,0,0,r*0.45); coreG.addColorStop(0,'#ffffff'); coreG.addColorStop(0.4,'#88ffdd'); coreG.addColorStop(1,'#22aa88');
+        if(this.quality.detailLevel>=1){ctx.globalAlpha=0.15; ctx.strokeStyle='#44ffaa'; ctx.lineWidth=0.5; for(let i=0;i<6;i++){const a1=(i/6)*TWO_PI_NEW+t*0.5; const a2=((i+2)/6)*TWO_PI_NEW+t*0.5; ctx.beginPath(); ctx.moveTo(Math.cos(a1)*r*0.6,Math.sin(a1)*r*0.6); ctx.lineTo(Math.cos(a2)*r*0.6,Math.sin(a2)*r*0.6); ctx.stroke();}}
+        ctx.globalAlpha=0.9; const coreG=ctx.createRadialGradient(0,0,0,0,0,r*0.45); coreG.addColorStop(0,'#ffffff'); coreG.addColorStop(0.4,'#88ffdd'); coreG.addColorStop(1,'#22aa88');
     ctx.fillStyle=coreG; ctx.beginPath(); ctx.arc(0,0,r*0.45,0,TWO_PI_NEW); ctx.fill();
     // 澶栫幆
     ctx.globalAlpha=0.5; ctx.strokeStyle='#44ffaa'; ctx.lineWidth=1.5; ctx.beginPath(); ctx.arc(0,0,r*0.65+Math.sin(t*3)*r*0.05,0,TWO_PI_NEW); ctx.stroke();
@@ -102,7 +102,7 @@ SkinRenderer.prototype._body_thunder = function(ctx, x, y, r, angle) {
     // 鐢靛姬澶栫幆
     ctx.globalAlpha=0.4; ctx.strokeStyle='#ffee88'; ctx.lineWidth=1; ctx.beginPath();
     for(let i=0;i<20;i++){const a=(i/20)*TWO_PI_NEW; const rr=r*1.2+(Math.random()-0.5)*r*0.3; if(i===0) ctx.moveTo(Math.cos(a)*rr,Math.sin(a)*rr); else ctx.lineTo(Math.cos(a)*rr,Math.sin(a)*rr);} ctx.closePath(); ctx.stroke();
-    // 鐪?    ctx.globalAlpha=1; ctx.fillStyle='#ffee00'; ctx.beginPath(); ctx.arc(-r*0.25,-r*0.1,3,0,TWO_PI_NEW); ctx.fill(); ctx.beginPath(); ctx.arc(r*0.25,-r*0.1,3,0,TWO_PI_NEW); ctx.fill();
+        ctx.globalAlpha=1; ctx.fillStyle='#ffee00'; ctx.beginPath(); ctx.arc(-r*0.25,-r*0.1,3,0,TWO_PI_NEW); ctx.fill(); ctx.beginPath(); ctx.arc(r*0.25,-r*0.1,3,0,TWO_PI_NEW); ctx.fill();
     ctx.restore();
 };
 SkinRenderer.prototype._proj_thunder = function(ctx, x, y, r, angle) {
@@ -117,11 +117,11 @@ SkinRenderer.prototype._body_glacier = function(ctx, x, y, r, angle) {
     const t = this._time;
     this._shadow(ctx, x, y, r); this._glow(ctx, x, y, r, '#88ddff', 0.18);
     ctx.save(); ctx.translate(x, y); ctx.rotate(t * 0.3);
-    // 鍐版櫠浣?    const cg = ctx.createRadialGradient(0,0,0,0,0,r); cg.addColorStop(0,'#ffffff'); cg.addColorStop(0.3,'#ccf0ff'); cg.addColorStop(0.7,'#66bbdd'); cg.addColorStop(1,'#2266aa');
+        const cg = ctx.createRadialGradient(0,0,0,0,0,r); cg.addColorStop(0,'#ffffff'); cg.addColorStop(0.3,'#ccf0ff'); cg.addColorStop(0.7,'#66bbdd'); cg.addColorStop(1,'#2266aa');
     ctx.fillStyle = cg; ctx.beginPath();
     for(let i=0;i<8;i++){const a=(i/8)*TWO_PI_NEW; const cr=i%2===0?r:r*0.75; ctx.lineTo(Math.cos(a)*cr,Math.sin(a)*cr);} ctx.closePath(); ctx.fill();
-    // 楂樺厜闈?    ctx.globalAlpha=0.3; ctx.fillStyle='#fff'; ctx.beginPath(); ctx.moveTo(0,-r*0.8); ctx.lineTo(r*0.3,-r*0.2); ctx.lineTo(0,0); ctx.lineTo(-r*0.2,-r*0.4); ctx.closePath(); ctx.fill();
-    // 闆姳绾?    if(this.quality.detailLevel>=1){ctx.globalAlpha=0.3; ctx.strokeStyle='#ffffff'; ctx.lineWidth=1; for(let i=0;i<6;i++){const a=(i/6)*TWO_PI_NEW; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(Math.cos(a)*r*0.6,Math.sin(a)*r*0.6); ctx.stroke();}}
+        ctx.globalAlpha=0.3; ctx.fillStyle='#fff'; ctx.beginPath(); ctx.moveTo(0,-r*0.8); ctx.lineTo(r*0.3,-r*0.2); ctx.lineTo(0,0); ctx.lineTo(-r*0.2,-r*0.4); ctx.closePath(); ctx.fill();
+        if(this.quality.detailLevel>=1){ctx.globalAlpha=0.3; ctx.strokeStyle='#ffffff'; ctx.lineWidth=1; for(let i=0;i<6;i++){const a=(i/6)*TWO_PI_NEW; ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(Math.cos(a)*r*0.6,Math.sin(a)*r*0.6); ctx.stroke();}}
     ctx.restore();
     // 椋樻暎鍐版櫠
     ctx.save(); ctx.globalAlpha=0.4; ctx.fillStyle='#aaeeff';
@@ -182,7 +182,7 @@ SkinRenderer.prototype._body_kitsune = function(ctx, x, y, r, angle) {
     ctx.globalAlpha=1; const bg=ctx.createRadialGradient(-r*0.2,-r*0.2,0,0,0,r);
     bg.addColorStop(0,'#ffcc88'); bg.addColorStop(0.5,'#ff8844'); bg.addColorStop(1,'#cc5522');
     ctx.fillStyle=bg; ctx.beginPath(); ctx.arc(0,0,r,0,TWO_PI_NEW); ctx.fill();
-    // 鐙愯€?    ctx.fillStyle='#ff8844';
+        ctx.fillStyle='#ff8844';
     ctx.beginPath(); ctx.moveTo(-r*0.5,-r*0.7); ctx.lineTo(-r*0.2,-r*1.3); ctx.lineTo(r*0.05,-r*0.7); ctx.fill();
     ctx.beginPath(); ctx.moveTo(r*0.5,-r*0.7); ctx.lineTo(r*0.2,-r*1.3); ctx.lineTo(-r*0.05,-r*0.7); ctx.fill();
     // 鐙愮溂
@@ -214,7 +214,7 @@ SkinRenderer.prototype._body_dragonking = function(ctx, x, y, r, angle) {
     ctx.globalAlpha=1; const dg=ctx.createRadialGradient(-r*0.2,-r*0.3,0,0,0,r);
     dg.addColorStop(0,'#88ddff'); dg.addColorStop(0.4,'#2266cc'); dg.addColorStop(1,'#112266');
     ctx.fillStyle=dg; ctx.beginPath(); ctx.arc(0,0,r,0,TWO_PI_NEW); ctx.fill();
-    // 槌炵墖绾?    ctx.globalAlpha=0.2; ctx.strokeStyle='#aaddff'; ctx.lineWidth=0.8;
+        ctx.globalAlpha=0.2; ctx.strokeStyle='#aaddff'; ctx.lineWidth=0.8;
     for(let row=-2;row<=2;row++){for(let col=-2;col<=2;col++){const sx=col*r*0.3+row*r*0.15; const sy=row*r*0.3; if(sx*sx+sy*sy<r*r*0.7){ctx.beginPath(); ctx.arc(sx,sy,r*0.13,0,Math.PI); ctx.stroke();}}}
     // 榫欒
     ctx.globalAlpha=1; ctx.fillStyle='#ffcc44';
@@ -233,7 +233,7 @@ SkinRenderer.prototype._body_dragonking = function(ctx, x, y, r, angle) {
 };
 SkinRenderer.prototype._proj_dragonking = function(ctx, x, y, r, angle) {
     ctx.save(); ctx.translate(x,y); ctx.rotate(angle);
-    // 姘撮緳寮?    const g=ctx.createLinearGradient(-r,0,r*1.5,0); g.addColorStop(0,'#88ddff'); g.addColorStop(0.5,'#4488ff'); g.addColorStop(1,'#2244aa');
+        const g=ctx.createLinearGradient(-r,0,r*1.5,0); g.addColorStop(0,'#88ddff'); g.addColorStop(0.5,'#4488ff'); g.addColorStop(1,'#2244aa');
     ctx.fillStyle=g; ctx.beginPath(); ctx.moveTo(r*1.2,0); ctx.quadraticCurveTo(r*0.5,-r*0.5,0,-r*0.3); ctx.quadraticCurveTo(-r*0.5,-r*0.2,-r,0); ctx.quadraticCurveTo(-r*0.5,r*0.2,0,r*0.3); ctx.quadraticCurveTo(r*0.5,r*0.5,r*1.2,0); ctx.fill();
     ctx.restore(); if(this.quality.glowEnabled) this._glow(ctx,x,y,r*0.5,'#4488ff',0.3);
 };
@@ -242,7 +242,7 @@ SkinRenderer.prototype._body_wukong = function(ctx, x, y, r, angle) {
     const t = this._time;
     this._shadow(ctx, x, y, r); this._glow(ctx, x, y, r, '#ffaa00', 0.18);
     ctx.save(); ctx.translate(x, y);
-    // 閲戠畭妫掓棆杞?    ctx.save(); ctx.rotate(t*3);
+        ctx.save(); ctx.rotate(t*3);
     ctx.strokeStyle='#ffcc00'; ctx.lineWidth=3; ctx.lineCap='round';
     ctx.beginPath(); ctx.moveTo(-r*1.8,0); ctx.lineTo(r*1.8,0); ctx.stroke();
     ctx.fillStyle='#ffaa00'; ctx.beginPath(); ctx.arc(-r*1.8,0,3,0,TWO_PI_NEW); ctx.fill();
@@ -271,7 +271,7 @@ SkinRenderer.prototype._body_wukong = function(ctx, x, y, r, angle) {
 };
 SkinRenderer.prototype._proj_wukong = function(ctx, x, y, r, angle) {
     ctx.save(); ctx.translate(x,y); ctx.rotate(angle+this._time*10);
-    // 灏忛噾绠嶆鏃嬭浆寮?    ctx.strokeStyle='#ffcc00'; ctx.lineWidth=2.5; ctx.lineCap='round';
+        ctx.strokeStyle='#ffcc00'; ctx.lineWidth=2.5; ctx.lineCap='round';
     ctx.beginPath(); ctx.moveTo(-r*1.2,0); ctx.lineTo(r*1.2,0); ctx.stroke();
     ctx.fillStyle='#ff6600'; ctx.globalAlpha=0.5; ctx.beginPath(); ctx.arc(0,0,r*0.3,0,TWO_PI_NEW); ctx.fill();
     ctx.restore(); if(this.quality.glowEnabled) this._glow(ctx,x,y,r*0.4,'#ffaa00',0.3);
@@ -293,11 +293,11 @@ SkinRenderer.prototype._body_voidwalker = function(ctx, x, y, r, angle) {
     ctx.globalAlpha=1; const vg=ctx.createRadialGradient(0,0,0,0,0,r);
     vg.addColorStop(0,'#000000'); vg.addColorStop(0.4,'#110033'); vg.addColorStop(0.7,'#220066'); vg.addColorStop(1,'#4400aa');
     ctx.fillStyle=vg; ctx.beginPath(); ctx.arc(0,0,r,0,TWO_PI_NEW); ctx.fill();
-    // 鏃嬭浆鍚哥Н鐩?    ctx.save(); ctx.rotate(t*1.5); ctx.globalAlpha=0.4; ctx.strokeStyle='#aa66ff'; ctx.lineWidth=2;
+        ctx.save(); ctx.rotate(t*1.5); ctx.globalAlpha=0.4; ctx.strokeStyle='#aa66ff'; ctx.lineWidth=2;
     ctx.beginPath(); ctx.ellipse(0,0,r*0.9,r*0.35,0,0,TWO_PI_NEW); ctx.stroke();
     ctx.strokeStyle='#cc88ff'; ctx.lineWidth=1; ctx.beginPath(); ctx.ellipse(0,0,r*0.7,r*0.25,0.5,0,TWO_PI_NEW); ctx.stroke();
     ctx.restore();
-    // 涓績鐪?    ctx.fillStyle='#aa44ff'; ctx.globalAlpha=0.7+Math.sin(t*3)*0.3;
+        ctx.fillStyle='#aa44ff'; ctx.globalAlpha=0.7+Math.sin(t*3)*0.3;
     ctx.beginPath(); ctx.arc(0,0,r*0.25,0,TWO_PI_NEW); ctx.fill();
     ctx.fillStyle='#fff'; ctx.globalAlpha=0.5; ctx.beginPath(); ctx.arc(0,0,r*0.1,0,TWO_PI_NEW); ctx.fill();
     // 婕傛诞纰庣墖
@@ -309,7 +309,7 @@ SkinRenderer.prototype._body_voidwalker = function(ctx, x, y, r, angle) {
 };
 SkinRenderer.prototype._proj_voidwalker = function(ctx, x, y, r, angle) {
     ctx.save(); ctx.translate(x,y);
-    // 铏氱┖寮?- 灏忛粦娲?    const vg=ctx.createRadialGradient(0,0,0,0,0,r); vg.addColorStop(0,'#000'); vg.addColorStop(0.5,'#220044'); vg.addColorStop(1,'#8844ff');
+        const vg=ctx.createRadialGradient(0,0,0,0,0,r); vg.addColorStop(0,'#000'); vg.addColorStop(0.5,'#220044'); vg.addColorStop(1,'#8844ff');
     ctx.fillStyle=vg; ctx.beginPath(); ctx.arc(0,0,r*0.8,0,TWO_PI_NEW); ctx.fill();
     ctx.strokeStyle='#aa66ff'; ctx.lineWidth=1; ctx.globalAlpha=0.5; ctx.beginPath(); ctx.arc(0,0,r,0,TWO_PI_NEW); ctx.stroke();
     ctx.restore(); if(this.quality.glowEnabled) this._glow(ctx,x,y,r*0.5,'#8844ff',0.3);
@@ -319,27 +319,27 @@ SkinRenderer.prototype._body_bloodmoon = function(ctx, x, y, r, angle) {
     const t = this._time;
     this._shadow(ctx, x, y, r); this._glow(ctx, x, y, r, '#aa0000', 0.22);
     ctx.save(); ctx.translate(x, y);
-    // 琛€闆?    ctx.globalAlpha=0.2; ctx.fillStyle='#aa0000';
+        ctx.globalAlpha=0.2; ctx.fillStyle='#aa0000';
     for(let i=0;i<6;i++){const a=t*0.5+(i/6)*TWO_PI_NEW; const d=r*1.2+Math.sin(t*2+i*1.1)*r*0.2;
         ctx.beginPath(); ctx.arc(Math.cos(a)*d,Math.sin(a)*d,r*0.2+Math.sin(t*3+i)*r*0.05,0,TWO_PI_NEW); ctx.fill();}
-    // 琛€鏈堟湰浣?    ctx.globalAlpha=1; const mg=ctx.createRadialGradient(r*0.1,-r*0.1,0,0,0,r);
+        ctx.globalAlpha=1; const mg=ctx.createRadialGradient(r*0.1,-r*0.1,0,0,0,r);
     mg.addColorStop(0,'#ff2200'); mg.addColorStop(0.4,'#cc0000'); mg.addColorStop(0.7,'#880000'); mg.addColorStop(1,'#330000');
     ctx.fillStyle=mg; ctx.beginPath(); ctx.arc(0,0,r,0,TWO_PI_NEW); ctx.fill();
     // 鏈堥潰闃村奖
     ctx.globalAlpha=0.3; ctx.fillStyle='#000';
     ctx.beginPath(); ctx.arc(r*0.2,-r*0.1,r*0.5,0,TWO_PI_NEW); ctx.fill();
     ctx.beginPath(); ctx.arc(-r*0.3,r*0.3,r*0.25,0,TWO_PI_NEW); ctx.fill();
-    // 琛€鑹茶剦缁?    ctx.globalAlpha=0.5; ctx.strokeStyle='#ff4444'; ctx.lineWidth=1.5;
+        ctx.globalAlpha=0.5; ctx.strokeStyle='#ff4444'; ctx.lineWidth=1.5;
     for(let i=0;i<5;i++){const a=(i/5)*TWO_PI_NEW+Math.sin(t+i)*0.2; ctx.beginPath(); ctx.moveTo(0,0);
         const mx=Math.cos(a+0.3)*r*0.4; const my=Math.sin(a+0.3)*r*0.4;
         ctx.quadraticCurveTo(mx,my,Math.cos(a)*r*0.85,Math.sin(a)*r*0.85); ctx.stroke();}
-    // 鐪?    ctx.globalAlpha=1; ctx.fillStyle='#ff0000'; ctx.beginPath(); ctx.arc(0,0,r*0.2,0,TWO_PI_NEW); ctx.fill();
+        ctx.globalAlpha=1; ctx.fillStyle='#ff0000'; ctx.beginPath(); ctx.arc(0,0,r*0.2,0,TWO_PI_NEW); ctx.fill();
     ctx.fillStyle='#000'; ctx.beginPath(); ctx.ellipse(0,0,r*0.05,r*0.15,0,0,TWO_PI_NEW); ctx.fill();
     ctx.restore();
 };
 SkinRenderer.prototype._proj_bloodmoon = function(ctx, x, y, r, angle) {
     ctx.save(); ctx.translate(x,y); ctx.rotate(angle);
-    // 琛€鍒?    ctx.fillStyle='#cc0000'; ctx.globalAlpha=0.9;
+        ctx.fillStyle='#cc0000'; ctx.globalAlpha=0.9;
     ctx.beginPath(); ctx.moveTo(r*1.2,0); ctx.quadraticCurveTo(r*0.5,-r*0.4,0,-r*0.1); ctx.lineTo(-r*0.5,0); ctx.lineTo(0,r*0.1); ctx.quadraticCurveTo(r*0.5,r*0.4,r*1.2,0); ctx.fill();
     ctx.fillStyle='#ff4444'; ctx.globalAlpha=0.4; ctx.beginPath(); ctx.arc(0,0,r*0.25,0,TWO_PI_NEW); ctx.fill();
     ctx.restore(); if(this.quality.glowEnabled) this._glow(ctx,x,y,r*0.4,'#ff0000',0.3);
@@ -362,7 +362,7 @@ SkinRenderer.prototype._body_chaoseye = function(ctx, x, y, r, angle) {
     const cg=ctx.createRadialGradient(0,0,0,0,0,r);
     cg.addColorStop(0,`hsl(${hMain},60%,70%)`); cg.addColorStop(0.5,`hsl(${(hMain+60)%360},70%,40%)`); cg.addColorStop(1,`hsl(${(hMain+120)%360},80%,20%)`);
     ctx.fillStyle=cg; ctx.beginPath(); ctx.arc(0,0,r,0,TWO_PI_NEW); ctx.fill();
-    // 澶氬眰鐜?    ctx.globalAlpha=0.3; ctx.strokeStyle=`hsl(${(hMain+180)%360},90%,60%)`; ctx.lineWidth=2;
+        ctx.globalAlpha=0.3; ctx.strokeStyle=`hsl(${(hMain+180)%360},90%,60%)`; ctx.lineWidth=2;
     ctx.beginPath(); ctx.arc(0,0,r*0.7,0,TWO_PI_NEW); ctx.stroke();
     // 娣锋矊涔嬬溂锛堝法澶э級
     ctx.globalAlpha=1; ctx.fillStyle='#fff'; ctx.beginPath(); ctx.ellipse(0,0,r*0.45,r*0.3,0,0,TWO_PI_NEW); ctx.fill();
@@ -380,8 +380,9 @@ SkinRenderer.prototype._proj_chaoseye = function(ctx, x, y, r, angle) {
     const t = this._time; const hue=(t*50)%360;
     ctx.save(); ctx.translate(x,y); ctx.rotate(angle+t*5);
     ctx.fillStyle=`hsl(${hue},80%,50%)`; ctx.globalAlpha=0.8;
-    // 浜旇鏄?    ctx.beginPath(); for(let i=0;i<5;i++){const a=(i/5)*TWO_PI_NEW-Math.PI/2; const ir=(i*2%5)/5*TWO_PI_NEW-Math.PI/2; ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r); ctx.lineTo(Math.cos((a+ir)/2)*r*0.4,Math.sin((a+ir)/2)*r*0.4);} ctx.closePath(); ctx.fill();
+        ctx.beginPath(); for(let i=0;i<5;i++){const a=(i/5)*TWO_PI_NEW-Math.PI/2; const ir=(i*2%5)/5*TWO_PI_NEW-Math.PI/2; ctx.lineTo(Math.cos(a)*r,Math.sin(a)*r); ctx.lineTo(Math.cos((a+ir)/2)*r*0.4,Math.sin((a+ir)/2)*r*0.4);} ctx.closePath(); ctx.fill();
     ctx.fillStyle='#fff'; ctx.globalAlpha=0.3; ctx.beginPath(); ctx.arc(0,0,r*0.25,0,TWO_PI_NEW); ctx.fill();
     ctx.restore(); if(this.quality.glowEnabled) this._glow(ctx,x,y,r*0.5,`hsl(${hue},80%,50%)`,0.3);
 };
+
 
