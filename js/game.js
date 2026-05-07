@@ -1,7 +1,7 @@
 ﻿// ============================================
 // 游戏版本号
 // ============================================
-var GAME_VERSION = 'v1.8.8';
+var GAME_VERSION = 'v1.8.9';
 
 // 性能常量（避免每帧重复创建）
 const RECYCLE_DIST_SQ = 1500 * 1500; // 超出此距离回收敌人
@@ -373,6 +373,8 @@ class Game {
 
     // === 标题界面 ===
     _updateTitle(dt) {
+        // 启动菜单音乐
+        if (typeof BGM !== 'undefined' && !BGM._playing) BGM.play('menu');
         const result = this.ui.renderTitleScreen(dt);
         if (result === 'start') {
             this.state = 'menu';
@@ -528,6 +530,8 @@ class Game {
         this.camera.x = this.player.x - this.logicWidth / 2;
         this.camera.y = this.player.y - this.logicHeight / 2;
         this.state = 'playing';
+        // 切换战斗音乐
+        if (typeof BGM !== 'undefined') BGM.switchScene('battle');
     }
 
     // === 游戏进行 ===
@@ -1491,22 +1495,30 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
             ctx.restore();
         }
 
-        // 边界警告渐变（屏幕边缘紫红色脉冲）
+        // 边界警告渐变（仅在对应方向屏幕边缘高亮）
         if (this._boundaryVignette > 0) {
+            const dirs = this._boundaryDirs || [];
             ctx.save();
             ctx.globalAlpha = this._boundaryVignette;
             ctx.fillStyle = '#aa0044';
-            ctx.fillRect(0, 0, screenW, 50);
-            ctx.fillRect(0, screenH - 50, screenW, 50);
-            ctx.fillRect(0, 0, 50, screenH);
-            ctx.fillRect(screenW - 50, 0, 50, screenH);
+            if (dirs.includes('上')) ctx.fillRect(0, 0, screenW, 50);
+            if (dirs.includes('下')) ctx.fillRect(0, screenH - 50, screenW, 50);
+            if (dirs.includes('左')) ctx.fillRect(0, 0, 50, screenH);
+            if (dirs.includes('右')) ctx.fillRect(screenW - 50, 0, 50, screenH);
+            if (!dirs.length || dirs.includes('外')) {
+                ctx.fillRect(0, 0, screenW, 50);
+                ctx.fillRect(0, screenH - 50, screenW, 50);
+                ctx.fillRect(0, 0, 50, screenH);
+                ctx.fillRect(screenW - 50, 0, 50, screenH);
+            }
             ctx.restore();
             ctx.save();
             ctx.globalAlpha = Math.min(1, this._boundaryVignette * 3);
             ctx.font = "bold 18px 'Microsoft YaHei','PingFang SC',Arial,sans-serif";
             ctx.fillStyle = '#ff4466';
             ctx.textAlign = 'center';
-            ctx.fillText('⚠ 已接近地图边界 ⚠', screenW / 2, 36);
+            const dirText = dirs.length > 0 ? dirs.join('') + '方' : '';
+            ctx.fillText(`⚠ 已接近${dirText}地图边界 ⚠`, screenW / 2, 36);
             ctx.restore();
         }
 
@@ -2009,6 +2021,7 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
             this.state = 'menu';
             this.showStatsPanel = false;
             this.particles.clear();
+            if (typeof BGM !== 'undefined') BGM.switchScene('menu');
         }
     }
 
@@ -2047,6 +2060,7 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
             this._victoryRecorded = false;
             this._victoryGold = 0;
             this._dailyRank = 0;
+            if (typeof BGM !== 'undefined') BGM.switchScene('menu');
         }
     }
 
@@ -2085,6 +2099,7 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
             this._deathRecorded = false;
             this._goldEarned = 0;
             this._dailyRank = 0;
+            if (typeof BGM !== 'undefined') BGM.switchScene('menu');
         }
     }
 
@@ -2552,6 +2567,15 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
         if (distFromOrigin > warningZone) {
             const overRatio = (distFromOrigin - warningZone) / (boundary - warningZone);
             const clampedRatio = Math.min(1, overRatio);
+
+            // 判断具体方向
+            const px = this.player.x, py = this.player.y;
+            const dirs = [];
+            if (px > warningZone) dirs.push('右');
+            if (px < -warningZone) dirs.push('左');
+            if (py > warningZone) dirs.push('下');
+            if (py < -warningZone) dirs.push('上');
+            this._boundaryDirs = dirs.length > 0 ? dirs : ['外'];
 
             // 视觉警告：屏幕边缘红色脉冲
             if (!this._boundaryVignette) this._boundaryVignette = 0;

@@ -686,6 +686,136 @@ const SFX = {
 };
 
 // ============================================
+// 背景音乐系统 - Web Audio API 程序化生成
+// ============================================
+const BGM = {
+    _ctx: null,
+    _playing: false,
+    _enabled: true,
+    _volume: 0.25,
+    _nodes: [],
+    _loopTimer: null,
+
+    init() {
+        if (this._ctx) return;
+        try {
+            this._ctx = SFX._ctx || new (window.AudioContext || window.webkitAudioContext)();
+        } catch (e) { this._enabled = false; }
+    },
+
+    setVolume(v) { this._volume = Utils.clamp(v, 0, 1); if (this._masterGain) this._masterGain.gain.value = this._volume; },
+    toggle(on) { this._enabled = on; if (!on) this.stop(); },
+
+    play(scene) {
+        if (!this._enabled || this._playing) return;
+        this.init();
+        if (!this._ctx) return;
+        if (this._ctx.state === 'suspended') this._ctx.resume();
+        this._playing = true;
+        this._scene = scene || 'menu';
+        this._masterGain = this._ctx.createGain();
+        this._masterGain.gain.value = this._volume;
+        this._masterGain.connect(this._ctx.destination);
+        this._startLoop();
+    },
+
+    stop() {
+        this._playing = false;
+        if (this._loopTimer) { clearTimeout(this._loopTimer); this._loopTimer = null; }
+        for (const n of this._nodes) { try { n.stop(); } catch (e) {} }
+        this._nodes = [];
+        if (this._masterGain) { this._masterGain.disconnect(); this._masterGain = null; }
+    },
+
+    switchScene(scene) {
+        if (this._scene === scene) return;
+        this.stop();
+        this.play(scene);
+    },
+
+    _startLoop() {
+        if (!this._playing || !this._ctx) return;
+        const scene = this._scene;
+        if (scene === 'battle') {
+            this._playBattlePhrase();
+        } else {
+            this._playMenuPhrase();
+        }
+    },
+
+    _playMenuPhrase() {
+        if (!this._playing) return;
+        const ctx = this._ctx;
+        const now = ctx.currentTime;
+        // 柔和的氛围音 - 交替和弦
+        const chords = [[261.6, 329.6, 392], [293.7, 349.2, 440], [246.9, 311.1, 370], [261.6, 329.6, 392]];
+        const chordDur = 2.0;
+        chords.forEach((chord, ci) => {
+            chord.forEach(freq => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.value = freq;
+                gain.gain.setValueAtTime(0, now + ci * chordDur);
+                gain.gain.linearRampToValueAtTime(0.06, now + ci * chordDur + 0.5);
+                gain.gain.linearRampToValueAtTime(0.04, now + ci * chordDur + chordDur - 0.3);
+                gain.gain.linearRampToValueAtTime(0, now + ci * chordDur + chordDur);
+                osc.connect(gain).connect(this._masterGain);
+                osc.start(now + ci * chordDur);
+                osc.stop(now + ci * chordDur + chordDur);
+                this._nodes.push(osc);
+            });
+        });
+        const totalDur = chords.length * chordDur * 1000;
+        this._loopTimer = setTimeout(() => { this._nodes = []; this._playMenuPhrase(); }, totalDur - 100);
+    },
+
+    _playBattlePhrase() {
+        if (!this._playing) return;
+        const ctx = this._ctx;
+        const now = ctx.currentTime;
+        // 节奏更强的战斗音 - 低音脉冲 + 高音旋律
+        const bassNotes = [82.4, 98, 73.4, 82.4, 110, 98, 82.4, 73.4];
+        const melodyNotes = [330, 392, 440, 392, 349, 330, 294, 330];
+        const beatDur = 0.5;
+
+        // 低音线
+        bassNotes.forEach((freq, i) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.value = freq;
+            gain.gain.setValueAtTime(0, now + i * beatDur);
+            gain.gain.linearRampToValueAtTime(0.08, now + i * beatDur + 0.05);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + i * beatDur + beatDur * 0.8);
+            osc.connect(gain).connect(this._masterGain);
+            osc.start(now + i * beatDur);
+            osc.stop(now + i * beatDur + beatDur);
+            this._nodes.push(osc);
+        });
+
+        // 旋律线
+        melodyNotes.forEach((freq, i) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.value = freq;
+            gain.gain.setValueAtTime(0, now + i * beatDur);
+            gain.gain.linearRampToValueAtTime(0.05, now + i * beatDur + 0.08);
+            gain.gain.linearRampToValueAtTime(0.03, now + i * beatDur + beatDur * 0.6);
+            gain.gain.linearRampToValueAtTime(0, now + i * beatDur + beatDur);
+            osc.connect(gain).connect(this._masterGain);
+            osc.start(now + i * beatDur);
+            osc.stop(now + i * beatDur + beatDur);
+            this._nodes.push(osc);
+        });
+
+        const totalDur = bassNotes.length * beatDur * 1000;
+        this._loopTimer = setTimeout(() => { this._nodes = []; this._playBattlePhrase(); }, totalDur - 50);
+    },
+};
+
+// ============================================
 // 武器融合系统定义
 // ============================================
 const FusionDefs = {

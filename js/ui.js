@@ -87,17 +87,21 @@ class UISystem {
             this.mouseX = (e.clientX - rect.left) * (this._inputScaleX || 1);
             this.mouseY = (e.clientY - rect.top) * (this._inputScaleY || 1);
         });
-        this.canvas.addEventListener('mousedown', () => {
+        this.canvas.addEventListener('mousedown', (e) => {
+            if (e.button !== 0) return; // 只响应左键
             this.mouseDown = true;
             this.clicked = true;
             this._lastClickTime = performance.now();
             // 每次用户交互都尝试初始化/resume AudioContext（移动端浏览器要求在用户手势中 resume）
             if (typeof SFX !== 'undefined') SFX.init();
         });
-        this.canvas.addEventListener('mouseup', () => {
+        this.canvas.addEventListener('mouseup', (e) => {
+            if (e.button !== 0) return; // 只响应左键
             this.mouseDown = false;
             this._draggingSlider = null;
         });
+        // 禁用右键菜单
+        this.canvas.addEventListener('contextmenu', (e) => { e.preventDefault(); });
 
         // 触屏支持：将 touch 事件映射为 mouse 事件（坐标转换为逻辑坐标）
         this.canvas.addEventListener('touchstart', (e) => {
@@ -303,12 +307,15 @@ class UISystem {
             ctx.fillStyle = isSelected ? 'rgba(255,255,255,0.22)' : (isHover ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.08)');
             this._roundRect(ctx, cx, cy, cardW, cardH, 18 * S);
             ctx.fill();
-            // 彩色顶部装饰条
+            // 彩色顶部装饰条（裁剪到卡片内，避免穿模）
+            ctx.save();
+            this._roundRect(ctx, cx, cy, cardW, cardH, 18 * S);
+            ctx.clip();
             ctx.fillStyle = ballColor;
             ctx.globalAlpha = isSelected ? 0.8 : (isHover ? 0.55 : 0.35);
-            this._roundRect(ctx, cx, cy, cardW, 4 * S, 18 * S);
-            ctx.fill();
+            ctx.fillRect(cx, cy, cardW, 4 * S);
             ctx.globalAlpha = 1;
+            ctx.restore();
             // 边框
             ctx.strokeStyle = isSelected ? ballColor : (isHover ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.1)');
             ctx.lineWidth = isSelected ? 2 : 1;
@@ -408,19 +415,19 @@ class UISystem {
             const infoBottom = cy + cardH;     // 信息区底部
 
             // 将信息区分为5个槽位，按比例分配高度
-            // 名称(15%) | 标签(12%) | 描述(32%) | 分隔(5%) | 被动标题(14%) | 被动描述(22%)
-            const slotNameY = infoTop + infoH * 0.12;
-            const slotTagY = infoTop + infoH * 0.25;
-            const slotDescY = infoTop + infoH * 0.37;
-            const slotSepY = infoTop + infoH * 0.60;
-            const slotPassiveTitleY = infoTop + infoH * 0.67;
-            const slotPassiveDescY = infoTop + infoH * 0.79;
+            // 名称(12%) | 标签(10%) | 描述(26%) | 分隔(4%) | 被动标题(12%) | 被动描述(36%)
+            const slotNameY = infoTop + infoH * 0.10;
+            const slotTagY = infoTop + infoH * 0.22;
+            const slotDescY = infoTop + infoH * 0.33;
+            const slotSepY = infoTop + infoH * 0.55;
+            const slotPassiveTitleY = infoTop + infoH * 0.62;
+            const slotPassiveDescY = infoTop + infoH * 0.73;
 
             // 描述区域可用行高（基于剩余空间计算）
             const descAvailH = slotSepY - slotDescY;
-            const passiveAvailH = infoBottom - slotPassiveDescY - infoH * 0.04;
-            const descLineH = Math.min(descAvailH / 2, 18 * S);
-            const passiveLineH = Math.min(passiveAvailH / 2, 16 * S);
+            const passiveAvailH = infoBottom - slotPassiveDescY - infoH * 0.02;
+            const descLineH = Math.min(descAvailH / 2, 16 * S);
+            const passiveLineH = Math.min(passiveAvailH / 3, 14 * S);
 
             // 角色名
             ctx.font = this._font('bold', 16);
@@ -460,12 +467,12 @@ class UISystem {
             ctx.fillStyle = '#feca57';
             ctx.fillText('被动: ' + def.passive.name, textCX, slotPassiveTitleY);
 
-            // 被动描述（最多2行）
-            ctx.font = this._font(null, 10);
+            // 被动描述（最多3行）
+            ctx.font = this._font(null, 9);
             ctx.fillStyle = 'rgba(0,0,0,0.35)';
-            this._wrapText(ctx, def.passive.desc, textCX + 0.5, slotPassiveDescY + 0.5, cardW - 16 * S, passiveLineH, 2);
+            this._wrapText(ctx, def.passive.desc, textCX + 0.5, slotPassiveDescY + 0.5, cardW - 14 * S, passiveLineH, 3);
             ctx.fillStyle = 'rgba(254,202,87,0.85)';
-            this._wrapText(ctx, def.passive.desc, textCX, slotPassiveDescY, cardW - 16 * S, passiveLineH, 2);
+            this._wrapText(ctx, def.passive.desc, textCX, slotPassiveDescY, cardW - 14 * S, passiveLineH, 3);
 
             // 关闭卡片裁剪
             ctx.restore();
@@ -548,18 +555,44 @@ class UISystem {
         ctx.fillText('每日挑战', dailyBtnX + btnW / 2, btnY + btnH / 2);
         ctx.textBaseline = 'alphabetic';
 
-        // 每日挑战信息提示（hover时显示今日角色和修饰）
+        // 每日挑战信息提示（hover时显示在按钮上方）
         if (dailyHover && typeof DailyLeaderboard !== 'undefined') {
             const seed = DailyLeaderboard.getSeed();
             const charId = DailyLeaderboard.getDailyCharacter(seed);
             const charDef = CharacterDefs[charId];
             const mods = DailyLeaderboard.getDailyModifiers(seed);
-            const tipY = btnY + btnH + 10 * S;
+            const modText = mods.map(m => m.name).join(' + ');
+            const tipText = `今日: ${charDef ? charDef.name : charId} | ${modText}`;
             ctx.font = this._font(null, 11);
+            const tipMetrics = ctx.measureText(tipText);
+            const tipPadX = 10 * S;
+            const tipPadY = 6 * S;
+            const tipW = tipMetrics.width + tipPadX * 2;
+            const tipH = 14 * S + tipPadY * 2;
+            const tipX = dailyBtnX + btnW / 2 - tipW / 2;
+            const tipY = btnY - tipH - 8 * S;
+            // 背景框
+            ctx.fillStyle = 'rgba(30,20,10,0.88)';
+            this._roundRect(ctx, tipX, tipY, tipW, tipH, 8 * S);
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(255,180,80,0.5)';
+            ctx.lineWidth = 1;
+            this._roundRect(ctx, tipX, tipY, tipW, tipH, 8 * S);
+            ctx.stroke();
+            // 小三角（指向按钮）
+            ctx.fillStyle = 'rgba(30,20,10,0.88)';
+            ctx.beginPath();
+            ctx.moveTo(dailyBtnX + btnW / 2 - 6 * S, tipY + tipH);
+            ctx.lineTo(dailyBtnX + btnW / 2 + 6 * S, tipY + tipH);
+            ctx.lineTo(dailyBtnX + btnW / 2, tipY + tipH + 5 * S);
+            ctx.closePath();
+            ctx.fill();
+            // 文字
             ctx.fillStyle = '#ffcc88';
             ctx.textAlign = 'center';
-            const modText = mods.map(m => m.name).join(' + ');
-            ctx.fillText(`今日: ${charDef ? charDef.name : charId} | ${modText}`, W / 2, tipY);
+            ctx.textBaseline = 'middle';
+            ctx.fillText(tipText, dailyBtnX + btnW / 2, tipY + tipH / 2);
+            ctx.textBaseline = 'alphabetic';
         }
 
         // --- 天赋商店按钮 ---
