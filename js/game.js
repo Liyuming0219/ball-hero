@@ -550,12 +550,13 @@ class Game {
         this.player._gameTime = this.waveManager.gameTime;
         this.player.update(dt, this.inputDir, this.particles);
 
-        // 英雄移动拖尾（每3帧生成1个拖尾粒子，极低开销）
+        // 英雄移动拖尾（每3帧生成1个拖尾粒子，发射在球体后方远处）
         if (this.player.isMoving && (this.frameCount % 3 === 0)) {
+            const trailDist = this.player.radius * 1.8;
             this.particles.addTrail(
-                this.player.x - Math.cos(this.player.facingAngle) * 8,
-                this.player.y - Math.sin(this.player.facingAngle) * 8,
-                this.player.def.color, 5, 0.25
+                this.player.x - Math.cos(this.player.facingAngle) * trailDist,
+                this.player.y - Math.sin(this.player.facingAngle) * trailDist,
+                this.player.def.color, 4, 0.2
             );
         }
 
@@ -985,8 +986,8 @@ class Game {
         if (window._skinFxSystem && this.player && this.player.isMoving) {
             const skin = (typeof skinManager !== 'undefined') ? skinManager.getEquippedSkin(this.player.def.id) : null;
             if (skin) {
-                // 拖尾发射在人物移动方向的后端，避免遮挡皮肤本身
-                const trailOffsetDist = this.player.radius ? this.player.radius * 0.8 : 10;
+                // 拖尾发射在人物移动方向的后方远处，彻底避免遮挡皮肤
+                const trailOffsetDist = this.player.radius ? this.player.radius * 2.0 : 20;
                 const trailX = this.player.x - Math.cos(this.player.facingAngle) * trailOffsetDist;
                 const trailY = this.player.y - Math.sin(this.player.facingAngle) * trailOffsetDist;
                 window._skinFxSystem.emitMoveTrail(trailX, trailY, skin);

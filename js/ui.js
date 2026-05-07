@@ -181,10 +181,10 @@ class UISystem {
         const S = this.scale;
         this._titleTime += dt;
 
-        // 每个角色对应的彩色球球色系
+        // 每个角色对应的彩色球球色系（与 characters.js 中 def.color 保持一致）
         const charBallColors = {
-            swordsman: '#ff6b6b', mage: '#54a0ff', assassin: '#5f27cd',
-            paladin: '#feca57', archer: '#96e6a1', necromancer: '#ff9ff3',
+            swordsman: '#44aaff', mage: '#ff6644', assassin: '#aa44ff',
+            paladin: '#ffcc44', archer: '#44ddaa', necromancer: '#44ccaa',
         };
 
         // ── 背景：与封面完全一致的深蓝星空渐变 ──
@@ -1018,6 +1018,10 @@ class UISystem {
                     ctx.fillStyle = '#888';
                     ctx.beginPath(); ctx.arc(previewX, previewY, previewR, 0, Math.PI * 2); ctx.fill();
                 }
+                // 悬停时渲染光环特效预览（窄屏）
+                if (cardHover && window._skinFxSystem) {
+                    window._skinFxSystem.renderAura(ctx, previewX, previewY, previewR, skin);
+                }
 
                 // 文字信息
                 const textX = cx + 110 * S;
@@ -1027,7 +1031,8 @@ class UISystem {
                 ctx.fillText(skin.name, textX, cy + 30 * S);
                 ctx.font = this._font(null, 10);
                 ctx.fillStyle = '#aaa';
-                ctx.fillText(skin.desc.slice(0, 12) + '...', textX, cy + 50 * S);
+                ctx.textAlign = 'left';
+                this._wrapText(ctx, skin.desc, textX, cy + 50 * S, cardW - 130 * S, 14 * S, 2);
 
                 // 价格/状态
                 const btnX = cx + cardW - 80 * S;
@@ -1072,12 +1077,34 @@ class UISystem {
                 const previewX = cx + cardW / 2;
                 const previewY = cy + 60 * S;
 
-                // 皮肤预览球
+                // 皮肤预览球 + 悬停特效预览
                 if (window._skinRenderer && window._skinRenderer.renderBody(ctx, skin, previewX, previewY, previewR, 0, 0, 1)) {
                     // 渲染成功
                 } else {
                     ctx.fillStyle = '#888';
                     ctx.beginPath(); ctx.arc(previewX, previewY, previewR, 0, Math.PI * 2); ctx.fill();
+                }
+                // 悬停时渲染光环 & 拖尾/攻击特效预览
+                if (cardHover && window._skinFxSystem) {
+                    window._skinFxSystem.renderAura(ctx, previewX, previewY, previewR, skin);
+                    // 定时释放拖尾粒子模拟移动
+                    if (!this._skinShopFxTimer) this._skinShopFxTimer = 0;
+                    this._skinShopFxTimer += dt;
+                    if (this._skinShopFxTimer > 0.08) {
+                        this._skinShopFxTimer = 0;
+                        const trailOffX = previewX + (Math.random() - 0.5) * previewR;
+                        const trailOffY = previewY + previewR * 0.6;
+                        window._skinFxSystem.emitMoveTrail(trailOffX, trailOffY, skin);
+                    }
+                    // 每1.5秒释放一次攻击特效
+                    if (!this._skinShopHitTimer) this._skinShopHitTimer = 0;
+                    this._skinShopHitTimer += dt;
+                    if (this._skinShopHitTimer > 1.5) {
+                        this._skinShopHitTimer = 0;
+                        const hitX = previewX + (Math.random() - 0.5) * previewR * 1.5;
+                        const hitY = previewY + (Math.random() - 0.5) * previewR * 1.5;
+                        window._skinFxSystem.onHit(hitX, hitY, skin);
+                    }
                 }
 
                 // 名称
@@ -1089,9 +1116,8 @@ class UISystem {
                 // 描述
                 ctx.font = this._font(null, 10);
                 ctx.fillStyle = '#aaa';
-                const maxDescW = cardW - 16 * S;
-                const descText = skin.desc.length > 20 ? skin.desc.slice(0, 20) + '...' : skin.desc;
-                ctx.fillText(descText, previewX, previewY + previewR + 40 * S);
+                const maxDescW = cardW - 20 * S;
+                this._wrapText(ctx, skin.desc, previewX, previewY + previewR + 38 * S, maxDescW, 14 * S, 2);
 
                 // 稀有度标签
                 const tierLabels = ['普通', '稀有', '史诗', '传说', '神话'];
@@ -1142,6 +1168,18 @@ class UISystem {
                     }
                 }
             }
+        }
+
+        // 渲染皮肤商店内的粒子特效预览（悬停触发的粒子）
+        if (window._skinFxSystem && window._game && window._game.particles) {
+            const ps = window._game.particles;
+            ps.update(dt);
+            // 用零偏移camera渲染（皮肤商店中坐标即屏幕坐标）
+            ps.renderTrails(ctx, { x: 0, y: 0 }, W, H);
+            ps.render(ctx, { x: 0, y: 0 }, W, H);
+            // 同步更新FX系统时间 & 渲染器时间
+            window._skinFxSystem.update(dt);
+            if (window._skinRenderer) window._skinRenderer.update(dt);
         }
 
         // 返回按钮（左上角）
