@@ -67,6 +67,38 @@ const SkinSeries = {
             phoenix: { id: 'phoenix', name: '不死凤凰', series: 'cosmic', tier: 4, icon: '🔥', price: 6000, desc: '浴火重生神鸟，烈焰羽翼划破苍穹' },
         },
     },
+    mech: {
+        name: '机械纪元', icon: '⚙️', tier: 3,
+        skins: {
+            cyberpunk: { id: 'cyberpunk', name: '赛博朋克', series: 'mech', tier: 3, icon: '🤖', price: 3500, desc: '霓虹闪烁的赛博义体，数据洪流贯穿全身' },
+            steambot: { id: 'steambot', name: '蒸汽机甲', series: 'mech', tier: 3, icon: '⚙️', price: 3000, desc: '复古蒸汽朋克巨兽，铜齿轮与蒸汽共鸣' },
+            nanocore: { id: 'nanocore', name: '纳米核心', series: 'mech', tier: 3, icon: '🔬', price: 4000, desc: '亿万纳米粒子组成的可变形态战士' },
+        },
+    },
+    element: {
+        name: '元素领主', icon: '⚡', tier: 4,
+        skins: {
+            thunder: { id: 'thunder', name: '雷霆之神', series: 'element', tier: 4, icon: '⚡', price: 5000, desc: '掌控雷霆的远古神灵，每一击引来天罚' },
+            glacier: { id: 'glacier', name: '寒冰领主', series: 'element', tier: 4, icon: '❄️', price: 5000, desc: '绝对零度的冰霜化身，冻结万物的呼吸' },
+            shadow: { id: 'shadow', name: '暗影主宰', series: 'element', tier: 4, icon: '🌑', price: 5500, desc: '黑暗深渊的统治者，影子是最锋利的刀刃' },
+        },
+    },
+    myth: {
+        name: '东方神话', icon: '🐉', tier: 5,
+        skins: {
+            kitsune: { id: 'kitsune', name: '九尾天狐', series: 'myth', tier: 5, icon: '🦊', price: 8000, desc: '千年修炼的九尾天狐，幻术与狐火并济' },
+            dragonking: { id: 'dragonking', name: '东海龙王', series: 'myth', tier: 5, icon: '🐉', price: 10000, desc: '四海之主，翻江倒海、呼风唤雨' },
+            wukong: { id: 'wukong', name: '齐天大圣', series: 'myth', tier: 5, icon: '🐵', price: 12000, desc: '大闹天宫的美猴王，金箍棒横扫三界' },
+        },
+    },
+    abyss: {
+        name: '深渊秘境', icon: '👁️', tier: 5,
+        skins: {
+            voidwalker: { id: 'voidwalker', name: '虚空行者', series: 'abyss', tier: 5, icon: '🌀', price: 8000, desc: '穿梭虚空夹缝的神秘存在，扭曲空间本身' },
+            bloodmoon: { id: 'bloodmoon', name: '血月猎人', series: 'abyss', tier: 5, icon: '🌙', price: 7000, desc: '血月之夜苏醒的永恒猎手，鲜血是力量源泉' },
+            chaoseye: { id: 'chaoseye', name: '混沌之眼', series: 'abyss', tier: 5, icon: '👁️', price: 10000, desc: '窥探一切的深渊之眼，令凝视者疯狂' },
+        },
+    },
 };
 
 // --- 皮肤管理器 ---
