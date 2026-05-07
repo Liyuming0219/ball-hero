@@ -570,12 +570,10 @@ class ParticleSystem {
         this.lightnings.length = len;
     }
 
-    // --- 渲染所有粒子(增强版) ---
-    render(ctx, camera, screenW, screenH) {
+    // --- 渲染拖尾（在玩家之前调用，避免遮挡皮肤） ---
+    renderTrails(ctx, camera, screenW, screenH) {
         ctx.save();
         const margin = 40;
-
-        // 拖尾(增强辉光)
         for (const t of this.trailEffects) {
             const sx = t.x - camera.x;
             const sy = t.y - camera.y;
@@ -583,17 +581,14 @@ class ParticleSystem {
             const alpha = t.life / t.maxLife;
             ctx.fillStyle = t.color;
             if (t.glow && t.size > 2) {
-                // 外层辉光
                 ctx.globalAlpha = alpha * 0.4;
                 ctx.beginPath();
                 ctx.arc(sx, sy, t.size * 2.5, 0, TWO_PI);
                 ctx.fill();
-                // 中层
                 ctx.globalAlpha = alpha * 0.7;
                 ctx.beginPath();
                 ctx.arc(sx, sy, t.size * 1.4, 0, TWO_PI);
                 ctx.fill();
-                // 核心(白色)
                 ctx.globalAlpha = alpha;
                 ctx.fillStyle = '#fff';
                 ctx.beginPath();
@@ -605,6 +600,13 @@ class ParticleSystem {
                 ctx.fillRect(sx - s, sy - s, s * 2, s * 2);
             }
         }
+        ctx.restore();
+    }
+
+    // --- 渲染所有粒子(增强版，不含拖尾) ---
+    render(ctx, camera, screenW, screenH) {
+        ctx.save();
+        const margin = 40;
 
         // 基础粒子(增强渲染)
         for (const p of this.particles) {

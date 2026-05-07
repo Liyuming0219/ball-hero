@@ -930,7 +930,7 @@ class SummonManager {
         this.player = player;
         this.particles = particles;
         this.summons = [];
-        this.maxSummons = 6;       // 总上限（不含巨兽）
+        this.maxSummons = 8;       // 总上限（不含巨兽）
         // 已解锁的召唤物种类
         this.unlockedTypes = ['skeleton']; // 初始只有近战骷髅
     }

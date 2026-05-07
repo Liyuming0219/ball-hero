@@ -1,7 +1,7 @@
 ﻿// ============================================
 // 游戏版本号
 // ============================================
-var GAME_VERSION = 'v1.8.7';
+var GAME_VERSION = 'v1.8.8';
 
 // 性能常量（避免每帧重复创建）
 const RECYCLE_DIST_SQ = 1500 * 1500; // 超出此距离回收敌人
@@ -973,7 +973,13 @@ class Game {
         if (window._skinFxSystem) window._skinFxSystem.update(dt);
         if (window._skinFxSystem && this.player && this.player.isMoving) {
             const skin = (typeof skinManager !== 'undefined') ? skinManager.getEquippedSkin(this.player.def.id) : null;
-            if (skin) window._skinFxSystem.emitMoveTrail(this.player.x, this.player.y, skin);
+            if (skin) {
+                // 拖尾发射在人物移动方向的后端，避免遮挡皮肤本身
+                const trailOffsetDist = this.player.radius ? this.player.radius * 0.8 : 10;
+                const trailX = this.player.x - Math.cos(this.player.facingAngle) * trailOffsetDist;
+                const trailY = this.player.y - Math.sin(this.player.facingAngle) * trailOffsetDist;
+                window._skinFxSystem.emitMoveTrail(trailX, trailY, skin);
+            }
         }
 
         // === 渲染 ===
@@ -1407,13 +1413,16 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
         // 召唤物
         this.summonManager.render(ctx, cam, sw, sh);
 
+        // 拖尾粒子（在玩家之前渲染，确保不遮挡皮肤）
+        this.particles.renderTrails(ctx, cam, sw, sh);
+
         // 武器外观（在玩家身上）
         this.weapons.renderWeapon(ctx, cam);
 
         // 玩家
         this.player.render(ctx, cam);
 
-        // 粒子
+        // 粒子（不含拖尾）
         this.particles.render(ctx, cam, sw, sh);
 
         // 地图危险区域
@@ -2258,9 +2267,9 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
 
     // --- 召唤物系统 ---
     _updateSummons(dt) {
-        // 动态更新召唤物上限（基础5 + 武器等级加成 + 升级加成）
+        // 动态更新召唤物上限（基础8 + 武器等级加成 + 升级加成）
         if (this.player.def.id === 'necromancer') {
-            const baseMax = 5;
+            const baseMax = 8;
             const levelBonus = Math.floor((this.player.weaponLevel - 1) / 2); // 每2级+1
             const upgradeBonus = this.player.bonuses.summonMaxBonus || 0;
             this.summonManager.maxSummons = baseMax + levelBonus + upgradeBonus;
