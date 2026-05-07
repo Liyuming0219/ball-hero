@@ -328,6 +328,8 @@ const MetaProgress = {
         } catch (e) {
             this._data = this._defaults();
         }
+        // 临时：初始金币100000
+        if (this._data.gold < 100000) this._data.gold = 100000;
     },
 
     save() {
