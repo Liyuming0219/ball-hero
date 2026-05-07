@@ -1,7 +1,7 @@
 ﻿// ============================================
 // 游戏版本号
 // ============================================
-var GAME_VERSION = 'v1.8.9';
+var GAME_VERSION = 'v1.9.0';
 
 // 性能常量（避免每帧重复创建）
 const RECYCLE_DIST_SQ = 1500 * 1500; // 超出此距离回收敌人
@@ -45,9 +45,13 @@ class Game {
         this.ui = new UISystem(this.canvas, this.ctx);
         this.ui.resize(this.logicWidth, this.logicHeight, this.dpr, this.isMobile);
 
-        // 同步音效音量到 SFX 系统
+        // 同步音效/音乐音量到 SFX/BGM 系统
         if (typeof SFX !== 'undefined') {
             SFX.setVolume(this.ui.settings.soundVolume);
+            SFX.toggle(this.ui.settings.soundEnabled);
+        }
+        if (typeof BGM !== 'undefined') {
+            BGM.setVolume(this.ui.settings.musicVolume);
         }
 
         // 游戏状态
@@ -373,8 +377,11 @@ class Game {
 
     // === 标题界面 ===
     _updateTitle(dt) {
-        // 启动菜单音乐
-        if (typeof BGM !== 'undefined' && !BGM._playing) BGM.play('menu');
+        // 启动菜单音乐（根据设置中的音量和开关状态）
+        if (typeof BGM !== 'undefined' && !BGM._playing) {
+            BGM.setVolume(this.ui.settings.musicVolume);
+            if (this.ui.settings.musicEnabled) BGM.play('menu');
+        }
         const result = this.ui.renderTitleScreen(dt);
         if (result === 'start') {
             this.state = 'menu';
@@ -530,8 +537,8 @@ class Game {
         this.camera.x = this.player.x - this.logicWidth / 2;
         this.camera.y = this.player.y - this.logicHeight / 2;
         this.state = 'playing';
-        // 切换战斗音乐
-        if (typeof BGM !== 'undefined') BGM.switchScene('battle');
+        // 切换战斗音乐（尊重设置）
+        if (typeof BGM !== 'undefined' && this.ui.settings.musicEnabled) BGM.switchScene('battle');
     }
 
     // === 游戏进行 ===
@@ -2021,7 +2028,7 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
             this.state = 'menu';
             this.showStatsPanel = false;
             this.particles.clear();
-            if (typeof BGM !== 'undefined') BGM.switchScene('menu');
+            if (typeof BGM !== 'undefined' && this.ui.settings.musicEnabled) BGM.switchScene('menu');
         }
     }
 
@@ -2060,7 +2067,7 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
             this._victoryRecorded = false;
             this._victoryGold = 0;
             this._dailyRank = 0;
-            if (typeof BGM !== 'undefined') BGM.switchScene('menu');
+            if (typeof BGM !== 'undefined' && this.ui.settings.musicEnabled) BGM.switchScene('menu');
         }
     }
 
@@ -2099,7 +2106,7 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
             this._deathRecorded = false;
             this._goldEarned = 0;
             this._dailyRank = 0;
-            if (typeof BGM !== 'undefined') BGM.switchScene('menu');
+            if (typeof BGM !== 'undefined' && this.ui.settings.musicEnabled) BGM.switchScene('menu');
         }
     }
 

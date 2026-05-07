@@ -34,8 +34,8 @@ class UISystem {
         this._skinShopScroll = 0;  // 滚动位置
         this._skinShopCharId = 'swordsman'; // 当前预览装备的角色
 
-        // 游戏设置
-        this.settings = {
+        // 游戏设置（从localStorage加载）
+        const defaultSettings = {
             soundEnabled: true,
             musicEnabled: true,
             soundVolume: 0.5,     // 音效音量 0~1
@@ -44,6 +44,11 @@ class UISystem {
             showFps: true,
             showControls: false, // 操作说明弹窗
         };
+        try {
+            const saved = JSON.parse(localStorage.getItem('gameSettings'));
+            this.settings = saved ? Object.assign(defaultSettings, saved) : defaultSettings;
+        } catch (e) { this.settings = defaultSettings; }
+        this.settings.showControls = false; // 弹窗每次重置
         this._draggingSlider = null; // 当前拖拽中的滑条（'sound' 或 'music'）
 
         // 封面动画
@@ -1166,6 +1171,13 @@ class UISystem {
 
         this.clicked = false;
         return null;
+    }
+
+    _saveSettings() {
+        try {
+            const s = { soundEnabled: this.settings.soundEnabled, musicEnabled: this.settings.musicEnabled, soundVolume: this.settings.soundVolume, musicVolume: this.settings.musicVolume, difficulty: this.settings.difficulty, showFps: this.settings.showFps };
+            localStorage.setItem('gameSettings', JSON.stringify(s));
+        } catch (e) {}
     }
 
     _getCharTags(def) {
@@ -3189,6 +3201,7 @@ _roundRect(ctx, x, y, w, h, r) {
                 }
             } else {
                 this._draggingSlider = null;
+                this._saveSettings();
             }
         }
 
@@ -3234,8 +3247,14 @@ _roundRect(ctx, x, y, w, h, r) {
                 const rawVal = (this.mouseX - sliderX) / sliderW;
                 this.settings.musicVolume = Math.max(0, Math.min(1, rawVal));
                 this.settings.musicEnabled = this.settings.musicVolume > 0;
+                if (typeof BGM !== 'undefined') {
+                    BGM.setVolume(this.settings.musicVolume);
+                    BGM.toggle(this.settings.musicEnabled);
+                    if (this.settings.musicEnabled && !BGM._playing) BGM.play('menu');
+                }
             } else {
                 this._draggingSlider = null;
+                this._saveSettings();
             }
         }
 
@@ -3278,6 +3297,7 @@ _roundRect(ctx, x, y, w, h, r) {
             ctx.textBaseline = 'alphabetic';
             if (dHover && this.consumeClick()) {
                 this.settings.difficulty = diff.id;
+                this._saveSettings();
             }
             diffStartX += diffBtnW + diffGap;
         }
@@ -3306,6 +3326,7 @@ _roundRect(ctx, x, y, w, h, r) {
         ctx.textBaseline = 'alphabetic';
         if (fpsHover && this.consumeClick()) {
             this.settings.showFps = !this.settings.showFps;
+            this._saveSettings();
         }
 
         curY += itemH;
