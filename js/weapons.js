@@ -1346,8 +1346,13 @@ class WeaponSystem {
                     const _sk = skinManager.getEquippedSkin(this.player.def.id);
                     if (_sk && window._skinRenderer.renderProjectile(ctx, _sk, sx, sy, p.radius, p.angle || 0)) continue;
                 }
-                // 火球 — 默认渲染
-                ctx.globalAlpha = 0.5;
+                // 火球 — 增强渲染(四层光晕)
+                ctx.globalAlpha = 0.2;
+                ctx.fillStyle = '#ff4400';
+                ctx.beginPath();
+                ctx.arc(sx, sy, p.radius * 2.8, 0, TWO_PI);
+                ctx.fill();
+                ctx.globalAlpha = 0.4;
                 ctx.fillStyle = '#ffaa00';
                 ctx.beginPath();
                 ctx.arc(sx, sy, p.radius * 1.8, 0, TWO_PI);
@@ -1357,9 +1362,9 @@ class WeaponSystem {
                 ctx.beginPath();
                 ctx.arc(sx, sy, p.radius, 0, TWO_PI);
                 ctx.fill();
-                ctx.fillStyle = '#ffff44';
+                ctx.fillStyle = '#ffff88';
                 ctx.beginPath();
-                ctx.arc(sx, sy, p.radius * 0.4, 0, TWO_PI);
+                ctx.arc(sx, sy, p.radius * 0.45, 0, TWO_PI);
                 ctx.fill();
                 continue;
             }
@@ -1370,8 +1375,13 @@ class WeaponSystem {
                     const _sk = skinManager.getEquippedSkin(this.player.def.id);
                     if (_sk && window._skinRenderer.renderProjectile(ctx, _sk, sx, sy, p.radius, p.angle || 0)) continue;
                 }
-                // 灵魂弹 — 默认渲染
-                ctx.globalAlpha = 0.5;
+                // 灵魂弹 — 增强渲染(四层幽光)
+                ctx.globalAlpha = 0.15;
+                ctx.fillStyle = '#22aa88';
+                ctx.beginPath();
+                ctx.arc(sx, sy, p.radius * 2.8, 0, TWO_PI);
+                ctx.fill();
+                ctx.globalAlpha = 0.4;
                 ctx.fillStyle = '#66eedd';
                 ctx.beginPath();
                 ctx.arc(sx, sy, p.radius * 1.8, 0, TWO_PI);
@@ -1382,9 +1392,9 @@ class WeaponSystem {
                 ctx.arc(sx, sy, p.radius, 0, TWO_PI);
                 ctx.fill();
                 ctx.fillStyle = '#ffffff';
-                ctx.globalAlpha = 0.6;
+                ctx.globalAlpha = 0.8;
                 ctx.beginPath();
-                ctx.arc(sx, sy, p.radius * 0.35, 0, TWO_PI);
+                ctx.arc(sx, sy, p.radius * 0.4, 0, TWO_PI);
                 ctx.fill();
                 ctx.globalAlpha = 1;
                 continue;

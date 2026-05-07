@@ -1041,25 +1041,30 @@ class SkinRenderer {
 }
 
 // ============================================
-// 皮肤特效系统 V2 - 每个皮肤独特特效
+// 皮肤特效系统 V3 - 极致视觉冲击力
+// 粒子数翻倍、多层次组合特效、屏幕震动+闪光
 // ============================================
 class SkinFxSystem {
     constructor(particles, qualityCfg) {
         this.particles = particles;
         this.quality = qualityCfg || QualityLevels.high;
+        this._time = 0;
     }
     setQuality(q) { this.quality = q; }
+    update(dt) { this._time += dt; }
 
     // 命中特效 - 根据皮肤ID分发
     onHit(x, y, skin) {
         if (!skin || this.quality.particleMult <= 0) return;
         const fn = this['_hit_' + skin.id];
         if (fn) { fn.call(this, x, y); return; }
-        // 通用fallback
-        this.particles.emit(x, y, Math.floor(8 * this.quality.particleMult), {
-            colors: ['#fff', '#ffcc00'], speedMin: 2, speedMax: 7,
-            sizeMin: 2, sizeMax: 5, lifeMin: 0.2, lifeMax: 0.5, friction: 0.92,
+        // 通用fallback(增强)
+        this.particles.emit(x, y, Math.floor(14 * this.quality.particleMult), {
+            colors: ['#fff', '#ffcc00', '#ffee88'], speedMin: 3, speedMax: 9,
+            sizeMin: 2, sizeMax: 6, lifeMin: 0.2, lifeMax: 0.6, friction: 0.9,
+            glow: true, glowSize: 12,
         });
+        this.particles.addFlash(x, y, '#fff', 20, 0.08);
     }
 
     // 技能(升级)特效
@@ -1067,11 +1072,15 @@ class SkinFxSystem {
         if (!skin || this.quality.particleMult <= 0) return;
         const fn = this['_skill_' + skin.id];
         if (fn) { fn.call(this, x, y); return; }
-        this.particles.emit(x, y, Math.floor(20 * this.quality.particleMult), {
-            colors: ['#fff', '#88ddff'], speedMin: 3, speedMax: 10,
-            sizeMin: 3, sizeMax: 8, lifeMin: 0.5, lifeMax: 1.0, friction: 0.95,
-            glow: this.quality.glowEnabled, glowSize: 12,
+        // 通用fallback(增强)
+        this.particles.emit(x, y, Math.floor(35 * this.quality.particleMult), {
+            colors: ['#fff', '#88ddff', '#44aaff'], speedMin: 4, speedMax: 12,
+            sizeMin: 3, sizeMax: 10, lifeMin: 0.5, lifeMax: 1.2, friction: 0.94,
+            glow: true, glowSize: 16,
         });
+        this.particles.addShockwave(x, y, '#88ddff', 100, 0.5);
+        this.particles.triggerScreenFlash('#88ddff', 0.15, 0.12);
+        Utils.shake(5);
     }
 
     // 移动拖尾
@@ -1079,12 +1088,10 @@ class SkinFxSystem {
         if (!skin || this.quality.particleMult <= 0) return;
         const fn = this['_trail_' + skin.id];
         if (fn) { fn.call(this, x, y); return; }
-        this.particles.emit(x, y, 1, {
-            colors: ['#aaa'], speedMin: 0.2, speedMax: 1, sizeMin: 2, sizeMax: 4, lifeMin: 0.2, lifeMax: 0.4,
-        });
+        this.particles.addTrail(x, y, '#aaa', 3, 0.3);
     }
 
-    // 光环
+    // 光环(增强: 脉冲呼吸+多层)
     renderAura(ctx, x, y, radius, skin) {
         if (!skin || this.quality.detailLevel < 1) return;
         const fn = this['_aura_' + skin.id];
@@ -1093,460 +1100,697 @@ class SkinFxSystem {
 
     // ===== 水果系列特效 =====
 
-    // 西瓜 - 命中：瓜汁飞溅(红绿对比)
+    // 西瓜 - 命中：瓜汁四溅+瓜籽弹射
     _hit_watermelon(x, y) {
-        const n = Math.floor(10 * this.quality.particleMult);
+        const n = Math.floor(18 * this.quality.particleMult);
+        // 瓜汁
         this.particles.emit(x, y, n, {
             colors: ['#ff2233', '#ff6666', '#1e7a30', '#fff'],
-            speedMin: 3, speedMax: 9, sizeMin: 3, sizeMax: 8,
-            lifeMin: 0.3, lifeMax: 0.7, friction: 0.9,
-            glow: this.quality.glowEnabled, glowSize: 10,
+            speedMin: 4, speedMax: 12, sizeMin: 3, sizeMax: 9,
+            lifeMin: 0.3, lifeMax: 0.8, friction: 0.88,
+            glow: this.quality.glowEnabled, glowSize: 12,
         });
-        if (this.quality.detailLevel >= 2) this.particles.addShockwave(x, y, '#33aa44', 45, 0.3);
+        // 瓜籽
+        this.particles.emit(x, y, Math.floor(4 * this.quality.particleMult), {
+            colors: ['#111', '#222'], speedMin: 8, speedMax: 16,
+            sizeMin: 1.5, sizeMax: 3, lifeMin: 0.3, lifeMax: 0.6, friction: 0.85,
+            shape: 'diamond',
+        });
+        this.particles.addShockwave(x, y, '#33aa44', 50, 0.3);
+        this.particles.addFlash(x, y, '#ff2233', 25, 0.1);
     }
     _skill_watermelon(x, y) {
-        const n = Math.floor(30 * this.quality.particleMult);
+        const n = Math.floor(50 * this.quality.particleMult);
         // 大爆裂 - 瓜瓤爆炸
         this.particles.emit(x, y, n, {
-            colors: ['#ff2233', '#ff4455', '#1e7a30', '#ffcc00'],
-            speedMin: 5, speedMax: 14, sizeMin: 4, sizeMax: 12,
-            lifeMin: 0.6, lifeMax: 1.2, friction: 0.94,
-            glow: this.quality.glowEnabled, glowSize: 15,
+            colors: ['#ff2233', '#ff4455', '#1e7a30', '#ffcc00', '#fff'],
+            speedMin: 6, speedMax: 18, sizeMin: 4, sizeMax: 14,
+            lifeMin: 0.6, lifeMax: 1.4, friction: 0.93,
+            glow: true, glowSize: 18,
         });
-        this.particles.addShockwave(x, y, '#ff2233', 90, 0.5);
-        if (this.quality.detailLevel >= 2) {
-            setTimeout(() => this.particles.addShockwave(x, y, '#33aa44', 120, 0.6), 80);
-        }
-        // 飞出瓜籽
-        if (this.quality.detailLevel >= 3) {
-            this.particles.emit(x, y, 8, {
-                colors: ['#111', '#333'], speedMin: 8, speedMax: 15,
-                sizeMin: 2, sizeMax: 4, lifeMin: 0.4, lifeMax: 0.8, friction: 0.88,
-            });
-        }
+        // 环形扩散
+        this.particles.emitRing(x, y, Math.floor(16 * this.quality.particleMult), 30, {
+            colors: ['#ff2233', '#33aa44', '#fff'],
+            speedMin: 3, speedMax: 8, sizeMin: 3, sizeMax: 7,
+            lifeMin: 0.4, lifeMax: 0.8, glow: true, glowSize: 10,
+        });
+        this.particles.addShockwave(x, y, '#ff2233', 110, 0.55);
+        setTimeout(() => this.particles.addShockwave(x, y, '#33aa44', 140, 0.65), 80);
+        // 飞出大量瓜籽
+        this.particles.emit(x, y, Math.floor(12 * this.quality.particleMult), {
+            colors: ['#111', '#333'], speedMin: 10, speedMax: 20,
+            sizeMin: 2, sizeMax: 4, lifeMin: 0.5, lifeMax: 1.0, friction: 0.86,
+            shape: 'diamond',
+        });
+        this.particles.triggerScreenFlash('#ff2233', 0.2, 0.12);
+        this.particles.addBeam(x, y, 200, 8, '#33aa44', 0.4);
+        Utils.shake(8);
     }
     _trail_watermelon(x, y) {
-        this.particles.emit(x, y, Math.max(1, Math.floor(2 * this.quality.particleMult)), {
-            colors: ['#1e7a30', '#33aa44'],
-            speedMin: 0.2, speedMax: 1, sizeMin: 2, sizeMax: 4, lifeMin: 0.25, lifeMax: 0.45,
-            gravity: 0.3, shape: 'square',
+        this.particles.emit(x, y, Math.max(1, Math.floor(3 * this.quality.particleMult)), {
+            colors: ['#1e7a30', '#33aa44', '#66cc66'],
+            speedMin: 0.3, speedMax: 1.5, sizeMin: 2, sizeMax: 5, lifeMin: 0.3, lifeMax: 0.5,
+            gravity: 0.3, shape: 'square', glow: this.quality.glowEnabled, glowSize: 4,
         });
     }
     _aura_watermelon(ctx, x, y, r) {
-        ctx.save(); ctx.globalAlpha = 0.08;
+        const pulse = 1 + Math.sin(this._time * 3) * 0.1;
+        ctx.save(); ctx.globalAlpha = 0.12 * pulse;
         ctx.fillStyle = '#33aa44';
-        ctx.beginPath(); ctx.arc(x, y, r * 1.6, 0, TWO_PI_SK); ctx.fill();
+        ctx.beginPath(); ctx.arc(x, y, r * 1.7 * pulse, 0, TWO_PI_SK); ctx.fill();
+        ctx.globalAlpha = 0.06;
+        ctx.fillStyle = '#ff2233';
+        ctx.beginPath(); ctx.arc(x, y, r * 1.3, 0, TWO_PI_SK); ctx.fill();
         ctx.restore();
     }
 
-    // 草莓 - 命中：粉色花瓣爆发
+    // 草莓 - 命中：粉色花瓣+爱心爆发
     _hit_strawberry(x, y) {
-        const n = Math.floor(10 * this.quality.particleMult);
+        const n = Math.floor(16 * this.quality.particleMult);
         this.particles.emit(x, y, n, {
             colors: ['#ff4488', '#ff88aa', '#ffbbcc', '#fff'],
-            speedMin: 2, speedMax: 7, sizeMin: 3, sizeMax: 7,
-            lifeMin: 0.4, lifeMax: 0.8, friction: 0.93, gravity: 0.4,
-            shape: 'square', // 方形模拟花瓣
-            glow: this.quality.glowEnabled, glowSize: 8,
+            speedMin: 3, speedMax: 9, sizeMin: 3, sizeMax: 8,
+            lifeMin: 0.4, lifeMax: 0.9, friction: 0.92, gravity: 0.3,
+            shape: 'heart', glow: this.quality.glowEnabled, glowSize: 10,
         });
+        // 粉色闪光
+        this.particles.addFlash(x, y, '#ff88aa', 30, 0.1);
     }
     _skill_strawberry(x, y) {
-        // 花瓣风暴
-        const n = Math.floor(35 * this.quality.particleMult);
+        // 花瓣风暴+爱心爆发
+        const n = Math.floor(50 * this.quality.particleMult);
         this.particles.emit(x, y, n, {
             colors: ['#ff4488', '#ff88aa', '#ffccdd', '#fff', '#ff66aa'],
-            speedMin: 4, speedMax: 12, sizeMin: 4, sizeMax: 10,
-            lifeMin: 0.8, lifeMax: 1.5, friction: 0.96, gravity: 0.2,
-            shape: 'square',
-            glow: this.quality.glowEnabled, glowSize: 12,
+            speedMin: 5, speedMax: 15, sizeMin: 4, sizeMax: 12,
+            lifeMin: 0.8, lifeMax: 1.6, friction: 0.95, gravity: 0.15,
+            shape: 'heart', glow: true, glowSize: 14,
         });
-        this.particles.addShockwave(x, y, '#ff88aa', 80, 0.5);
-        if (this.quality.detailLevel >= 3) {
-            for (let i = 0; i < 8; i++) {
-                const a = (i / 8) * TWO_PI_SK;
-                setTimeout(() => {
-                    this.particles.emit(x + Math.cos(a) * 40, y + Math.sin(a) * 40, 4, {
-                        colors: ['#ff4488', '#ffaacc'], speedMin: 1, speedMax: 3,
-                        sizeMin: 4, sizeMax: 7, lifeMin: 0.5, lifeMax: 0.8,
-                        shape: 'square', gravity: 0.5,
-                    });
-                }, i * 40);
-            }
+        // 螺旋花瓣
+        this.particles.emitSpiral(x, y, Math.floor(20 * this.quality.particleMult), {
+            colors: ['#ff4488', '#ffaacc', '#fff'], radius: 60,
+            speedMin: 2, speedMax: 5, sizeMin: 3, sizeMax: 7,
+            lifeMin: 0.6, lifeMax: 1.0, glow: true, glowSize: 8,
+            shape: 'heart',
+        });
+        this.particles.addShockwave(x, y, '#ff88aa', 100, 0.55);
+        this.particles.addShockwave(x, y, '#ffccdd', 70, 0.4);
+        // 放射状花瓣圈
+        for (let i = 0; i < 10; i++) {
+            const a = (i / 10) * TWO_PI_SK;
+            setTimeout(() => {
+                this.particles.emit(x + Math.cos(a) * 50, y + Math.sin(a) * 50, 5, {
+                    colors: ['#ff4488', '#ffaacc', '#fff'], speedMin: 1, speedMax: 4,
+                    sizeMin: 4, sizeMax: 8, lifeMin: 0.5, lifeMax: 0.9,
+                    shape: 'heart', gravity: 0.4, glow: true, glowSize: 6,
+                });
+            }, i * 30);
         }
+        this.particles.triggerScreenFlash('#ff88aa', 0.15, 0.12);
+        Utils.shake(6);
     }
     _trail_strawberry(x, y) {
-        this.particles.emit(x, y, Math.max(1, Math.floor(2 * this.quality.particleMult)), {
-            colors: ['#ff88aa', '#ffbbcc'],
-            speedMin: 0.3, speedMax: 1.2, sizeMin: 2, sizeMax: 5, lifeMin: 0.3, lifeMax: 0.5,
-            gravity: 0.5, shape: 'square',
+        this.particles.emit(x, y, Math.max(1, Math.floor(3 * this.quality.particleMult)), {
+            colors: ['#ff88aa', '#ffbbcc', '#ffddee'],
+            speedMin: 0.3, speedMax: 1.5, sizeMin: 2, sizeMax: 5, lifeMin: 0.3, lifeMax: 0.55,
+            gravity: 0.4, shape: 'heart', glow: this.quality.glowEnabled, glowSize: 5,
         });
     }
     _aura_strawberry(ctx, x, y, r) {
-        ctx.save(); ctx.globalAlpha = 0.07;
+        const pulse = 1 + Math.sin(this._time * 4) * 0.08;
+        ctx.save(); ctx.globalAlpha = 0.1 * pulse;
         ctx.fillStyle = '#ff88aa';
-        ctx.beginPath(); ctx.arc(x, y, r * 1.6, 0, TWO_PI_SK); ctx.fill();
+        ctx.beginPath(); ctx.arc(x, y, r * 1.7 * pulse, 0, TWO_PI_SK); ctx.fill();
         ctx.restore();
     }
 
-    // 橙子 - 命中：橙汁喷溅
+    // 橙子 - 命中：橙汁喷溅+酸爆
     _hit_orange(x, y) {
-        this.particles.emit(x, y, Math.floor(10 * this.quality.particleMult), {
+        this.particles.emit(x, y, Math.floor(16 * this.quality.particleMult), {
             colors: ['#ff9900', '#ffcc44', '#ffee88', '#fff'],
-            speedMin: 3, speedMax: 9, sizeMin: 2, sizeMax: 6,
-            lifeMin: 0.2, lifeMax: 0.5, friction: 0.88,
-            glow: this.quality.glowEnabled, glowSize: 8,
+            speedMin: 4, speedMax: 11, sizeMin: 2, sizeMax: 7,
+            lifeMin: 0.2, lifeMax: 0.6, friction: 0.86,
+            glow: this.quality.glowEnabled, glowSize: 10,
         });
-        if (this.quality.detailLevel >= 2) this.particles.addShockwave(x, y, '#ffaa33', 40, 0.25);
+        this.particles.addShockwave(x, y, '#ffaa33', 45, 0.25);
+        this.particles.addFlash(x, y, '#ffcc00', 22, 0.08);
     }
     _skill_orange(x, y) {
-        this.particles.emit(x, y, Math.floor(25 * this.quality.particleMult), {
+        const n = Math.floor(40 * this.quality.particleMult);
+        this.particles.emit(x, y, n, {
             colors: ['#ff8800', '#ffcc00', '#ffee66', '#fff'],
-            speedMin: 5, speedMax: 13, sizeMin: 3, sizeMax: 10,
-            lifeMin: 0.5, lifeMax: 1.0, friction: 0.93,
-            glow: this.quality.glowEnabled, glowSize: 12,
+            speedMin: 6, speedMax: 16, sizeMin: 3, sizeMax: 12,
+            lifeMin: 0.5, lifeMax: 1.2, friction: 0.92,
+            glow: true, glowSize: 14,
         });
-        this.particles.addShockwave(x, y, '#ff9900', 85, 0.5);
+        // 环形橙汁
+        this.particles.emitRing(x, y, Math.floor(12 * this.quality.particleMult), 25, {
+            colors: ['#ff9900', '#ffcc44'], speedMin: 4, speedMax: 9,
+            sizeMin: 3, sizeMax: 6, lifeMin: 0.3, lifeMax: 0.7, glow: true, glowSize: 8,
+        });
+        this.particles.addShockwave(x, y, '#ff9900', 100, 0.5);
+        this.particles.addShockwave(x, y, '#ffcc44', 70, 0.35);
+        this.particles.triggerScreenFlash('#ffcc00', 0.12, 0.1);
+        Utils.shake(5);
     }
     _trail_orange(x, y) {
-        this.particles.emit(x, y, Math.max(1, Math.floor(1.5 * this.quality.particleMult)), {
-            colors: ['#ffaa33', '#ffcc66'], speedMin: 0.3, speedMax: 1, sizeMin: 2, sizeMax: 4, lifeMin: 0.2, lifeMax: 0.4,
+        this.particles.emit(x, y, Math.max(1, Math.floor(2 * this.quality.particleMult)), {
+            colors: ['#ffaa33', '#ffcc66', '#ffee88'], speedMin: 0.3, speedMax: 1.2,
+            sizeMin: 2, sizeMax: 5, lifeMin: 0.25, lifeMax: 0.45,
+            glow: this.quality.glowEnabled, glowSize: 5,
         });
     }
     _aura_orange(ctx, x, y, r) {
-        ctx.save(); ctx.globalAlpha = 0.06; ctx.fillStyle = '#ff9900';
-        ctx.beginPath(); ctx.arc(x, y, r * 1.5, 0, TWO_PI_SK); ctx.fill(); ctx.restore();
+        const pulse = 1 + Math.sin(this._time * 3.5) * 0.08;
+        ctx.save(); ctx.globalAlpha = 0.1 * pulse; ctx.fillStyle = '#ff9900';
+        ctx.beginPath(); ctx.arc(x, y, r * 1.6 * pulse, 0, TWO_PI_SK); ctx.fill(); ctx.restore();
     }
 
     // ===== 动物系列特效 =====
 
-    // 灵狐 - 命中：蓝色鬼火散开
+    // 灵狐 - 命中：蓝色鬼火爆散+火星
     _hit_fox(x, y) {
-        this.particles.emit(x, y, Math.floor(8 * this.quality.particleMult), {
-            colors: ['#88ddff', '#4488ff', '#fff'],
-            speedMin: 2, speedMax: 6, sizeMin: 3, sizeMax: 7,
-            lifeMin: 0.3, lifeMax: 0.7, friction: 0.95,
-            glow: this.quality.glowEnabled, glowSize: 12,
+        const n = Math.floor(14 * this.quality.particleMult);
+        this.particles.emit(x, y, n, {
+            colors: ['#88ddff', '#4488ff', '#aaeeff', '#fff'],
+            speedMin: 3, speedMax: 9, sizeMin: 3, sizeMax: 8,
+            lifeMin: 0.3, lifeMax: 0.8, friction: 0.93,
+            glow: true, glowSize: 14,
         });
-        // 分裂小火苗
-        if (this.quality.detailLevel >= 2) {
-            for (let i = 0; i < 3; i++) {
-                const a = Math.random() * TWO_PI_SK;
-                const d = 15 + Math.random() * 15;
-                this.particles.emit(x + Math.cos(a) * d, y + Math.sin(a) * d, 2, {
-                    colors: ['#4488ff', '#88ddff'], speedMin: 0.5, speedMax: 2,
-                    sizeMin: 2, sizeMax: 5, lifeMin: 0.4, lifeMax: 0.8,
-                    glow: true, glowSize: 8,
-                });
-            }
+        // 狐火分裂
+        for (let i = 0; i < 4; i++) {
+            const a = Math.random() * TWO_PI_SK;
+            const d = 12 + Math.random() * 18;
+            this.particles.emit(x + Math.cos(a) * d, y + Math.sin(a) * d, 3, {
+                colors: ['#4488ff', '#88ddff'], speedMin: 0.5, speedMax: 3,
+                sizeMin: 3, sizeMax: 6, lifeMin: 0.5, lifeMax: 1.0,
+                glow: true, glowSize: 10,
+            });
         }
+        this.particles.addFlash(x, y, '#88ddff', 28, 0.1);
     }
     _skill_fox(x, y) {
-        this.particles.emit(x, y, Math.floor(25 * this.quality.particleMult), {
-            colors: ['#ff6622', '#ffaa44', '#88ddff', '#fff'],
-            speedMin: 4, speedMax: 11, sizeMin: 3, sizeMax: 9,
-            lifeMin: 0.5, lifeMax: 1.1, friction: 0.94,
-            glow: this.quality.glowEnabled, glowSize: 14,
+        const n = Math.floor(40 * this.quality.particleMult);
+        // 九尾狐火爆发
+        this.particles.emit(x, y, n, {
+            colors: ['#ff6622', '#ffaa44', '#88ddff', '#4488ff', '#fff'],
+            speedMin: 5, speedMax: 14, sizeMin: 3, sizeMax: 10,
+            lifeMin: 0.5, lifeMax: 1.3, friction: 0.93,
+            glow: true, glowSize: 16,
         });
-        this.particles.addShockwave(x, y, '#ff6622', 70, 0.45);
+        // 九尾扩散(9方向)
+        for (let i = 0; i < 9; i++) {
+            const a = (i / 9) * TWO_PI_SK;
+            this.particles.emit(x, y, 4, {
+                colors: ['#88ddff', '#4488ff'], angle: a, spread: 0.15,
+                speedMin: 8, speedMax: 14, sizeMin: 2, sizeMax: 5,
+                lifeMin: 0.4, lifeMax: 0.8, glow: true, glowSize: 8, friction: 0.92,
+            });
+        }
+        this.particles.addShockwave(x, y, '#ff6622', 90, 0.5);
+        this.particles.addShockwave(x, y, '#88ddff', 120, 0.6);
+        this.particles.triggerScreenFlash('#88ddff', 0.15, 0.1);
+        Utils.shake(7);
     }
     _trail_fox(x, y) {
-        this.particles.emit(x, y, Math.max(1, Math.floor(2 * this.quality.particleMult)), {
-            colors: ['#ff6622', '#ff8844', '#ffcc66'],
-            speedMin: 0.3, speedMax: 1.5, sizeMin: 2, sizeMax: 5, lifeMin: 0.3, lifeMax: 0.5,
-            glow: this.quality.glowEnabled, glowSize: 6,
+        this.particles.emit(x, y, Math.max(1, Math.floor(3 * this.quality.particleMult)), {
+            colors: ['#ff6622', '#ff8844', '#ffcc66', '#88ddff'],
+            speedMin: 0.4, speedMax: 2, sizeMin: 2, sizeMax: 6, lifeMin: 0.3, lifeMax: 0.55,
+            glow: true, glowSize: 7,
         });
     }
     _aura_fox(ctx, x, y, r) {
-        ctx.save(); ctx.globalAlpha = 0.08; ctx.fillStyle = '#ff6622';
-        ctx.beginPath(); ctx.arc(x, y, r * 1.5, 0, TWO_PI_SK); ctx.fill(); ctx.restore();
+        const pulse = 1 + Math.sin(this._time * 4) * 0.12;
+        ctx.save();
+        ctx.globalAlpha = 0.12 * pulse; ctx.fillStyle = '#ff6622';
+        ctx.beginPath(); ctx.arc(x, y, r * 1.6 * pulse, 0, TWO_PI_SK); ctx.fill();
+        ctx.globalAlpha = 0.06; ctx.fillStyle = '#88ddff';
+        ctx.beginPath(); ctx.arc(x, y, r * 1.9, 0, TWO_PI_SK); ctx.fill();
+        ctx.restore();
     }
 
-    // 幼龙 - 命中：紫金火焰爆裂
+    // 幼龙 - 命中：紫金火焰爆裂+龙息碎片
     _hit_dragon(x, y) {
-        this.particles.emit(x, y, Math.floor(12 * this.quality.particleMult), {
-            colors: ['#7744dd', '#ffcc00', '#ff4422', '#fff'],
-            speedMin: 3, speedMax: 10, sizeMin: 2, sizeMax: 7,
-            lifeMin: 0.2, lifeMax: 0.6, friction: 0.9,
-            glow: this.quality.glowEnabled, glowSize: 10,
+        const n = Math.floor(18 * this.quality.particleMult);
+        this.particles.emit(x, y, n, {
+            colors: ['#7744dd', '#9966ff', '#ffcc00', '#ff4422', '#fff'],
+            speedMin: 4, speedMax: 12, sizeMin: 3, sizeMax: 8,
+            lifeMin: 0.25, lifeMax: 0.7, friction: 0.88,
+            glow: true, glowSize: 12,
         });
-        if (this.quality.detailLevel >= 2) this.particles.addShockwave(x, y, '#7744dd', 50, 0.3);
+        // 龙鳞碎片
+        this.particles.emit(x, y, Math.floor(5 * this.quality.particleMult), {
+            colors: ['#ffcc00', '#aa8800'], speedMin: 5, speedMax: 12,
+            sizeMin: 2, sizeMax: 4, lifeMin: 0.3, lifeMax: 0.6, friction: 0.85,
+            shape: 'diamond', glow: true, glowSize: 6,
+        });
+        this.particles.addShockwave(x, y, '#7744dd', 55, 0.3);
+        this.particles.addFlash(x, y, '#ffcc00', 25, 0.09);
     }
     _skill_dragon(x, y) {
+        const n = Math.floor(55 * this.quality.particleMult);
         // 龙啸 - 紫金风暴
-        this.particles.emit(x, y, Math.floor(30 * this.quality.particleMult), {
+        this.particles.emit(x, y, n, {
             colors: ['#6644cc', '#9966ff', '#ffcc00', '#ff4422', '#fff'],
-            speedMin: 5, speedMax: 14, sizeMin: 4, sizeMax: 11,
-            lifeMin: 0.6, lifeMax: 1.3, friction: 0.94,
-            glow: true, glowSize: 16,
+            speedMin: 6, speedMax: 18, sizeMin: 4, sizeMax: 14,
+            lifeMin: 0.6, lifeMax: 1.5, friction: 0.93,
+            glow: true, glowSize: 20,
         });
-        this.particles.addShockwave(x, y, '#6644cc', 100, 0.6);
-        if (this.quality.detailLevel >= 2) {
-            setTimeout(() => this.particles.addShockwave(x, y, '#ffcc00', 130, 0.7), 100);
-        }
+        // 螺旋龙息
+        this.particles.emitSpiral(x, y, Math.floor(24 * this.quality.particleMult), {
+            colors: ['#7744dd', '#ffcc00', '#fff'], radius: 70, arms: 4,
+            speedMin: 3, speedMax: 7, sizeMin: 3, sizeMax: 7,
+            lifeMin: 0.5, lifeMax: 1.0, glow: true, glowSize: 10,
+            shape: 'diamond',
+        });
+        this.particles.addShockwave(x, y, '#6644cc', 120, 0.6);
+        setTimeout(() => this.particles.addShockwave(x, y, '#ffcc00', 160, 0.75), 100);
+        this.particles.addBeam(x, y, 250, 10, '#7744dd', 0.5);
+        this.particles.triggerScreenFlash('#7744dd', 0.18, 0.14);
+        Utils.shake(10);
     }
     _trail_dragon(x, y) {
-        this.particles.emit(x, y, Math.max(1, Math.floor(2 * this.quality.particleMult)), {
+        this.particles.emit(x, y, Math.max(1, Math.floor(3 * this.quality.particleMult)), {
             colors: ['#6644cc', '#9977ff', '#ccbbff'],
-            speedMin: 0.3, speedMax: 1.2, sizeMin: 2, sizeMax: 5, lifeMin: 0.3, lifeMax: 0.5,
-            glow: this.quality.glowEnabled, glowSize: 6,
+            speedMin: 0.4, speedMax: 1.5, sizeMin: 2, sizeMax: 6, lifeMin: 0.3, lifeMax: 0.55,
+            glow: true, glowSize: 7, shape: 'diamond',
         });
     }
     _aura_dragon(ctx, x, y, r) {
-        ctx.save(); ctx.globalAlpha = 0.1; ctx.fillStyle = '#7744dd';
-        ctx.beginPath(); ctx.arc(x, y, r * 1.6, 0, TWO_PI_SK); ctx.fill(); ctx.restore();
+        const pulse = 1 + Math.sin(this._time * 3) * 0.1;
+        ctx.save();
+        ctx.globalAlpha = 0.14 * pulse; ctx.fillStyle = '#7744dd';
+        ctx.beginPath(); ctx.arc(x, y, r * 1.8 * pulse, 0, TWO_PI_SK); ctx.fill();
+        ctx.globalAlpha = 0.07; ctx.fillStyle = '#ffcc00';
+        ctx.beginPath(); ctx.arc(x, y, r * 1.4, 0, TWO_PI_SK); ctx.fill();
+        ctx.restore();
     }
 
-    // 暗影猫 - 命中：暗影爪痕+暗绿碎片
+    // 暗影猫 - 命中：暗影爪痕撕裂+暗绿闪电
     _hit_cat(x, y) {
-        this.particles.emit(x, y, Math.floor(8 * this.quality.particleMult), {
-            colors: ['#44ffaa', '#22cc77', '#1a1a2e'],
-            speedMin: 3, speedMax: 8, sizeMin: 2, sizeMax: 5,
-            lifeMin: 0.2, lifeMax: 0.5, friction: 0.9, shape: 'spark',
-            glow: this.quality.glowEnabled, glowSize: 8,
+        const n = Math.floor(14 * this.quality.particleMult);
+        // 爪痕(spark形状)
+        this.particles.emit(x, y, n, {
+            colors: ['#44ffaa', '#22cc77', '#1a1a2e', '#000'],
+            speedMin: 5, speedMax: 12, sizeMin: 2, sizeMax: 6,
+            lifeMin: 0.15, lifeMax: 0.5, friction: 0.85, shape: 'spark',
+            glow: true, glowSize: 10,
         });
+        // 闪电爪
+        if (this.quality.detailLevel >= 2) {
+            const a = Math.random() * TWO_PI_SK;
+            this.particles.addLightning(x, y, x + Math.cos(a) * 40, y + Math.sin(a) * 40, '#44ffaa', 2, 0.15);
+        }
+        this.particles.addFlash(x, y, '#44ffaa', 22, 0.08);
     }
     _skill_cat(x, y) {
-        this.particles.emit(x, y, Math.floor(22 * this.quality.particleMult), {
-            colors: ['#44ffaa', '#22cc77', '#1a1a2e', '#000'],
-            speedMin: 4, speedMax: 12, sizeMin: 3, sizeMax: 8,
-            lifeMin: 0.5, lifeMax: 1.0, friction: 0.93, shape: 'spark',
-            glow: this.quality.glowEnabled, glowSize: 10,
+        const n = Math.floor(40 * this.quality.particleMult);
+        // 暗影爆发
+        this.particles.emit(x, y, n, {
+            colors: ['#44ffaa', '#22cc77', '#1a1a2e', '#000', '#88ffcc'],
+            speedMin: 5, speedMax: 15, sizeMin: 3, sizeMax: 9,
+            lifeMin: 0.4, lifeMax: 1.1, friction: 0.91, shape: 'spark',
+            glow: true, glowSize: 12,
         });
-        this.particles.addShockwave(x, y, '#44ffaa', 75, 0.4);
+        // 多方向爪痕闪电
+        for (let i = 0; i < 6; i++) {
+            const a = (i / 6) * TWO_PI_SK + Math.random() * 0.3;
+            const d = 50 + Math.random() * 40;
+            this.particles.addLightning(x, y, x + Math.cos(a) * d, y + Math.sin(a) * d, '#44ffaa', 2, 0.2);
+        }
+        this.particles.addShockwave(x, y, '#44ffaa', 90, 0.45);
+        this.particles.addShockwave(x, y, '#1a1a2e', 60, 0.3);
+        this.particles.triggerScreenFlash('#44ffaa', 0.12, 0.1);
+        Utils.shake(6);
     }
     _trail_cat(x, y) {
-        this.particles.emit(x, y, Math.max(1, Math.floor(1.5 * this.quality.particleMult)), {
-            colors: ['#1a1a2e', '#44ffaa'],
-            speedMin: 0.2, speedMax: 1, sizeMin: 2, sizeMax: 4, lifeMin: 0.2, lifeMax: 0.4, shape: 'spark',
+        this.particles.emit(x, y, Math.max(1, Math.floor(2 * this.quality.particleMult)), {
+            colors: ['#1a1a2e', '#44ffaa', '#22cc77'],
+            speedMin: 0.3, speedMax: 1.5, sizeMin: 2, sizeMax: 5, lifeMin: 0.2, lifeMax: 0.4, shape: 'spark',
+            glow: this.quality.glowEnabled, glowSize: 5,
         });
     }
     _aura_cat(ctx, x, y, r) {
-        ctx.save(); ctx.globalAlpha = 0.08; ctx.fillStyle = '#44ffaa';
-        ctx.beginPath(); ctx.arc(x, y, r * 1.5, 0, TWO_PI_SK); ctx.fill(); ctx.restore();
+        const flicker = 0.8 + Math.random() * 0.4; // 闪烁效果
+        ctx.save(); ctx.globalAlpha = 0.1 * flicker; ctx.fillStyle = '#44ffaa';
+        ctx.beginPath(); ctx.arc(x, y, r * 1.6, 0, TWO_PI_SK); ctx.fill();
+        ctx.globalAlpha = 0.05; ctx.fillStyle = '#1a1a2e';
+        ctx.beginPath(); ctx.arc(x, y, r * 2.0, 0, TWO_PI_SK); ctx.fill();
+        ctx.restore();
     }
 
     // ===== 宝石系列特效 =====
 
-    // 钻石 - 命中：棱光碎片散射
+    // 钻石 - 命中：棱光碎片散射+彩虹闪光
     _hit_diamond(x, y) {
-        this.particles.emit(x, y, Math.floor(10 * this.quality.particleMult), {
+        const n = Math.floor(16 * this.quality.particleMult);
+        this.particles.emit(x, y, n, {
             colors: ['#88ccff', '#ff88cc', '#88ff88', '#ffff88', '#fff'],
-            speedMin: 3, speedMax: 9, sizeMin: 2, sizeMax: 6,
-            lifeMin: 0.3, lifeMax: 0.6, friction: 0.91, shape: 'star',
-            glow: this.quality.glowEnabled, glowSize: 10,
+            speedMin: 4, speedMax: 11, sizeMin: 2, sizeMax: 7,
+            lifeMin: 0.3, lifeMax: 0.7, friction: 0.89, shape: 'diamond',
+            glow: true, glowSize: 12, hueShift: true,
         });
-        if (this.quality.detailLevel >= 2) this.particles.addShockwave(x, y, '#88ccff', 45, 0.3);
+        this.particles.addShockwave(x, y, '#88ccff', 50, 0.3);
+        this.particles.addFlash(x, y, '#fff', 28, 0.1);
     }
     _skill_diamond(x, y) {
-        this.particles.emit(x, y, Math.floor(28 * this.quality.particleMult), {
-            colors: ['#88ccff', '#ff88cc', '#88ff88', '#ffff88', '#fff'],
-            speedMin: 5, speedMax: 13, sizeMin: 4, sizeMax: 10,
-            lifeMin: 0.6, lifeMax: 1.2, friction: 0.95, shape: 'star',
-            glow: true, glowSize: 14,
+        const n = Math.floor(50 * this.quality.particleMult);
+        // 彩虹棱光大爆发
+        this.particles.emit(x, y, n, {
+            colors: ['#88ccff', '#ff88cc', '#88ff88', '#ffff88', '#fff', '#ff8888'],
+            speedMin: 6, speedMax: 16, sizeMin: 4, sizeMax: 12,
+            lifeMin: 0.6, lifeMax: 1.4, friction: 0.94, shape: 'diamond',
+            glow: true, glowSize: 16, hueShift: true,
         });
-        this.particles.addShockwave(x, y, '#fff', 90, 0.5);
-        if (this.quality.detailLevel >= 3) {
-            for (let i = 0; i < 6; i++) {
-                const a = (i / 6) * TWO_PI_SK;
-                setTimeout(() => {
-                    this.particles.emit(x + Math.cos(a) * 35, y + Math.sin(a) * 35, 3, {
-                        colors: [`hsl(${i * 60}, 80%, 70%)`, '#fff'],
-                        speedMin: 1, speedMax: 3, sizeMin: 3, sizeMax: 6, lifeMin: 0.4, lifeMax: 0.7,
-                        shape: 'star', glow: true, glowSize: 8,
-                    });
-                }, i * 35);
-            }
+        // 彩虹环
+        this.particles.emitRing(x, y, Math.floor(20 * this.quality.particleMult), 35, {
+            colors: ['#ff4444', '#ff8800', '#ffff00', '#44ff44', '#4488ff', '#aa44ff'],
+            speedMin: 4, speedMax: 10, sizeMin: 3, sizeMax: 7, lifeMin: 0.5, lifeMax: 0.9,
+            glow: true, glowSize: 10, shape: 'star',
+        });
+        // 六芒星方向射线
+        for (let i = 0; i < 6; i++) {
+            const a = (i / 6) * TWO_PI_SK;
+            setTimeout(() => {
+                this.particles.emit(x + Math.cos(a) * 40, y + Math.sin(a) * 40, 5, {
+                    colors: [`hsl(${i * 60}, 80%, 70%)`, '#fff'],
+                    speedMin: 2, speedMax: 5, sizeMin: 3, sizeMax: 7, lifeMin: 0.5, lifeMax: 0.9,
+                    shape: 'star', glow: true, glowSize: 10,
+                });
+            }, i * 25);
         }
+        this.particles.addShockwave(x, y, '#fff', 110, 0.55);
+        this.particles.addShockwave(x, y, '#88ccff', 80, 0.4);
+        this.particles.addBeam(x, y, 220, 8, '#88ccff', 0.4);
+        this.particles.triggerScreenFlash('#ffffff', 0.2, 0.12);
+        Utils.shake(7);
     }
     _trail_diamond(x, y) {
-        this.particles.emit(x, y, Math.max(1, Math.floor(2 * this.quality.particleMult)), {
-            colors: ['#88ccff', '#aaddff', '#fff'],
-            speedMin: 0.3, speedMax: 1.2, sizeMin: 2, sizeMax: 4, lifeMin: 0.25, lifeMax: 0.45, shape: 'star',
-            glow: this.quality.glowEnabled, glowSize: 5,
+        this.particles.emit(x, y, Math.max(1, Math.floor(2.5 * this.quality.particleMult)), {
+            colors: ['#88ccff', '#aaddff', '#fff', '#ff88cc'],
+            speedMin: 0.3, speedMax: 1.5, sizeMin: 2, sizeMax: 5, lifeMin: 0.3, lifeMax: 0.5,
+            shape: 'diamond', glow: true, glowSize: 6, hueShift: true,
         });
     }
     _aura_diamond(ctx, x, y, r) {
-        ctx.save(); ctx.globalAlpha = 0.1; ctx.fillStyle = '#88ccff';
-        ctx.beginPath(); ctx.arc(x, y, r * 1.7, 0, TWO_PI_SK); ctx.fill(); ctx.restore();
+        const pulse = 1 + Math.sin(this._time * 5) * 0.1;
+        const hue = (this._time * 60) % 360;
+        ctx.save();
+        ctx.globalAlpha = 0.12 * pulse;
+        ctx.fillStyle = `hsl(${hue}, 60%, 70%)`;
+        ctx.beginPath(); ctx.arc(x, y, r * 1.8 * pulse, 0, TWO_PI_SK); ctx.fill();
+        ctx.globalAlpha = 0.08;
+        ctx.fillStyle = `hsl(${(hue + 120) % 360}, 60%, 70%)`;
+        ctx.beginPath(); ctx.arc(x, y, r * 1.5, 0, TWO_PI_SK); ctx.fill();
+        ctx.restore();
     }
 
-    // 红宝石 - 命中：火焰爆裂
+    // 红宝石 - 命中：火焰爆裂+熔岩飞溅
     _hit_ruby(x, y) {
-        this.particles.emit(x, y, Math.floor(10 * this.quality.particleMult), {
-            colors: ['#ff3355', '#ff6644', '#ffaa00', '#fff'],
-            speedMin: 3, speedMax: 9, sizeMin: 3, sizeMax: 7,
-            lifeMin: 0.2, lifeMax: 0.6, friction: 0.9,
-            glow: this.quality.glowEnabled, glowSize: 10,
+        const n = Math.floor(16 * this.quality.particleMult);
+        this.particles.emit(x, y, n, {
+            colors: ['#ff3355', '#ff6644', '#ffaa00', '#ffee00', '#fff'],
+            speedMin: 4, speedMax: 11, sizeMin: 3, sizeMax: 8,
+            lifeMin: 0.25, lifeMax: 0.7, friction: 0.88,
+            glow: true, glowSize: 12,
         });
-        if (this.quality.detailLevel >= 2) this.particles.addShockwave(x, y, '#ff4444', 50, 0.3);
+        this.particles.addShockwave(x, y, '#ff4444', 55, 0.3);
+        this.particles.addFlash(x, y, '#ff6644', 28, 0.1);
     }
     _skill_ruby(x, y) {
-        this.particles.emit(x, y, Math.floor(30 * this.quality.particleMult), {
-            colors: ['#cc2244', '#ff4422', '#ffcc00', '#fff'],
-            speedMin: 5, speedMax: 14, sizeMin: 4, sizeMax: 12,
-            lifeMin: 0.5, lifeMax: 1.2, friction: 0.93,
-            glow: true, glowSize: 16,
+        const n = Math.floor(50 * this.quality.particleMult);
+        // 熔岩大爆发
+        this.particles.emit(x, y, n, {
+            colors: ['#cc2244', '#ff4422', '#ffcc00', '#ffee88', '#fff'],
+            speedMin: 6, speedMax: 18, sizeMin: 4, sizeMax: 14,
+            lifeMin: 0.5, lifeMax: 1.4, friction: 0.92,
+            glow: true, glowSize: 18,
         });
-        this.particles.addShockwave(x, y, '#ff4422', 90, 0.5);
-        if (this.quality.detailLevel >= 2) {
-            setTimeout(() => this.particles.addShockwave(x, y, '#ffcc00', 120, 0.6), 100);
-        }
+        // 火山喷射(向上)
+        this.particles.emit(x, y, Math.floor(15 * this.quality.particleMult), {
+            colors: ['#ff4422', '#ffaa00', '#ffcc00'],
+            angle: -Math.PI / 2, spread: 0.6,
+            speedMin: 10, speedMax: 20, sizeMin: 3, sizeMax: 8,
+            lifeMin: 0.6, lifeMax: 1.2, gravity: 3, friction: 0.96,
+            glow: true, glowSize: 10,
+        });
+        this.particles.addShockwave(x, y, '#ff4422', 110, 0.55);
+        setTimeout(() => this.particles.addShockwave(x, y, '#ffcc00', 140, 0.65), 80);
+        this.particles.addBeam(x, y, 280, 12, '#ff4422', 0.5);
+        this.particles.triggerScreenFlash('#ff4422', 0.2, 0.14);
+        Utils.shake(9);
     }
     _trail_ruby(x, y) {
-        this.particles.emit(x, y, Math.max(1, Math.floor(2 * this.quality.particleMult)), {
-            colors: ['#cc2244', '#ff4422', '#ffaa44'],
-            speedMin: 0.4, speedMax: 1.5, sizeMin: 2, sizeMax: 5, lifeMin: 0.25, lifeMax: 0.45,
-            glow: this.quality.glowEnabled, glowSize: 6,
+        this.particles.emit(x, y, Math.max(1, Math.floor(3 * this.quality.particleMult)), {
+            colors: ['#cc2244', '#ff4422', '#ffaa44', '#ffcc66'],
+            speedMin: 0.5, speedMax: 2, sizeMin: 2, sizeMax: 6, lifeMin: 0.25, lifeMax: 0.5,
+            glow: true, glowSize: 7,
         });
     }
     _aura_ruby(ctx, x, y, r) {
-        ctx.save(); ctx.globalAlpha = 0.1; ctx.fillStyle = '#ff4444';
-        ctx.beginPath(); ctx.arc(x, y, r * 1.6, 0, TWO_PI_SK); ctx.fill(); ctx.restore();
+        const pulse = 1 + Math.sin(this._time * 3.5) * 0.12;
+        ctx.save();
+        ctx.globalAlpha = 0.14 * pulse; ctx.fillStyle = '#ff4444';
+        ctx.beginPath(); ctx.arc(x, y, r * 1.7 * pulse, 0, TWO_PI_SK); ctx.fill();
+        ctx.globalAlpha = 0.06; ctx.fillStyle = '#ffcc00';
+        ctx.beginPath(); ctx.arc(x, y, r * 1.3, 0, TWO_PI_SK); ctx.fill();
+        ctx.restore();
     }
 
-    // 翡翠 - 命中：绿色自然爆发
+    // 翡翠 - 命中：自然能量+藤蔓爆发
     _hit_emerald(x, y) {
-        this.particles.emit(x, y, Math.floor(10 * this.quality.particleMult), {
-            colors: ['#22aa55', '#44dd77', '#88ffaa', '#fff'],
-            speedMin: 2, speedMax: 7, sizeMin: 2, sizeMax: 6,
-            lifeMin: 0.3, lifeMax: 0.6, friction: 0.92, gravity: 0.3,
-            shape: 'square',
+        const n = Math.floor(14 * this.quality.particleMult);
+        this.particles.emit(x, y, n, {
+            colors: ['#22aa55', '#44dd77', '#88ffaa', '#ccffcc', '#fff'],
+            speedMin: 3, speedMax: 9, sizeMin: 2, sizeMax: 7,
+            lifeMin: 0.3, lifeMax: 0.7, friction: 0.9, gravity: 0.2,
+            shape: 'cross', glow: this.quality.glowEnabled, glowSize: 10,
         });
+        this.particles.addFlash(x, y, '#44dd77', 22, 0.08);
     }
     _skill_emerald(x, y) {
-        this.particles.emit(x, y, Math.floor(25 * this.quality.particleMult), {
+        const n = Math.floor(45 * this.quality.particleMult);
+        // 自然风暴
+        this.particles.emit(x, y, n, {
             colors: ['#22aa55', '#44dd77', '#88ffaa', '#ffcc44', '#fff'],
-            speedMin: 4, speedMax: 12, sizeMin: 3, sizeMax: 9,
-            lifeMin: 0.6, lifeMax: 1.1, friction: 0.94, gravity: 0.2,
-            shape: 'square', glow: this.quality.glowEnabled, glowSize: 10,
+            speedMin: 5, speedMax: 14, sizeMin: 3, sizeMax: 11,
+            lifeMin: 0.6, lifeMax: 1.3, friction: 0.93, gravity: 0.1,
+            shape: 'cross', glow: true, glowSize: 14,
         });
-        this.particles.addShockwave(x, y, '#44dd77', 80, 0.5);
+        // 藤蔓螺旋
+        this.particles.emitSpiral(x, y, Math.floor(18 * this.quality.particleMult), {
+            colors: ['#22aa55', '#44dd77', '#88ffaa'], radius: 60, arms: 5,
+            speedMin: 2, speedMax: 5, sizeMin: 2, sizeMax: 6,
+            lifeMin: 0.5, lifeMax: 1.0, glow: true, glowSize: 8,
+            shape: 'cross',
+        });
+        this.particles.addShockwave(x, y, '#44dd77', 95, 0.5);
+        this.particles.addShockwave(x, y, '#88ffaa', 65, 0.35);
+        this.particles.triggerScreenFlash('#44dd77', 0.12, 0.1);
+        Utils.shake(5);
     }
     _trail_emerald(x, y) {
-        this.particles.emit(x, y, Math.max(1, Math.floor(1.5 * this.quality.particleMult)), {
+        this.particles.emit(x, y, Math.max(1, Math.floor(2 * this.quality.particleMult)), {
             colors: ['#22aa55', '#44dd77', '#88ffaa'],
-            speedMin: 0.2, speedMax: 1, sizeMin: 2, sizeMax: 4, lifeMin: 0.3, lifeMax: 0.5,
-            gravity: 0.4, shape: 'square',
+            speedMin: 0.3, speedMax: 1.2, sizeMin: 2, sizeMax: 5, lifeMin: 0.3, lifeMax: 0.55,
+            gravity: 0.3, shape: 'cross', glow: this.quality.glowEnabled, glowSize: 5,
         });
     }
     _aura_emerald(ctx, x, y, r) {
-        ctx.save(); ctx.globalAlpha = 0.08; ctx.fillStyle = '#44dd77';
-        ctx.beginPath(); ctx.arc(x, y, r * 1.5, 0, TWO_PI_SK); ctx.fill(); ctx.restore();
+        const pulse = 1 + Math.sin(this._time * 2.5) * 0.1;
+        ctx.save(); ctx.globalAlpha = 0.12 * pulse; ctx.fillStyle = '#44dd77';
+        ctx.beginPath(); ctx.arc(x, y, r * 1.6 * pulse, 0, TWO_PI_SK); ctx.fill(); ctx.restore();
     }
 
     // ===== 宇宙系列特效 =====
 
-    // 星云 - 命中：星光碎裂
+    // 星云 - 命中：星光碎裂+彩色星尘
     _hit_nebula(x, y) {
-        this.particles.emit(x, y, Math.floor(10 * this.quality.particleMult), {
-            colors: ['#aa44ff', '#ff44aa', '#4488ff', '#fff'],
-            speedMin: 3, speedMax: 9, sizeMin: 2, sizeMax: 6,
-            lifeMin: 0.3, lifeMax: 0.7, friction: 0.92, shape: 'star',
-            glow: this.quality.glowEnabled, glowSize: 10,
+        const n = Math.floor(16 * this.quality.particleMult);
+        this.particles.emit(x, y, n, {
+            colors: ['#aa44ff', '#ff44aa', '#4488ff', '#fff', '#ffcc44'],
+            speedMin: 4, speedMax: 10, sizeMin: 2, sizeMax: 7,
+            lifeMin: 0.3, lifeMax: 0.8, friction: 0.9, shape: 'star',
+            glow: true, glowSize: 12, hueShift: true,
         });
+        this.particles.addFlash(x, y, '#aa44ff', 25, 0.1);
     }
     _skill_nebula(x, y) {
-        this.particles.emit(x, y, Math.floor(35 * this.quality.particleMult), {
+        const n = Math.floor(55 * this.quality.particleMult);
+        // 星云爆发
+        this.particles.emit(x, y, n, {
             colors: ['#4422aa', '#aa44ff', '#ff44aa', '#ffcc00', '#fff'],
-            speedMin: 5, speedMax: 15, sizeMin: 4, sizeMax: 12,
-            lifeMin: 0.7, lifeMax: 1.4, friction: 0.95, shape: 'star',
-            glow: true, glowSize: 18,
+            speedMin: 6, speedMax: 18, sizeMin: 4, sizeMax: 14,
+            lifeMin: 0.7, lifeMax: 1.6, friction: 0.94, shape: 'star',
+            glow: true, glowSize: 20, hueShift: true,
         });
-        this.particles.addShockwave(x, y, '#aa44ff', 100, 0.6);
-        if (this.quality.detailLevel >= 2) {
-            setTimeout(() => this.particles.addShockwave(x, y, '#ff44aa', 140, 0.8), 120);
-        }
+        // 星云螺旋
+        this.particles.emitSpiral(x, y, Math.floor(30 * this.quality.particleMult), {
+            colors: ['#aa44ff', '#ff44aa', '#4488ff', '#fff'], radius: 80, arms: 6,
+            speedMin: 3, speedMax: 7, sizeMin: 3, sizeMax: 8,
+            lifeMin: 0.6, lifeMax: 1.2, glow: true, glowSize: 12,
+            shape: 'star', hueShift: true,
+        });
+        this.particles.addShockwave(x, y, '#aa44ff', 130, 0.65);
+        setTimeout(() => this.particles.addShockwave(x, y, '#ff44aa', 170, 0.8), 100);
+        this.particles.addBeam(x, y, 260, 10, '#aa44ff', 0.5);
+        this.particles.triggerScreenFlash('#aa44ff', 0.2, 0.14);
+        Utils.shake(9);
     }
     _trail_nebula(x, y) {
-        this.particles.emit(x, y, Math.max(1, Math.floor(2 * this.quality.particleMult)), {
-            colors: ['#aa44ff', '#ff44aa', '#fff'],
-            speedMin: 0.3, speedMax: 1.5, sizeMin: 2, sizeMax: 5, lifeMin: 0.3, lifeMax: 0.6,
-            shape: 'star', glow: this.quality.glowEnabled, glowSize: 6,
+        this.particles.emit(x, y, Math.max(1, Math.floor(3 * this.quality.particleMult)), {
+            colors: ['#aa44ff', '#ff44aa', '#4488ff', '#fff'],
+            speedMin: 0.4, speedMax: 2, sizeMin: 2, sizeMax: 6, lifeMin: 0.3, lifeMax: 0.6,
+            shape: 'star', glow: true, glowSize: 7, hueShift: true,
         });
     }
     _aura_nebula(ctx, x, y, r) {
-        ctx.save(); ctx.globalAlpha = 0.12; ctx.fillStyle = '#aa44ff';
-        ctx.beginPath(); ctx.arc(x, y, r * 1.8, 0, TWO_PI_SK); ctx.fill(); ctx.restore();
-    }
-
-    // 黑洞 - 命中：引力坍缩(向内吸)
-    _hit_blackhole(x, y) {
-        this.particles.emit(x, y, Math.floor(8 * this.quality.particleMult), {
-            colors: ['#ff6600', '#ffcc00', '#000'],
-            speedMin: -6, speedMax: -2, // 负速度=向内吸引效果
-            sizeMin: 2, sizeMax: 5,
-            lifeMin: 0.3, lifeMax: 0.5, friction: 0.85,
-        });
-        if (this.quality.detailLevel >= 2) this.particles.addShockwave(x, y, '#ff6600', 40, 0.2);
-    }
-    _skill_blackhole(x, y) {
-        this.particles.emit(x, y, Math.floor(20 * this.quality.particleMult), {
-            colors: ['#000', '#220044', '#ff6600', '#ffcc00'],
-            speedMin: 3, speedMax: 10, sizeMin: 3, sizeMax: 8,
-            lifeMin: 0.5, lifeMax: 1.0, friction: 0.92,
-        });
-        this.particles.addShockwave(x, y, '#000', 80, 0.5);
-        if (this.quality.detailLevel >= 2) {
-            this.particles.addShockwave(x, y, '#ff6600', 120, 0.7);
-        }
-    }
-    _trail_blackhole(x, y) {
-        this.particles.emit(x, y, Math.max(1, Math.floor(1.5 * this.quality.particleMult)), {
-            colors: ['#220044', '#000'],
-            speedMin: 0.2, speedMax: 0.8, sizeMin: 3, sizeMax: 5, lifeMin: 0.2, lifeMax: 0.4,
-            glow: this.quality.glowEnabled, glowSize: 4,
-        });
-    }
-    _aura_blackhole(ctx, x, y, r) {
-        ctx.save(); ctx.globalAlpha = 0.15;
-        const g = ctx.createRadialGradient(x, y, r * 0.5, x, y, r * 2);
-        g.addColorStop(0, '#000'); g.addColorStop(1, 'transparent');
-        ctx.fillStyle = g;
-        ctx.beginPath(); ctx.arc(x, y, r * 2, 0, TWO_PI_SK); ctx.fill();
+        const pulse = 1 + Math.sin(this._time * 3) * 0.12;
+        const hue = (this._time * 40) % 360;
+        ctx.save();
+        ctx.globalAlpha = 0.15 * pulse;
+        ctx.fillStyle = `hsl(${hue}, 70%, 50%)`;
+        ctx.beginPath(); ctx.arc(x, y, r * 2.0 * pulse, 0, TWO_PI_SK); ctx.fill();
+        ctx.globalAlpha = 0.08;
+        ctx.fillStyle = `hsl(${(hue + 180) % 360}, 70%, 50%)`;
+        ctx.beginPath(); ctx.arc(x, y, r * 1.5, 0, TWO_PI_SK); ctx.fill();
         ctx.restore();
     }
 
-    // 凤凰 - 命中：火焰爆裂+余烬
-    _hit_phoenix(x, y) {
-        this.particles.emit(x, y, Math.floor(12 * this.quality.particleMult), {
-            colors: ['#ff4400', '#ffaa00', '#ffcc00', '#fff'],
-            speedMin: 3, speedMax: 10, sizeMin: 2, sizeMax: 7,
-            lifeMin: 0.3, lifeMax: 0.7, friction: 0.9,
-            glow: this.quality.glowEnabled, glowSize: 12,
+    // 黑洞 - 命中：引力坍缩+时空扭曲
+    _hit_blackhole(x, y) {
+        const n = Math.floor(14 * this.quality.particleMult);
+        // 向内吸引
+        this.particles.emit(x, y, n, {
+            colors: ['#ff6600', '#ffcc00', '#fff', '#000'],
+            speedMin: -8, speedMax: -3, sizeMin: 2, sizeMax: 6,
+            lifeMin: 0.2, lifeMax: 0.5, friction: 0.8,
+            glow: true, glowSize: 8,
         });
-        if (this.quality.detailLevel >= 2) this.particles.addShockwave(x, y, '#ff6600', 55, 0.3);
+        // 外圈向外
+        this.particles.emitRing(x, y, 8, 20, {
+            colors: ['#ff6600', '#ffcc00'], speedMin: -2, speedMax: -0.5,
+            sizeMin: 1, sizeMax: 3, lifeMin: 0.2, lifeMax: 0.4,
+        });
+        this.particles.addShockwave(x, y, '#ff6600', 45, 0.2);
+    }
+    _skill_blackhole(x, y) {
+        const n = Math.floor(40 * this.quality.particleMult);
+        // 坍缩大爆发
+        this.particles.emit(x, y, n, {
+            colors: ['#000', '#220044', '#ff6600', '#ffcc00', '#fff'],
+            speedMin: 4, speedMax: 13, sizeMin: 3, sizeMax: 10,
+            lifeMin: 0.5, lifeMax: 1.2, friction: 0.9,
+            glow: true, glowSize: 14,
+        });
+        // 吸积盘环
+        this.particles.emitRing(x, y, Math.floor(16 * this.quality.particleMult), 40, {
+            colors: ['#ff6600', '#ffcc00', '#fff'], speedMin: 1, speedMax: 4,
+            sizeMin: 2, sizeMax: 5, lifeMin: 0.5, lifeMax: 1.0, glow: true, glowSize: 8,
+        });
+        // 向内吸的第二波
+        setTimeout(() => {
+            this.particles.emit(x, y, Math.floor(20 * this.quality.particleMult), {
+                colors: ['#ff6600', '#ffcc00', '#000'], speedMin: -10, speedMax: -4,
+                sizeMin: 2, sizeMax: 5, lifeMin: 0.3, lifeMax: 0.6, friction: 0.8,
+            });
+        }, 150);
+        this.particles.addShockwave(x, y, '#000', 100, 0.5);
+        this.particles.addShockwave(x, y, '#ff6600', 140, 0.7);
+        this.particles.triggerScreenFlash('#000000', 0.25, 0.15);
+        Utils.shake(8);
+    }
+    _trail_blackhole(x, y) {
+        this.particles.emit(x, y, Math.max(1, Math.floor(2 * this.quality.particleMult)), {
+            colors: ['#220044', '#000', '#ff6600'],
+            speedMin: 0.2, speedMax: 1, sizeMin: 3, sizeMax: 6, lifeMin: 0.2, lifeMax: 0.45,
+            glow: true, glowSize: 5,
+        });
+    }
+    _aura_blackhole(ctx, x, y, r) {
+        const pulse = 1 + Math.sin(this._time * 2) * 0.15;
+        ctx.save();
+        ctx.globalAlpha = 0.2 * pulse;
+        const g = ctx.createRadialGradient(x, y, r * 0.3, x, y, r * 2.2 * pulse);
+        g.addColorStop(0, '#000'); g.addColorStop(0.6, '#220033');
+        g.addColorStop(0.85, 'rgba(255,102,0,0.3)'); g.addColorStop(1, 'transparent');
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(x, y, r * 2.2 * pulse, 0, TWO_PI_SK); ctx.fill();
+        ctx.restore();
+    }
+
+    // 凤凰 - 命中：烈焰爆裂+余烬升腾
+    _hit_phoenix(x, y) {
+        const n = Math.floor(18 * this.quality.particleMult);
+        this.particles.emit(x, y, n, {
+            colors: ['#ff4400', '#ffaa00', '#ffcc00', '#ffee88', '#fff'],
+            speedMin: 4, speedMax: 12, sizeMin: 3, sizeMax: 8,
+            lifeMin: 0.3, lifeMax: 0.8, friction: 0.88,
+            glow: true, glowSize: 14,
+        });
+        // 余烬上升
+        this.particles.emit(x, y, Math.floor(5 * this.quality.particleMult), {
+            colors: ['#ff4400', '#ffaa00'], speedMin: 1, speedMax: 3,
+            sizeMin: 1, sizeMax: 3, lifeMin: 0.5, lifeMax: 1.0, gravity: -1.5,
+            glow: true, glowSize: 5,
+        });
+        this.particles.addShockwave(x, y, '#ff6600', 60, 0.3);
+        this.particles.addFlash(x, y, '#ffaa00', 30, 0.1);
     }
     _skill_phoenix(x, y) {
+        const n = Math.floor(60 * this.quality.particleMult);
         // 浴火重生大爆发
-        this.particles.emit(x, y, Math.floor(35 * this.quality.particleMult), {
-            colors: ['#ff4400', '#ffaa00', '#ffee88', '#fff', '#ff2200'],
-            speedMin: 5, speedMax: 16, sizeMin: 4, sizeMax: 13,
-            lifeMin: 0.7, lifeMax: 1.5, friction: 0.94,
-            glow: true, glowSize: 18,
+        this.particles.emit(x, y, n, {
+            colors: ['#ff4400', '#ffaa00', '#ffee88', '#fff', '#ff2200', '#ffcc00'],
+            speedMin: 7, speedMax: 20, sizeMin: 4, sizeMax: 15,
+            lifeMin: 0.7, lifeMax: 1.6, friction: 0.93,
+            glow: true, glowSize: 22,
         });
-        this.particles.addShockwave(x, y, '#ff6600', 100, 0.6);
-        if (this.quality.detailLevel >= 2) {
-            setTimeout(() => this.particles.addShockwave(x, y, '#ffcc00', 140, 0.8), 100);
+        // 凤凰翼展(左右两翼)
+        for (let side = -1; side <= 1; side += 2) {
+            this.particles.emit(x, y, Math.floor(12 * this.quality.particleMult), {
+                colors: ['#ff4400', '#ffaa00', '#ffcc00', '#fff'],
+                angle: side * Math.PI * 0.4, spread: 0.4,
+                speedMin: 8, speedMax: 16, sizeMin: 3, sizeMax: 9,
+                lifeMin: 0.5, lifeMax: 1.0, friction: 0.94,
+                glow: true, glowSize: 12,
+            });
         }
-        // 飞溅余烬
-        if (this.quality.detailLevel >= 3) {
-            this.particles.emit(x, y, 10, {
-                colors: ['#ff4400', '#ffaa00'], speedMin: 1, speedMax: 4,
-                sizeMin: 1, sizeMax: 3, lifeMin: 1.0, lifeMax: 2.0, gravity: -0.3,
-                glow: true, glowSize: 5,
+        // 余烬柱
+        this.particles.emit(x, y, Math.floor(15 * this.quality.particleMult), {
+            colors: ['#ff4400', '#ffaa00', '#ffee88'], speedMin: 2, speedMax: 6,
+            sizeMin: 1.5, sizeMax: 4, lifeMin: 1.0, lifeMax: 2.5, gravity: -2,
+            glow: true, glowSize: 6,
+        });
+        this.particles.addShockwave(x, y, '#ff6600', 120, 0.6);
+        setTimeout(() => this.particles.addShockwave(x, y, '#ffcc00', 160, 0.8), 90);
+        this.particles.addBeam(x, y, 300, 12, '#ff6600', 0.55);
+        this.particles.triggerScreenFlash('#ff6600', 0.22, 0.15);
+        Utils.shake(12);
+    }
+    _trail_phoenix(x, y) {
+        this.particles.emit(x, y, Math.max(1, Math.floor(4 * this.quality.particleMult)), {
+            colors: ['#ff4400', '#ffaa00', '#ffcc00', '#ffee88'],
+            speedMin: 0.5, speedMax: 2.5, sizeMin: 2, sizeMax: 7, lifeMin: 0.3, lifeMax: 0.65,
+            glow: true, glowSize: 9,
+        });
+        // 额外余烬
+        if (this.quality.detailLevel >= 2) {
+            this.particles.emit(x, y, 1, {
+                colors: ['#ffaa00'], speedMin: 0.3, speedMax: 1,
+                sizeMin: 1, sizeMax: 2, lifeMin: 0.6, lifeMax: 1.2, gravity: -1,
+                glow: true, glowSize: 4,
             });
         }
     }
-    _trail_phoenix(x, y) {
-        this.particles.emit(x, y, Math.max(1, Math.floor(2.5 * this.quality.particleMult)), {
-            colors: ['#ff4400', '#ffaa00', '#ffcc00'],
-            speedMin: 0.5, speedMax: 2, sizeMin: 2, sizeMax: 6, lifeMin: 0.3, lifeMax: 0.6,
-            glow: this.quality.glowEnabled, glowSize: 8,
-        });
-    }
     _aura_phoenix(ctx, x, y, r) {
-        ctx.save(); ctx.globalAlpha = 0.12; ctx.fillStyle = '#ff6600';
-        ctx.beginPath(); ctx.arc(x, y, r * 1.7, 0, TWO_PI_SK); ctx.fill(); ctx.restore();
+        const pulse = 1 + Math.sin(this._time * 4) * 0.15;
+        const flicker = 0.9 + Math.random() * 0.2;
+        ctx.save();
+        ctx.globalAlpha = 0.16 * pulse * flicker; ctx.fillStyle = '#ff6600';
+        ctx.beginPath(); ctx.arc(x, y, r * 1.9 * pulse, 0, TWO_PI_SK); ctx.fill();
+        ctx.globalAlpha = 0.08 * flicker; ctx.fillStyle = '#ffcc00';
+        ctx.beginPath(); ctx.arc(x, y, r * 1.5, 0, TWO_PI_SK); ctx.fill();
+        ctx.restore();
     }
 }
 

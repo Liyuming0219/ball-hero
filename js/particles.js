@@ -1,5 +1,7 @@
 // ============================================
-// 粒子特效系统 - 华丽炫酷的核心
+// 粒子特效系统 V3 - 极致视觉升级
+// 新增：环形粒子、螺旋轨迹、彩虹粒子、
+//       多层冲击波、能量柱、屏幕闪白/染色
 // ============================================
 
 class ParticleSystem {
@@ -11,28 +13,31 @@ class ParticleSystem {
         this.trailEffects = [];
         this.shockwaves = [];
         this.lightnings = [];
+        this.beams = [];        // 新增: 能量光柱
+        this.screenFlash = null; // 新增: 全屏闪光/染色
 
-        // 性能上限 —— 移动端大幅削减
+        // 性能上限 —— PC大幅提高上限
         if (this.isMobile) {
-            this.MAX_PARTICLES = 60;
-            this.MAX_TEXT = 15;
-            this.MAX_TRAIL = 20;
-            this.MAX_SHOCKWAVES = 4;
-            this.MAX_FLASH = 4;
-            this.MAX_LIGHTNING = 2;
+            this.MAX_PARTICLES = 120;
+            this.MAX_TEXT = 20;
+            this.MAX_TRAIL = 40;
+            this.MAX_SHOCKWAVES = 8;
+            this.MAX_FLASH = 8;
+            this.MAX_LIGHTNING = 4;
+            this.MAX_BEAMS = 4;
         } else {
-            this.MAX_PARTICLES = 400;
-            this.MAX_TEXT = 60;
-            this.MAX_TRAIL = 150;
-            this.MAX_SHOCKWAVES = 20;
-            this.MAX_FLASH = 20;
-            this.MAX_LIGHTNING = 12;
+            this.MAX_PARTICLES = 1200;
+            this.MAX_TEXT = 80;
+            this.MAX_TRAIL = 400;
+            this.MAX_SHOCKWAVES = 40;
+            this.MAX_FLASH = 40;
+            this.MAX_LIGHTNING = 20;
+            this.MAX_BEAMS = 12;
         }
     }
 
-    // --- 基础粒子 ---
+    // --- 基础粒子(增强) ---
     emit(x, y, count, config) {
-        // 性能保护：接近上限时减少生成
         const headroom = this.MAX_PARTICLES - this.particles.length;
         if (headroom <= 0) return;
         count = Math.min(count, headroom);
@@ -57,148 +62,266 @@ class ParticleSystem {
                 gravity: config.gravity || 0,
                 friction: config.friction || 0.98,
                 shrink: config.shrink !== false,
+                grow: config.grow || false,     // 新增: 先大后小
                 glow: config.glow || false,
                 glowSize: config.glowSize || 10,
-                shape: config.shape || 'circle', // circle, square, star, spark
+                glowColor: config.glowColor || null, // 新增: 独立辉光色
+                shape: config.shape || 'circle', // circle, square, star, spark, ring, diamond, cross, heart
                 rotation: Utils.rand(0, TWO_PI),
-                rotSpeed: Utils.rand(-0.2, 0.2),
+                rotSpeed: config.rotSpeed !== undefined ? config.rotSpeed : Utils.rand(-0.2, 0.2),
                 fadeOut: config.fadeOut !== false,
+                pulse: config.pulse || false,   // 新增: 脉冲明暗
+                trail: config.trail || false,   // 新增: 粒子本身带短尾
+                hueShift: config.hueShift || false, // 新增: 彩虹色相偏移
+                _hue: Math.random() * 360,
+                blend: config.blend || null,   // 新增: 混合模式(lighter等)
             });
         }
     }
 
-    // --- 爆炸效果 ---
-    explode(x, y, color, count = 20, power = 5) {
+    // --- 环形发射(新增) ---
+    emitRing(x, y, count, radius, config) {
+        const headroom = this.MAX_PARTICLES - this.particles.length;
+        if (headroom <= 0) return;
+        count = Math.min(count, headroom);
+        for (let i = 0; i < count; i++) {
+            const angle = (i / count) * TWO_PI;
+            const px = x + Math.cos(angle) * radius;
+            const py = y + Math.sin(angle) * radius;
+            const speed = Utils.rand(config.speedMin || 2, config.speedMax || 5);
+            const size = Utils.rand(config.sizeMin || 2, config.sizeMax || 5);
+            const life = Utils.rand(config.lifeMin || 0.3, config.lifeMax || 0.8);
+            this.particles.push({
+                x: px, y: py,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                size, maxSize: size, life, maxLife: life,
+                color: config.colors ? Utils.randColor(config.colors) : (config.color || '#fff'),
+                gravity: config.gravity || 0, friction: config.friction || 0.96,
+                shrink: true, glow: config.glow || true,
+                glowSize: config.glowSize || 12, glowColor: null,
+                shape: config.shape || 'circle',
+                rotation: angle, rotSpeed: 0,
+                fadeOut: true, pulse: false, trail: false,
+                hueShift: false, _hue: 0, blend: config.blend || null,
+                grow: false,
+            });
+        }
+    }
+
+    // --- 螺旋发射(新增) ---
+    emitSpiral(x, y, count, config) {
+        const headroom = this.MAX_PARTICLES - this.particles.length;
+        if (headroom <= 0) return;
+        count = Math.min(count, headroom);
+        const arms = config.arms || 3;
+        for (let i = 0; i < count; i++) {
+            const arm = i % arms;
+            const t = i / count;
+            const angle = arm * (TWO_PI / arms) + t * TWO_PI * 2 + (config.offset || 0);
+            const dist = t * (config.radius || 50);
+            const speed = Utils.rand(config.speedMin || 1, config.speedMax || 4);
+            const size = Utils.rand(config.sizeMin || 2, config.sizeMax || 5);
+            const life = Utils.rand(config.lifeMin || 0.5, config.lifeMax || 1.2);
+            this.particles.push({
+                x: x + Math.cos(angle) * dist,
+                y: y + Math.sin(angle) * dist,
+                vx: Math.cos(angle + Math.PI * 0.5) * speed,
+                vy: Math.sin(angle + Math.PI * 0.5) * speed,
+                size, maxSize: size, life, maxLife: life,
+                color: config.colors ? Utils.randColor(config.colors) : '#fff',
+                gravity: 0, friction: config.friction || 0.97,
+                shrink: true, glow: config.glow || true,
+                glowSize: config.glowSize || 10, glowColor: null,
+                shape: config.shape || 'star',
+                rotation: angle, rotSpeed: 0.1,
+                fadeOut: true, pulse: false, trail: config.trail || false,
+                hueShift: config.hueShift || false, _hue: (i / count) * 360,
+                blend: config.blend || null, grow: false,
+            });
+        }
+    }
+
+    // --- 爆炸效果(增强) ---
+    explode(x, y, color, count = 30, power = 6) {
         const colors = Array.isArray(color) ? color : [color, '#fff', '#ffaa00'];
+        // 核心爆裂
         this.emit(x, y, count, {
             colors,
             speedMin: power * 0.5,
-            speedMax: power * 1.5,
+            speedMax: power * 1.8,
             sizeMin: 2,
-            sizeMax: 8,
+            sizeMax: 9,
             lifeMin: 0.3,
-            lifeMax: 0.8,
-            friction: 0.95,
+            lifeMax: 0.9,
+            friction: 0.93,
             glow: true,
-            glowSize: 15,
+            glowSize: 18,
         });
-        // 火花
-        this.emit(x, y, Math.floor(count * 0.5), {
-            colors: ['#fff', '#ffffaa'],
-            speedMin: power * 1.0,
-            speedMax: power * 2.5,
+        // 外圈火花(spark形状)
+        this.emit(x, y, Math.floor(count * 0.6), {
+            colors: ['#fff', '#ffffaa', colors[0]],
+            speedMin: power * 1.2,
+            speedMax: power * 3.0,
             sizeMin: 1,
             sizeMax: 3,
+            lifeMin: 0.15,
+            lifeMax: 0.45,
+            friction: 0.88,
+            shape: 'spark',
+            glow: true,
+            glowSize: 6,
+        });
+        // 环形扩散粒子
+        this.emitRing(x, y, Math.floor(count * 0.4), power * 3, {
+            colors: [colors[0], '#fff'],
+            speedMin: power * 0.3,
+            speedMax: power * 0.8,
+            sizeMin: 2,
+            sizeMax: 5,
             lifeMin: 0.2,
             lifeMax: 0.5,
-            friction: 0.92,
-            shape: 'spark',
+            glow: true, glowSize: 10,
         });
         // 冲击波
-        this.addShockwave(x, y, color[0] || color, power * 15, 0.4);
+        this.addShockwave(x, y, colors[0] || color, power * 18, 0.45);
+        // 中心闪光
+        this.addFlash(x, y, '#fff', power * 8, 0.12);
     }
 
-    // --- 超级爆炸 (Boss死亡等) ---
-    superExplode(x, y, colors, count = 80) {
-        for (let i = 0; i < 3; i++) {
+    // --- 超级爆炸 (Boss死亡等)(增强) ---
+    superExplode(x, y, colors, count = 120) {
+        // 多波次连环爆炸
+        for (let i = 0; i < 4; i++) {
             setTimeout(() => {
                 this.explode(
-                    x + Utils.rand(-30, 30),
-                    y + Utils.rand(-30, 30),
+                    x + Utils.rand(-40, 40),
+                    y + Utils.rand(-40, 40),
                     colors,
-                    Math.floor(count / 3),
-                    8
+                    Math.floor(count / 4),
+                    9
                 );
-            }, i * 100);
+            }, i * 80);
         }
-        this.addShockwave(x, y, '#fff', 200, 0.6);
-        Utils.shake(15);
+        // 大冲击波
+        this.addShockwave(x, y, '#fff', 280, 0.7);
+        this.addShockwave(x, y, colors[0], 200, 0.5);
+        // 螺旋粒子
+        this.emitSpiral(x, y, 40, {
+            colors, radius: 80,
+            speedMin: 3, speedMax: 8,
+            sizeMin: 3, sizeMax: 7,
+            lifeMin: 0.6, lifeMax: 1.2,
+            glow: true, glowSize: 12,
+        });
+        // 全屏闪白
+        this.triggerScreenFlash('#ffffff', 0.4, 0.2);
+        Utils.shake(18);
+    }
+
+    // --- 新增: 全屏闪光/染色 ---
+    triggerScreenFlash(color, alpha, duration) {
+        this.screenFlash = { color, alpha, maxAlpha: alpha, life: duration, maxLife: duration };
+    }
+
+    // --- 新增: 能量光柱 ---
+    addBeam(x, y, height, width, color, life = 0.5) {
+        if (this.beams.length >= this.MAX_BEAMS) return;
+        this.beams.push({ x, y, height, width, color, life, maxLife: life });
     }
 
     // --- 伤害数字（增强版：大数字更大字号，暴击更夸张） ---
     addDamageText(x, y, damage, isCrit = false, color = '#fff') {
         if (this.textParticles.length >= this.MAX_TEXT) return;
         const isText = typeof damage === 'string';
-        // 数字大小随伤害值缩放
         let baseSize = 18;
         let bigScale = 1.0;
         if (!isText) {
             const dmg = Math.abs(typeof damage === 'number' ? damage : 0);
-            if (dmg >= 500) { baseSize = 32; bigScale = 1.8; }
-            else if (dmg >= 200) { baseSize = 26; bigScale = 1.4; }
-            else if (dmg >= 100) { baseSize = 22; bigScale = 1.2; }
+            if (dmg >= 500) { baseSize = 34; bigScale = 2.0; }
+            else if (dmg >= 200) { baseSize = 28; bigScale = 1.5; }
+            else if (dmg >= 100) { baseSize = 24; bigScale = 1.3; }
         }
         this.textParticles.push({
-            x: x + Utils.rand(-10, 10),
-            y: y - 10,
+            x: x + Utils.rand(-12, 12),
+            y: y - 12,
             text: isText ? damage : (isCrit ? Math.floor(damage) + '!' : Math.floor(damage).toString()),
-            size: isText ? 22 : (isCrit ? baseSize + 10 : baseSize),
-            maxSize: isText ? 26 : (isCrit ? baseSize + 16 : baseSize + 4),
+            size: isText ? 22 : (isCrit ? baseSize + 12 : baseSize),
+            maxSize: isText ? 26 : (isCrit ? baseSize + 18 : baseSize + 4),
             color: isText ? color : (isCrit ? '#ff4444' : color),
             outlineColor: isText ? '#000' : (isCrit ? '#ffaa00' : '#000'),
-            life: isText ? 1.0 : (isCrit ? 1.2 : 0.8),
-            maxLife: isText ? 1.0 : (isCrit ? 1.2 : 0.8),
-            vy: -3,
-            vx: Utils.rand(-1, 1),
+            life: isText ? 1.0 : (isCrit ? 1.4 : 0.9),
+            maxLife: isText ? 1.0 : (isCrit ? 1.4 : 0.9),
+            vy: -3.5,
+            vx: Utils.rand(-1.5, 1.5),
             isCrit: isText ? false : isCrit,
-            scale: isText ? 1.3 : (isCrit ? 1.5 * bigScale : bigScale),
+            scale: isText ? 1.3 : (isCrit ? 1.6 * bigScale : bigScale),
         });
         if (isCrit) {
-            this.emit(x, y, 8, {
-                colors: ['#ff4444', '#ffaa00', '#ffff00'],
-                speedMin: 2,
-                speedMax: 5,
+            // 更强暴击粒子效果
+            this.emit(x, y, 12, {
+                colors: ['#ff4444', '#ffaa00', '#ffff00', '#fff'],
+                speedMin: 3,
+                speedMax: 7,
                 sizeMin: 2,
-                sizeMax: 5,
+                sizeMax: 6,
                 lifeMin: 0.3,
-                lifeMax: 0.6,
+                lifeMax: 0.7,
                 shape: 'star',
                 glow: true,
-                glowSize: 8,
+                glowSize: 10,
             });
+            this.addShockwave(x, y, '#ffaa00', 30, 0.2);
         }
     }
 
-    // --- 连杀通知 ---
+    // --- 连杀通知(增强) ---
     addComboText(x, y, comboCount) {
         if (this.textParticles.length >= this.MAX_TEXT) return;
         const milestones = [10, 25, 50, 100, 200, 500];
         if (!milestones.includes(comboCount)) return;
         const colors = { 10: '#ffaa00', 25: '#ff8844', 50: '#ff4444', 100: '#ff44aa', 200: '#aa44ff', 500: '#ff2222' };
+        const c = colors[comboCount] || '#ffaa00';
         this.textParticles.push({
             x, y: y - 40,
             text: comboCount + ' COMBO!',
-            size: 30,
-            maxSize: 40,
-            color: colors[comboCount] || '#ffaa00',
+            size: 32,
+            maxSize: 44,
+            color: c,
             outlineColor: '#000',
-            life: 1.5,
-            maxLife: 1.5,
-            vy: -2,
+            life: 1.8,
+            maxLife: 1.8,
+            vy: -2.5,
             vx: 0,
             isCrit: true,
-            scale: 2.0,
+            scale: 2.2,
         });
-        this.addShockwave(x, y, colors[comboCount] || '#ffaa00', 100, 0.3);
+        this.addShockwave(x, y, c, 120, 0.35);
+        this.emitRing(x, y, 16, 30, {
+            colors: [c, '#fff'], speedMin: 3, speedMax: 7,
+            sizeMin: 2, sizeMax: 5, lifeMin: 0.3, lifeMax: 0.6,
+            glow: true, glowSize: 8,
+        });
     }
 
-    // --- 经验宝石闪光 ---
+    // --- 经验宝石闪光(增强) ---
     addGemSparkle(x, y, color) {
-        this.emit(x, y, 3, {
+        this.emit(x, y, 4, {
             colors: [color, '#fff'],
             speedMin: 0.5,
-            speedMax: 2,
+            speedMax: 2.5,
             sizeMin: 1,
-            sizeMax: 3,
+            sizeMax: 4,
             lifeMin: 0.2,
-            lifeMax: 0.5,
+            lifeMax: 0.6,
             glow: true,
-            glowSize: 6,
+            glowSize: 8,
+            shape: 'star',
         });
     }
 
     // --- 拖尾效果 ---
-    addTrail(x, y, color, size = 4, life = 0.3) {
+    addTrail(x, y, color, size = 5, life = 0.35) {
         if (this.trailEffects.length >= this.MAX_TRAIL) return;
         this.trailEffects.push({
             x, y, color, size, maxSize: size,
@@ -207,7 +330,7 @@ class ParticleSystem {
         });
     }
 
-    // --- 冲击波 ---
+    // --- 冲击波(增强: 双层+发光) ---
     addShockwave(x, y, color, maxRadius, life = 0.4) {
         if (this.shockwaves.length >= this.MAX_SHOCKWAVES) return;
         this.shockwaves.push({
@@ -216,11 +339,12 @@ class ParticleSystem {
             maxRadius,
             life,
             maxLife: life,
-            lineWidth: 4,
+            lineWidth: 5,
+            inner: true,
         });
     }
 
-    // --- 闪光 ---
+    // --- 闪光(增强: 多层辉光) ---
     addFlash(x, y, color, radius, life = 0.15) {
         if (this.flashEffects.length >= this.MAX_FLASH) return;
         this.flashEffects.push({
@@ -229,25 +353,24 @@ class ParticleSystem {
         });
     }
 
-    // --- 闪电 ---
-    addLightning(x1, y1, x2, y2, color = '#88aaff', branches = 3, life = 0.2) {
+    // --- 闪电(增强: 更粗更亮) ---
+    addLightning(x1, y1, x2, y2, color = '#88aaff', branches = 4, life = 0.25) {
         if (this.lightnings.length >= this.MAX_LIGHTNING) return;
-        const points = this._generateLightningPath(x1, y1, x2, y2, 5);
+        const points = this._generateLightningPath(x1, y1, x2, y2, 6);
         this.lightnings.push({
             points,
             color,
             life,
             maxLife: life,
-            lineWidth: 3,
+            lineWidth: 4,
             branches: [],
         });
-        // 生成分支
         for (let b = 0; b < branches; b++) {
             const idx = Utils.randInt(2, points.length - 2);
             const p = points[idx];
             const branchEnd = {
-                x: p.x + Utils.rand(-60, 60),
-                y: p.y + Utils.rand(-60, 60),
+                x: p.x + Utils.rand(-70, 70),
+                y: p.y + Utils.rand(-70, 70),
             };
             const branchPoints = this._generateLightningPath(p.x, p.y, branchEnd.x, branchEnd.y, 3);
             this.lightnings[this.lightnings.length - 1].branches.push(branchPoints);
@@ -256,20 +379,20 @@ class ParticleSystem {
 
     _generateLightningPath(x1, y1, x2, y2, detail) {
         const points = [{ x: x1, y: y1 }];
-        const segments = detail + Utils.randInt(2, 5);
+        const segments = detail + Utils.randInt(3, 6);
         for (let i = 1; i < segments; i++) {
             const t = i / segments;
-            const midX = Utils.lerp(x1, x2, t) + Utils.rand(-25, 25);
-            const midY = Utils.lerp(y1, y2, t) + Utils.rand(-25, 25);
+            const midX = Utils.lerp(x1, x2, t) + Utils.rand(-30, 30);
+            const midY = Utils.lerp(y1, y2, t) + Utils.rand(-30, 30);
             points.push({ x: midX, y: midY });
         }
         points.push({ x: x2, y: y2 });
         return points;
     }
 
-    // --- 武器拖尾/刀光 ---
-    addSlashArc(x, y, startAngle, endAngle, radius, color, life = 0.3) {
-        const steps = 12;
+    // --- 武器拖尾/刀光(增强) ---
+    addSlashArc(x, y, startAngle, endAngle, radius, color, life = 0.35) {
+        const steps = 16;
         for (let i = 0; i <= steps; i++) {
             const t = i / steps;
             const angle = Utils.lerp(startAngle, endAngle, t);
@@ -278,17 +401,50 @@ class ParticleSystem {
             this.trailEffects.push({
                 x: px, y: py,
                 color,
-                size: Utils.lerp(8, 2, t),
-                maxSize: Utils.lerp(8, 2, t),
-                life: life * (1 - t * 0.5),
+                size: Utils.lerp(10, 2, t),
+                maxSize: Utils.lerp(10, 2, t),
+                life: life * (1 - t * 0.4),
                 maxLife: life,
+                glow: true,
+            });
+        }
+        // 刀光中心亮线
+        for (let i = 0; i <= steps; i += 2) {
+            const t = i / steps;
+            const angle = Utils.lerp(startAngle, endAngle, t);
+            const px = x + Math.cos(angle) * radius;
+            const py = y + Math.sin(angle) * radius;
+            this.trailEffects.push({
+                x: px, y: py,
+                color: '#fff',
+                size: Utils.lerp(5, 1, t),
+                maxSize: Utils.lerp(5, 1, t),
+                life: life * 0.7 * (1 - t * 0.5),
+                maxLife: life * 0.7,
                 glow: true,
             });
         }
     }
 
-    // --- 更新所有粒子 (使用swap-and-pop替代splice提升性能) ---
+    // --- 更新所有粒子 ---
     update(dt) {
+        // 屏幕闪光
+        if (this.screenFlash) {
+            this.screenFlash.life -= dt;
+            if (this.screenFlash.life <= 0) this.screenFlash = null;
+        }
+
+        // 能量光柱
+        let bLen = this.beams.length;
+        for (let i = bLen - 1; i >= 0; i--) {
+            this.beams[i].life -= dt;
+            if (this.beams[i].life <= 0) {
+                this.beams[i] = this.beams[bLen - 1];
+                bLen--;
+            }
+        }
+        this.beams.length = bLen;
+
         // 基础粒子
         let len = this.particles.length;
         for (let i = len - 1; i >= 0; i--) {
@@ -305,8 +461,16 @@ class ParticleSystem {
             p.x += p.vx;
             p.y += p.vy;
             p.rotation += p.rotSpeed;
-            if (p.shrink) {
-                p.size = p.maxSize * (p.life / p.maxLife);
+            const lifeRatio = p.life / p.maxLife;
+            if (p.grow) {
+                // 先膨胀到1.5倍再缩小
+                const t = 1 - lifeRatio;
+                p.size = t < 0.2 ? p.maxSize * (t / 0.2) * 1.5 : p.maxSize * lifeRatio * 1.2;
+            } else if (p.shrink) {
+                p.size = p.maxSize * lifeRatio;
+            }
+            if (p.hueShift) {
+                p._hue = (p._hue + dt * 200) % 360;
             }
         }
         this.particles.length = len;
@@ -368,7 +532,7 @@ class ParticleSystem {
             }
             const progress = 1 - s.life / s.maxLife;
             s.radius = s.maxRadius * Utils.easeOutCubic(progress);
-            s.lineWidth = Utils.lerp(4, 1, progress);
+            s.lineWidth = Utils.lerp(5, 1.5, progress);
         }
         this.shockwaves.length = len;
 
@@ -384,72 +548,94 @@ class ParticleSystem {
         this.lightnings.length = len;
     }
 
-    // --- 渲染所有粒子 ---
+    // --- 渲染所有粒子(增强版) ---
     render(ctx, camera, screenW, screenH) {
         ctx.save();
-        const margin = 30; // 屏幕外裁剪余量
+        const margin = 40;
 
-        // 拖尾 — 小拖尾用 fillRect 代替 arc
+        // 拖尾(增强辉光)
         for (const t of this.trailEffects) {
             const sx = t.x - camera.x;
             const sy = t.y - camera.y;
             if (sx < -margin || sx > screenW + margin || sy < -margin || sy > screenH + margin) continue;
             const alpha = t.life / t.maxLife;
             ctx.fillStyle = t.color;
-            if (t.glow && t.size > 3) {
-                // 大拖尾保留 glow arc
-                ctx.globalAlpha = alpha * 0.6;
+            if (t.glow && t.size > 2) {
+                // 外层辉光
+                ctx.globalAlpha = alpha * 0.4;
                 ctx.beginPath();
-                ctx.arc(sx, sy, t.size * 2, 0, TWO_PI);
+                ctx.arc(sx, sy, t.size * 2.5, 0, TWO_PI);
                 ctx.fill();
-                ctx.globalAlpha = alpha;
+                // 中层
+                ctx.globalAlpha = alpha * 0.7;
                 ctx.beginPath();
-                ctx.arc(sx, sy, t.size, 0, TWO_PI);
+                ctx.arc(sx, sy, t.size * 1.4, 0, TWO_PI);
+                ctx.fill();
+                // 核心(白色)
+                ctx.globalAlpha = alpha;
+                ctx.fillStyle = '#fff';
+                ctx.beginPath();
+                ctx.arc(sx, sy, t.size * 0.6, 0, TWO_PI);
                 ctx.fill();
             } else {
-                // 小拖尾用 fillRect（极快）
                 ctx.globalAlpha = alpha;
                 const s = t.size;
                 ctx.fillRect(sx - s, sy - s, s * 2, s * 2);
             }
         }
 
-        // 基础粒子 — 小粒子用 fillRect，大粒子保留 arc
-        let prevColor = '';
+        // 基础粒子(增强渲染)
         for (const p of this.particles) {
             const sx = p.x - camera.x;
             const sy = p.y - camera.y;
             if (sx < -margin || sx > screenW + margin || sy < -margin || sy > screenH + margin) continue;
             const alpha = p.fadeOut ? (p.life / p.maxLife) : 1;
-            if (p.color !== prevColor) { ctx.fillStyle = p.color; prevColor = p.color; }
+            const pulseAlpha = p.pulse ? alpha * (0.6 + 0.4 * Math.sin(p.life * 15)) : alpha;
 
-            // 小圆形粒子快速路径：fillRect
-            if (p.shape === 'circle' && p.size < 4) {
-                ctx.globalAlpha = alpha;
+            // 混合模式
+            if (p.blend) ctx.globalCompositeOperation = p.blend;
+
+            // 色相偏移
+            let fillColor = p.color;
+            if (p.hueShift) {
+                fillColor = `hsl(${Math.floor(p._hue)}, 80%, 65%)`;
+            }
+            ctx.fillStyle = fillColor;
+
+            // 小圆形粒子快速路径
+            if (p.shape === 'circle' && p.size < 4 && !p.glow) {
+                ctx.globalAlpha = pulseAlpha;
                 const s = p.size;
-                if (p.glow) {
-                    ctx.globalAlpha = alpha * 0.4;
-                    const gs = s + p.glowSize * 0.5;
-                    ctx.fillRect(sx - gs, sy - gs, gs * 2, gs * 2);
-                    ctx.globalAlpha = alpha;
-                }
                 ctx.fillRect(sx - s, sy - s, s * 2, s * 2);
+                if (p.blend) ctx.globalCompositeOperation = 'source-over';
                 continue;
             }
 
+            // 辉光
             if (p.glow) {
-                ctx.globalAlpha = alpha * 0.5;
+                const gc = p.glowColor || fillColor;
+                ctx.globalAlpha = pulseAlpha * 0.35;
+                ctx.fillStyle = gc;
                 ctx.beginPath();
                 ctx.arc(sx, sy, p.size + p.glowSize, 0, TWO_PI);
                 ctx.fill();
+                ctx.fillStyle = fillColor;
             }
 
-            ctx.globalAlpha = alpha;
+            ctx.globalAlpha = pulseAlpha;
 
             if (p.shape === 'circle') {
                 ctx.beginPath();
                 ctx.arc(sx, sy, p.size, 0, TWO_PI);
                 ctx.fill();
+                // 中心亮点(大粒子)
+                if (p.size > 4) {
+                    ctx.globalAlpha = pulseAlpha * 0.6;
+                    ctx.fillStyle = '#fff';
+                    ctx.beginPath();
+                    ctx.arc(sx, sy, p.size * 0.35, 0, TWO_PI);
+                    ctx.fill();
+                }
             } else if (p.shape === 'square') {
                 ctx.save();
                 ctx.translate(sx, sy);
@@ -462,58 +648,136 @@ class ParticleSystem {
                 ctx.save();
                 ctx.translate(sx, sy);
                 ctx.rotate(p.rotation);
-                ctx.fillRect(-p.size * 3, -p.size * 0.3, p.size * 6, p.size * 0.6);
+                ctx.fillRect(-p.size * 3.5, -p.size * 0.35, p.size * 7, p.size * 0.7);
                 ctx.restore();
+            } else if (p.shape === 'ring') {
+                ctx.beginPath();
+                ctx.arc(sx, sy, p.size, 0, TWO_PI);
+                ctx.lineWidth = Math.max(1, p.size * 0.3);
+                ctx.strokeStyle = fillColor;
+                ctx.globalAlpha = pulseAlpha;
+                ctx.stroke();
+            } else if (p.shape === 'diamond') {
+                ctx.save();
+                ctx.translate(sx, sy);
+                ctx.rotate(p.rotation);
+                ctx.beginPath();
+                ctx.moveTo(0, -p.size * 1.4);
+                ctx.lineTo(p.size * 0.7, 0);
+                ctx.lineTo(0, p.size * 1.4);
+                ctx.lineTo(-p.size * 0.7, 0);
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore();
+            } else if (p.shape === 'cross') {
+                ctx.save();
+                ctx.translate(sx, sy);
+                ctx.rotate(p.rotation);
+                const w = p.size * 0.3;
+                ctx.fillRect(-p.size, -w, p.size * 2, w * 2);
+                ctx.fillRect(-w, -p.size, w * 2, p.size * 2);
+                ctx.restore();
+            } else if (p.shape === 'heart') {
+                this._drawHeart(ctx, sx, sy, p.size, p.rotation);
             }
+
+            if (p.blend) ctx.globalCompositeOperation = 'source-over';
         }
 
-        // 冲击波
+        // 冲击波(增强: 双层+辉光)
         for (const s of this.shockwaves) {
             const sx = s.x - camera.x;
             const sy = s.y - camera.y;
             const r = s.radius;
             if (sx + r < -margin || sx - r > screenW + margin || sy + r < -margin || sy - r > screenH + margin) continue;
             const alpha = s.life / s.maxLife;
-            ctx.globalAlpha = alpha * 0.75;
+
+            // 外圈辉光
+            ctx.globalAlpha = alpha * 0.3;
+            ctx.strokeStyle = s.color;
+            ctx.lineWidth = s.lineWidth + 6;
+            ctx.beginPath();
+            ctx.arc(sx, sy, r, 0, TWO_PI);
+            ctx.stroke();
+
+            // 主环
+            ctx.globalAlpha = alpha * 0.8;
             ctx.strokeStyle = s.color;
             ctx.lineWidth = s.lineWidth;
             ctx.beginPath();
             ctx.arc(sx, sy, r, 0, TWO_PI);
             ctx.stroke();
-            // 内圈
-            ctx.globalAlpha = alpha * 0.35;
-            ctx.strokeStyle = '#fff';
-            ctx.lineWidth = s.lineWidth * 0.5;
-            ctx.beginPath();
-            ctx.arc(sx, sy, r * 0.8, 0, TWO_PI);
-            ctx.stroke();
+
+            // 内环(白芯)
+            if (s.inner) {
+                ctx.globalAlpha = alpha * 0.5;
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = s.lineWidth * 0.4;
+                ctx.beginPath();
+                ctx.arc(sx, sy, r * 0.85, 0, TWO_PI);
+                ctx.stroke();
+            }
         }
 
-        // 闪光（用两层半透明圆代替createRadialGradient，性能更好）
+        // 闪光(增强: 三层渐变)
         for (const f of this.flashEffects) {
             const sx = f.x - camera.x;
             const sy = f.y - camera.y;
             if (sx + f.radius < -margin || sx - f.radius > screenW + margin || sy + f.radius < -margin || sy - f.radius > screenH + margin) continue;
             const alpha = f.life / f.maxLife;
             ctx.fillStyle = f.color;
-            ctx.globalAlpha = alpha * 0.25;
+            // 外层
+            ctx.globalAlpha = alpha * 0.15;
             ctx.beginPath();
-            ctx.arc(sx, sy, f.radius, 0, TWO_PI);
+            ctx.arc(sx, sy, f.radius * 1.3, 0, TWO_PI);
             ctx.fill();
-            ctx.globalAlpha = alpha * 0.65;
+            // 中层
+            ctx.globalAlpha = alpha * 0.35;
             ctx.beginPath();
-            ctx.arc(sx, sy, f.radius * 0.4, 0, TWO_PI);
+            ctx.arc(sx, sy, f.radius * 0.7, 0, TWO_PI);
+            ctx.fill();
+            // 核心
+            ctx.globalAlpha = alpha * 0.7;
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(sx, sy, f.radius * 0.25, 0, TWO_PI);
             ctx.fill();
         }
 
-        // 闪电
+        // 能量光柱
+        for (const b of this.beams) {
+            const sx = b.x - camera.x;
+            const sy = b.y - camera.y;
+            const alpha = b.life / b.maxLife;
+            // 宽辉光
+            ctx.globalAlpha = alpha * 0.2;
+            ctx.fillStyle = b.color;
+            ctx.fillRect(sx - b.width * 2, sy - b.height, b.width * 4, b.height);
+            // 中间
+            ctx.globalAlpha = alpha * 0.5;
+            ctx.fillRect(sx - b.width, sy - b.height, b.width * 2, b.height);
+            // 白芯
+            ctx.globalAlpha = alpha * 0.8;
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(sx - b.width * 0.3, sy - b.height, b.width * 0.6, b.height);
+        }
+
+        // 闪电(增强: 更亮更粗)
         for (const l of this.lightnings) {
             const alpha = l.life / l.maxLife;
+            // 外辉光
+            ctx.globalAlpha = alpha * 0.4;
+            this._drawLightningPath(ctx, l.points, l.color, l.lineWidth + 6, camera);
+            // 主干
             ctx.globalAlpha = alpha;
             this._drawLightningPath(ctx, l.points, l.color, l.lineWidth, camera);
+            // 白芯
+            ctx.globalAlpha = alpha * 0.9;
+            this._drawLightningPath(ctx, l.points, '#fff', l.lineWidth * 0.5, camera);
+            // 分支
             ctx.globalAlpha = alpha * 0.6;
             for (const branch of l.branches) {
-                this._drawLightningPath(ctx, branch, l.color, l.lineWidth * 0.5, camera);
+                this._drawLightningPath(ctx, branch, l.color, l.lineWidth * 0.4, camera);
             }
         }
 
@@ -523,7 +787,7 @@ class ParticleSystem {
         for (const t of this.textParticles) {
             const sx = t.x - camera.x;
             const sy = t.y - camera.y;
-            if (sx < -80 || sx > screenW + 80 || sy < -40 || sy > screenH + 40) continue;
+            if (sx < -100 || sx > screenW + 100 || sy < -50 || sy > screenH + 50) continue;
             const alpha = Math.min(1, t.life / t.maxLife * 2);
             const scale = t.scale || 1;
             const fontSize = Math.floor(t.size * scale);
@@ -531,21 +795,38 @@ class ParticleSystem {
             ctx.globalAlpha = alpha;
             ctx.font = `bold ${fontSize}px 'Microsoft YaHei','PingFang SC','Helvetica Neue',Arial,sans-serif`;
 
+            // 外辉光(暴击时)
+            if (t.isCrit) {
+                ctx.globalAlpha = alpha * 0.3;
+                ctx.fillStyle = t.outlineColor === '#ffaa00' ? '#ffaa00' : t.color;
+                ctx.fillText(t.text, sx, sy);
+            }
+
+            ctx.globalAlpha = alpha;
             // 描边
             ctx.strokeStyle = t.outlineColor;
-            ctx.lineWidth = 3;
+            ctx.lineWidth = 4;
             ctx.strokeText(t.text, sx, sy);
-
             // 填充
             ctx.fillStyle = t.color;
             ctx.fillText(t.text, sx, sy);
         }
 
         ctx.restore();
+
+        // 全屏闪光覆盖(在最上层)
+        if (this.screenFlash) {
+            const sf = this.screenFlash;
+            ctx.save();
+            ctx.globalAlpha = sf.maxAlpha * (sf.life / sf.maxLife);
+            ctx.fillStyle = sf.color;
+            ctx.fillRect(0, 0, screenW, screenH);
+            ctx.restore();
+        }
     }
 
     _drawStar(ctx, x, y, size, rotation) {
-        const spikes = 4;
+        const spikes = 5;
         ctx.save();
         ctx.translate(x, y);
         ctx.rotate(rotation);
@@ -563,23 +844,26 @@ class ParticleSystem {
         ctx.restore();
     }
 
+    _drawHeart(ctx, x, y, size, rotation) {
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(rotation);
+        const s = size * 0.6;
+        ctx.beginPath();
+        ctx.moveTo(0, s * 0.7);
+        ctx.bezierCurveTo(-s * 1.2, -s * 0.3, -s * 0.4, -s * 1.5, 0, -s * 0.6);
+        ctx.bezierCurveTo(s * 0.4, -s * 1.5, s * 1.2, -s * 0.3, 0, s * 0.7);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+    }
+
     _drawLightningPath(ctx, points, color, lineWidth, camera) {
         if (points.length < 2) return;
-        // 外光
         ctx.strokeStyle = color;
-        ctx.lineWidth = lineWidth + 4;
-        ctx.globalAlpha *= 0.3;
-        ctx.beginPath();
-        ctx.moveTo(points[0].x - camera.x, points[0].y - camera.y);
-        for (let i = 1; i < points.length; i++) {
-            ctx.lineTo(points[i].x - camera.x, points[i].y - camera.y);
-        }
-        ctx.stroke();
-
-        // 内芯
-        ctx.strokeStyle = '#fff';
         ctx.lineWidth = lineWidth;
-        ctx.globalAlpha *= 3;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
         ctx.beginPath();
         ctx.moveTo(points[0].x - camera.x, points[0].y - camera.y);
         for (let i = 1; i < points.length; i++) {
@@ -596,5 +880,7 @@ class ParticleSystem {
         this.trailEffects.length = 0;
         this.shockwaves.length = 0;
         this.lightnings.length = 0;
+        this.beams.length = 0;
+        this.screenFlash = null;
     }
 }

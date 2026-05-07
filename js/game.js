@@ -1,7 +1,7 @@
 ﻿// ============================================
 // 游戏版本号
 // ============================================
-var GAME_VERSION = 'v1.6.0';
+var GAME_VERSION = 'v1.7.0';
 
 // 性能常量（避免每帧重复创建）
 const RECYCLE_DIST_SQ = 1500 * 1500; // 超出此距离回收敌人
@@ -939,6 +939,7 @@ class Game {
 
         // 皮肤系统更新
         if (window._skinRenderer) window._skinRenderer.update(dt);
+        if (window._skinFxSystem) window._skinFxSystem.update(dt);
         if (window._skinFxSystem && this.player && this.player.isMoving) {
             const skin = (typeof skinManager !== 'undefined') ? skinManager.getEquippedSkin(this.player.def.id) : null;
             if (skin) window._skinFxSystem.emitMoveTrail(this.player.x, this.player.y, skin);

@@ -296,16 +296,17 @@ class Enemy {
             this.knockbackY = Math.sin(knockbackAngle) * knockbackForce * kbMult;
         }
 
-        // 受伤粒子
-        particles.emit(this.x, this.y, 6, {
-            colors: this.colors,
-            speedMin: 2,
-            speedMax: 5,
+        // 受伤粒子(增强V3)
+        particles.emit(this.x, this.y, 10, {
+            colors: this.colors.concat(['#fff']),
+            speedMin: 3,
+            speedMax: 8,
             sizeMin: 2,
-            sizeMax: 5,
+            sizeMax: 6,
             lifeMin: 0.2,
-            lifeMax: 0.5,
-            friction: 0.9,
+            lifeMax: 0.55,
+            friction: 0.88,
+            glow: true, glowSize: 6,
         });
 
         if (this.hp <= 0) {
@@ -821,52 +822,70 @@ class Enemy {
         const sy = this.deathY - camera.y;
         ctx.save();
         if (this.isBoss) {
-            // Boss死亡：多重扩散环
-            for (let r = 0; r < 3; r++) {
-                const rt = Utils.clamp(t * 3 - r * 0.3, 0, 1);
+            // Boss死亡：多重扩散环+强闪光+内核
+            for (let r = 0; r < 5; r++) {
+                const rt = Utils.clamp(t * 3 - r * 0.2, 0, 1);
                 if (rt <= 0) continue;
-                ctx.globalAlpha = (1 - rt) * 0.5;
+                ctx.globalAlpha = (1 - rt) * 0.6;
                 ctx.strokeStyle = this.colors[r % this.colors.length];
-                ctx.lineWidth = 4 * (1 - rt);
+                ctx.lineWidth = (5 - r) * (1 - rt);
                 ctx.beginPath();
-                ctx.arc(sx, sy, this.radius * (1 + rt * 4), 0, TWO_PI);
+                ctx.arc(sx, sy, this.radius * (1 + rt * 5), 0, TWO_PI);
                 ctx.stroke();
             }
-            ctx.globalAlpha = (1 - t) * 0.8;
+            // 白热内核
+            ctx.globalAlpha = (1 - t) * 0.9;
             ctx.fillStyle = '#ffffff';
             ctx.beginPath();
             ctx.arc(sx, sy, this.radius * (1 - t * 0.5), 0, TWO_PI);
             ctx.fill();
+            // 外层辉光
+            ctx.globalAlpha = (1 - t) * 0.3;
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            ctx.arc(sx, sy, this.radius * (1 + t * 2), 0, TWO_PI);
+            ctx.fill();
         } else {
-            // 普通/精英死亡：碎片扩散 + 闪白收缩
-            // 初始闪白
-            if (t < 0.15) {
-                ctx.globalAlpha = (1 - t / 0.15) * 0.5;
+            // 普通/精英死亡：碎片扩散 + 闪白 + 光环
+            // 初始闪白(更亮更大)
+            if (t < 0.2) {
+                const ft = t / 0.2;
+                ctx.globalAlpha = (1 - ft) * 0.7;
                 ctx.fillStyle = '#ffffff';
                 ctx.beginPath();
-                ctx.arc(sx, sy, this.radius * (1 + t * 2), 0, TWO_PI);
+                ctx.arc(sx, sy, this.radius * (1 + ft * 2.5), 0, TWO_PI);
                 ctx.fill();
             }
-            // 碎片
-            ctx.globalAlpha = (1 - t) * 0.7;
+            // 碎片(更多更亮)
+            ctx.globalAlpha = (1 - t) * 0.8;
             ctx.fillStyle = this.color;
-            const pieces = this.isElite ? 8 : 4;
+            const pieces = this.isElite ? 12 : 6;
             for (let i = 0; i < pieces; i++) {
-                const angle = (i / pieces) * TWO_PI + t * 3;
-                const dist = this.radius * t * (this.isElite ? 3 : 2);
-                const size = this.radius * (this.isElite ? 0.35 : 0.3) * (1 - t);
+                const angle = (i / pieces) * TWO_PI + t * 4;
+                const dist = this.radius * t * (this.isElite ? 4 : 2.5);
+                const size = this.radius * (this.isElite ? 0.35 : 0.28) * (1 - t);
                 ctx.beginPath();
                 ctx.arc(sx + Math.cos(angle) * dist, sy + Math.sin(angle) * dist, size, 0, TWO_PI);
                 ctx.fill();
             }
-            // 精英额外：残影缩小光环
-            if (this.isElite && t < 0.5) {
-                ctx.globalAlpha = (0.5 - t) * 0.6;
-                ctx.strokeStyle = this.color;
-                ctx.lineWidth = 2;
-                ctx.beginPath();
-                ctx.arc(sx, sy, this.radius * (1 + t * 3), 0, TWO_PI);
-                ctx.stroke();
+            // 精英额外：双层扩散光环
+            if (this.isElite) {
+                if (t < 0.6) {
+                    ctx.globalAlpha = (0.6 - t) * 0.6;
+                    ctx.strokeStyle = this.color;
+                    ctx.lineWidth = 3 * (1 - t);
+                    ctx.beginPath();
+                    ctx.arc(sx, sy, this.radius * (1 + t * 4), 0, TWO_PI);
+                    ctx.stroke();
+                }
+                if (t < 0.4) {
+                    ctx.globalAlpha = (0.4 - t) * 0.4;
+                    ctx.strokeStyle = '#fff';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(sx, sy, this.radius * (1 + t * 2.5), 0, TWO_PI);
+                    ctx.stroke();
+                }
             }
         }
         ctx.restore();
