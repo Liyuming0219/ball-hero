@@ -392,35 +392,57 @@ class ParticleSystem {
 
     // --- 武器拖尾/刀光(增强) ---
     addSlashArc(x, y, startAngle, endAngle, radius, color, life = 0.35) {
-        const steps = 16;
+        const steps = 18;
         for (let i = 0; i <= steps; i++) {
             const t = i / steps;
             const angle = Utils.lerp(startAngle, endAngle, t);
-            const px = x + Math.cos(angle) * radius;
-            const py = y + Math.sin(angle) * radius;
+            // 主弧线：带随机径向偏移增加动感
+            const rOff = 1 + (Math.random() - 0.5) * 0.1;
+            const px = x + Math.cos(angle) * radius * rOff;
+            const py = y + Math.sin(angle) * radius * rOff;
+            const sz = Utils.lerp(12, 3, t);
             this.trailEffects.push({
                 x: px, y: py,
                 color,
-                size: Utils.lerp(10, 2, t),
-                maxSize: Utils.lerp(10, 2, t),
-                life: life * (1 - t * 0.4),
+                size: sz,
+                maxSize: sz,
+                life: life * (1 - t * 0.35),
                 maxLife: life,
                 glow: true,
             });
         }
-        // 刀光中心亮线
+        // 内层速度线（稍短半径，更快消失）
         for (let i = 0; i <= steps; i += 2) {
             const t = i / steps;
             const angle = Utils.lerp(startAngle, endAngle, t);
-            const px = x + Math.cos(angle) * radius;
-            const py = y + Math.sin(angle) * radius;
+            const px = x + Math.cos(angle) * radius * 0.85;
+            const py = y + Math.sin(angle) * radius * 0.85;
+            const sz = Utils.lerp(6, 1.5, t);
             this.trailEffects.push({
                 x: px, y: py,
                 color: '#fff',
-                size: Utils.lerp(5, 1, t),
-                maxSize: Utils.lerp(5, 1, t),
-                life: life * 0.7 * (1 - t * 0.5),
-                maxLife: life * 0.7,
+                size: sz,
+                maxSize: sz,
+                life: life * 0.65 * (1 - t * 0.5),
+                maxLife: life * 0.65,
+                glow: true,
+            });
+        }
+        // 外层散射火花（少量随机飞溅，增强视觉丰富度）
+        const sparkCount = Math.min(6, Math.ceil(steps * 0.3));
+        for (let i = 0; i < sparkCount; i++) {
+            const t = Math.random();
+            const angle = Utils.lerp(startAngle, endAngle, t);
+            const sparkR = radius * (1.05 + Math.random() * 0.2);
+            const px = x + Math.cos(angle) * sparkR;
+            const py = y + Math.sin(angle) * sparkR;
+            this.trailEffects.push({
+                x: px, y: py,
+                color: color === '#ffffff' ? '#ffeecc' : '#ffffff',
+                size: 2 + Math.random() * 2,
+                maxSize: 3,
+                life: life * 0.4,
+                maxLife: life * 0.4,
                 glow: true,
             });
         }

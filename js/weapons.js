@@ -273,15 +273,28 @@ class WeaponSystem {
         this.comboCount++;
         const swingDir = this.comboCount % 2 === 0 ? 1 : -1;
 
-        // 刀光特效
+        // 刀光特效（增强版：双层刀光 + 外圈能量弧）
         this.particles.addSlashArc(
             px, py,
             angle - arcWidth / 2 * swingDir,
             angle + arcWidth / 2 * swingDir,
             range,
             this.player.def.color,
-            0.25
+            0.3
         );
+        // 外层淡色能量弧
+        this.particles.addSlashArc(
+            px, py,
+            angle - arcWidth / 2 * swingDir * 0.85,
+            angle + arcWidth / 2 * swingDir * 0.85,
+            range * 1.15,
+            '#ffffff',
+            0.15
+        );
+        // 刀锋尖端闪光
+        const tipX = px + Math.cos(angle) * range;
+        const tipY = py + Math.sin(angle) * range;
+        this.particles.addFlash(tipX, tipY, '#ffffff', 20, 0.1);
 
         // 范围伤害
         let hitCount = 0;
@@ -548,8 +561,15 @@ class WeaponSystem {
                 const textColor = isBackstab ? '#ff44ff' : '#cc66ff';
                 this.particles.addDamageText(enemy.x, enemy.y, damage, isCrit, textColor);
                 if (isBackstab) {
-                    // 背刺闪光
-                    this.particles.addFlash(enemy.x, enemy.y, '#ff44ff', 20, 0.1);
+                    // 背刺闪光 + 毒雾扩散
+                    this.particles.addFlash(enemy.x, enemy.y, '#ff44ff', 25, 0.12);
+                    this.particles.emit(enemy.x, enemy.y, 6, {
+                        colors: ['#ff44ff', '#aa22cc', '#cc66ff'],
+                        speedMin: 2, speedMax: 5,
+                        sizeMin: 2, sizeMax: 4,
+                        lifeMin: 0.2, lifeMax: 0.4,
+                        glow: true,
+                    });
                 }
                 hitCount++;
 
@@ -560,7 +580,7 @@ class WeaponSystem {
             }
         }
 
-        if (hitCount > 0) Utils.shake(2);
+        if (hitCount > 0) Utils.shake(2 + Math.min(hitCount, 3));
     }
 
     // 刺客被动：暗影步瞬移
@@ -632,16 +652,26 @@ class WeaponSystem {
         // 360度锤击冲击波，范围比剑略小但全方位
         const range = (70 + level * 10) * this.player.bonuses.areaMult;
 
-        // 冲击波视觉
+        // 冲击波视觉（增强版：双层冲击波 + 地面裂纹 + 金色能量环）
         this.particles.addShockwave(px, py, '#ffcc44', range, 0.3);
-        this.particles.addFlash(px, py, '#ffdd66', range * 0.5, 0.15);
-        this.particles.emit(px, py, 12, {
-            colors: ['#ffcc44', '#ffdd66', '#ffffff'],
-            speedMin: 2, speedMax: 6,
-            sizeMin: 2, sizeMax: 5,
-            lifeMin: 0.2, lifeMax: 0.5,
+        this.particles.addShockwave(px, py, '#ffffff', range * 0.6, 0.2);
+        this.particles.addFlash(px, py, '#ffdd66', range * 0.6, 0.18);
+        // 向外飞散的金色火花
+        this.particles.emit(px, py, 18, {
+            colors: ['#ffcc44', '#ffdd66', '#ffffff', '#ffaa00'],
+            speedMin: 3, speedMax: 10,
+            sizeMin: 2, sizeMax: 6,
+            lifeMin: 0.25, lifeMax: 0.6,
+            glow: true,
         });
-        Utils.shake(4);
+        // 地面碎石粒子（向外缓慢扩散）
+        this.particles.emit(px, py, 8, {
+            colors: ['#aa8844', '#887744', '#665533'],
+            speedMin: 1, speedMax: 4,
+            sizeMin: 3, sizeMax: 5,
+            lifeMin: 0.4, lifeMax: 0.8,
+        });
+        Utils.shake(5);
 
         for (const enemy of enemies) {
             if (!enemy.alive) continue;
@@ -916,18 +946,26 @@ class WeaponSystem {
 
         // 暴击视觉反馈增强
         if (isCrit) {
-            // 基础暴击闪光
-            this.particles.addFlash(enemy.x, enemy.y, '#ffaa00', 25, 0.12);
-            Utils.shake(2);
+            // 基础暴击闪光 + 星光爆发
+            this.particles.addFlash(enemy.x, enemy.y, '#ffcc00', 30, 0.15);
+            Utils.shake(3);
+            // 径向光芒粒子
+            this.particles.emit(enemy.x, enemy.y, 8, {
+                colors: ['#ffcc00', '#ffee44', '#ffffff'],
+                speedMin: 4, speedMax: 9,
+                sizeMin: 1.5, sizeMax: 3.5,
+                lifeMin: 0.1, lifeMax: 0.25,
+                glow: true,
+            });
             // 爆裂暴击（进阶效果）
             if (this.player.bonuses.critRateBonus > 0.07) {
-                this.particles.explode(enemy.x, enemy.y, ['#ff4444', '#ffaa00', '#ffff44'], 10, 4);
-                this.particles.addShockwave(enemy.x, enemy.y, '#ffaa00', 40, 0.2);
+                this.particles.explode(enemy.x, enemy.y, ['#ff4444', '#ffaa00', '#ffff44', '#ffffff'], 14, 5);
+                this.particles.addShockwave(enemy.x, enemy.y, '#ffcc00', 50, 0.22);
             }
         }
 
-        // 分裂弹
-        if (this.player.bonuses.splitShot && !projectile._hasSplit && projectile.type !== 'split') {
+        // 分裂弹（龙卷风和分裂弹本身不再触发分裂）
+        if (this.player.bonuses.splitShot && !projectile._hasSplit && projectile.type !== 'split' && projectile.type !== 'wind_slash') {
             projectile._hasSplit = true;
             this._triggerSplitShot(enemy.x, enemy.y, damage * 0.4, projectile.color);
         }
@@ -1334,6 +1372,7 @@ class WeaponSystem {
 
     renderProjectiles(ctx, camera, screenW, screenH) {
         const margin = 30;
+        const time = performance.now() / 1000;
         for (const p of this.projectiles) {
             if (!p.alive) continue;
             const sx = p.x - camera.x;
@@ -1346,26 +1385,46 @@ class WeaponSystem {
                     const _sk = skinManager.getEquippedSkin(this.player.def.id);
                     if (_sk && window._skinRenderer.renderProjectile(ctx, _sk, sx, sy, p.radius, p.angle || 0)) continue;
                 }
-                // 火球 — 增强渲染(四层光晕)
-                ctx.globalAlpha = 0.2;
-                ctx.fillStyle = '#ff4400';
+                // 火球 — PC端增强渲染(五层光晕 + 脉冲呼吸 + 扭曲尾焰)
+                const pulse = 1 + Math.sin(time * 12 + p.x * 0.1) * 0.08;
+                const evo = p.evolved;
+                // 最外层散射辉光
+                ctx.globalAlpha = 0.1;
+                ctx.fillStyle = evo ? '#8800ff' : '#ff2200';
                 ctx.beginPath();
-                ctx.arc(sx, sy, p.radius * 2.8, 0, TWO_PI);
+                ctx.arc(sx, sy, p.radius * 3.5 * pulse, 0, TWO_PI);
                 ctx.fill();
-                ctx.globalAlpha = 0.4;
-                ctx.fillStyle = '#ffaa00';
+                // 外层热浪
+                ctx.globalAlpha = 0.2;
+                ctx.fillStyle = evo ? '#aa44ff' : '#ff4400';
+                ctx.beginPath();
+                ctx.arc(sx, sy, p.radius * 2.8 * pulse, 0, TWO_PI);
+                ctx.fill();
+                // 中层火焰
+                ctx.globalAlpha = 0.45;
+                ctx.fillStyle = evo ? '#cc66ff' : '#ffaa00';
                 ctx.beginPath();
                 ctx.arc(sx, sy, p.radius * 1.8, 0, TWO_PI);
                 ctx.fill();
+                // 核心球体
                 ctx.globalAlpha = 1;
-                ctx.fillStyle = '#ff6644';
+                ctx.fillStyle = evo ? '#dd88ff' : '#ff6644';
                 ctx.beginPath();
                 ctx.arc(sx, sy, p.radius, 0, TWO_PI);
                 ctx.fill();
-                ctx.fillStyle = '#ffff88';
+                // 白热核心（呼吸）
+                ctx.fillStyle = evo ? '#ffccff' : '#ffff88';
                 ctx.beginPath();
-                ctx.arc(sx, sy, p.radius * 0.45, 0, TWO_PI);
+                ctx.arc(sx, sy, p.radius * 0.5 * pulse, 0, TWO_PI);
                 ctx.fill();
+                // 尾焰火花粒子（低频发射）
+                if (Math.random() < 0.4) {
+                    this.particles.addTrail(
+                        p.x - Math.cos(p.angle || 0) * p.radius * 1.5 + Utils.rand(-4, 4),
+                        p.y - Math.sin(p.angle || 0) * p.radius * 1.5 + Utils.rand(-4, 4),
+                        evo ? '#cc66ff' : '#ffaa00', p.radius * 0.4, 0.15
+                    );
+                }
                 continue;
             }
 
@@ -1375,28 +1434,46 @@ class WeaponSystem {
                     const _sk = skinManager.getEquippedSkin(this.player.def.id);
                     if (_sk && window._skinRenderer.renderProjectile(ctx, _sk, sx, sy, p.radius, p.angle || 0)) continue;
                 }
-                // 灵魂弹 — 增强渲染(四层幽光)
-                ctx.globalAlpha = 0.15;
+                // 灵魂弹 — PC端增强渲染(五层幽光 + 灵魂脉动 + 幽灵拖尾)
+                const soulPulse = 1 + Math.sin(time * 10 + p.y * 0.1) * 0.1;
+                // 最外层灵魂气场
+                ctx.globalAlpha = 0.08;
+                ctx.fillStyle = '#00ffaa';
+                ctx.beginPath();
+                ctx.arc(sx, sy, p.radius * 3.5 * soulPulse, 0, TWO_PI);
+                ctx.fill();
+                // 外层幽光
+                ctx.globalAlpha = 0.18;
                 ctx.fillStyle = '#22aa88';
                 ctx.beginPath();
-                ctx.arc(sx, sy, p.radius * 2.8, 0, TWO_PI);
+                ctx.arc(sx, sy, p.radius * 2.8 * soulPulse, 0, TWO_PI);
                 ctx.fill();
-                ctx.globalAlpha = 0.4;
+                // 中层魂焰
+                ctx.globalAlpha = 0.45;
                 ctx.fillStyle = '#66eedd';
                 ctx.beginPath();
                 ctx.arc(sx, sy, p.radius * 1.8, 0, TWO_PI);
                 ctx.fill();
+                // 核心
                 ctx.globalAlpha = 1;
                 ctx.fillStyle = '#44ccaa';
                 ctx.beginPath();
                 ctx.arc(sx, sy, p.radius, 0, TWO_PI);
                 ctx.fill();
+                // 灵魂之眼
                 ctx.fillStyle = '#ffffff';
-                ctx.globalAlpha = 0.8;
+                ctx.globalAlpha = 0.85;
                 ctx.beginPath();
-                ctx.arc(sx, sy, p.radius * 0.4, 0, TWO_PI);
+                ctx.arc(sx, sy, p.radius * 0.4 * soulPulse, 0, TWO_PI);
                 ctx.fill();
                 ctx.globalAlpha = 1;
+                // 幽灵粒子拖尾
+                if (Math.random() < 0.35) {
+                    this.particles.addTrail(
+                        p.x + Utils.rand(-5, 5), p.y + Utils.rand(-5, 5),
+                        '#66eedd', p.radius * 0.35, 0.2
+                    );
+                }
                 continue;
             }
 
@@ -1412,24 +1489,38 @@ class WeaponSystem {
                 }
                 ctx.translate(sx, sy);
                 ctx.rotate(p.angle || Math.atan2(p.vy, p.vx));
-                ctx.fillStyle = _arrowColor;
-                // 箭头
+                const evo = p.evolved;
+                // 箭矢外层能量辉光
+                ctx.globalAlpha = 0.2;
+                ctx.fillStyle = evo ? '#ffdd44' : _arrowColor;
                 ctx.beginPath();
-                ctx.moveTo(p.radius * 2.5, 0);
-                ctx.lineTo(p.radius * 0.5, -p.radius * 0.6);
-                ctx.lineTo(p.radius * 0.5, p.radius * 0.6);
+                ctx.ellipse(0, 0, p.radius * 3, p.radius * 1.2, 0, 0, TWO_PI);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+                // 箭头（更锐利）
+                ctx.fillStyle = evo ? '#ffee66' : _arrowColor;
+                ctx.beginPath();
+                ctx.moveTo(p.radius * 3, 0);
+                ctx.lineTo(p.radius * 0.5, -p.radius * 0.7);
+                ctx.lineTo(p.radius * 0.8, 0);
+                ctx.lineTo(p.radius * 0.5, p.radius * 0.7);
                 ctx.closePath();
                 ctx.fill();
-                // 箭身
-                ctx.fillStyle = '#88ffcc';
-                ctx.fillRect(-p.radius * 2, -1, p.radius * 2.5, 2);
-                // 箭羽
-                ctx.fillStyle = '#66ddaa';
+                // 箭身（渐变色带）
+                ctx.fillStyle = evo ? '#ccddaa' : '#88ffcc';
+                ctx.fillRect(-p.radius * 2, -1.2, p.radius * 2.8, 2.4);
+                // 箭身高光
+                ctx.fillStyle = '#ffffff';
+                ctx.globalAlpha = 0.3;
+                ctx.fillRect(-p.radius * 1, -0.6, p.radius * 2, 1.2);
+                ctx.globalAlpha = 1;
+                // 箭羽（更精致）
+                ctx.fillStyle = evo ? '#aacc66' : '#66ddaa';
                 ctx.beginPath();
                 ctx.moveTo(-p.radius * 2, 0);
-                ctx.lineTo(-p.radius * 2.5, -p.radius * 0.5);
+                ctx.lineTo(-p.radius * 2.8, -p.radius * 0.6);
                 ctx.lineTo(-p.radius * 1.5, 0);
-                ctx.lineTo(-p.radius * 2.5, p.radius * 0.5);
+                ctx.lineTo(-p.radius * 2.8, p.radius * 0.6);
                 ctx.closePath();
                 ctx.fill();
             } else if (p.type === 'wind_slash') {

@@ -170,8 +170,8 @@ const UpgradePool = {
         { id: 'allstat2', name: '超凡入圣', desc: '全属性+15%，暴击率+5%，护甲+4', icon: '✨', weight: 1, rarity: 'legendary', maxCount: 1, requires: 'allstat1', apply(p) { p.bonuses.attackMult += 0.15; p.bonuses.attackSpeedMult += 0.15; p.bonuses.moveSpeedMult += 0.15; p.bonuses.critRateBonus += 0.05; p.bonuses.armorBonus += 4; } },
 
         // === 新增·投射物数量 ===
-        { id: 'proj1', name: '额外弹幕', desc: '额外投射物+1', icon: '🌟', weight: 3, rarity: 'epic', maxCount: 1, classBonus: ['mage', 'archer', 'swordsman'], irrelevantFor: ['paladin', 'assassin'], apply(p) { p.bonuses.projectileBonus += 1; } },
-        { id: 'proj2', name: '弹幕风暴', desc: '额外投射物+1', icon: '💥', weight: 2, rarity: 'legendary', maxCount: 1, requires: 'proj1', classBonus: ['mage', 'archer', 'swordsman'], irrelevantFor: ['paladin', 'assassin'], apply(p) { p.bonuses.projectileBonus += 1; } },
+        { id: 'proj1', name: '额外弹幕', desc: '额外投射物+1', icon: '🌟', weight: 3, rarity: 'epic', maxCount: 1, classBonus: ['mage', 'archer', 'swordsman'], irrelevantFor: ['paladin', 'assassin', 'necromancer'], apply(p) { p.bonuses.projectileBonus += 1; } },
+        { id: 'proj2', name: '弹幕风暴', desc: '额外投射物+1', icon: '💥', weight: 2, rarity: 'legendary', maxCount: 1, requires: 'proj1', classBonus: ['mage', 'archer', 'swordsman'], irrelevantFor: ['paladin', 'assassin', 'necromancer'], apply(p) { p.bonuses.projectileBonus += 1; } },
     ],
 
     // 武器进化定义（满级后可进化）
