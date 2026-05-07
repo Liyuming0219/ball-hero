@@ -402,78 +402,70 @@ class UISystem {
             ctx.globalAlpha = 1;
 
             // ── 信息区：名称 / 标签 / 描述 / 被动 ──
-            // 所有间距基于实际渲染字号，而非固定 *S，避免移动端字号放大后文字重叠
+            // 使用百分比分配信息区空间，避免字号变大时文字叠加
             const textCX = cx + cardW / 2;
             const infoH = cardH - ballZoneH;  // 信息区总高度
-            const pad = Math.max(4, 3 * S);   // 行间距
+            const infoBottom = cy + cardH;     // 信息区底部
 
-            // 预计算各行实际字号（与 _font 逻辑一致）
-            const _actualSize = (sz) => {
-                const mobileMult = this.isMobile ? 1.15 : 1;
-                const s = Math.round(sz * S * mobileMult * 10) / 10;
-                const minSize = this.isSmallScreen ? 14 : 10;
-                return Math.max(s, minSize);
-            };
-            const nameFs = _actualSize(16);
-            const tagFs = _actualSize(11);
-            const descFs = _actualSize(12);
-            const passiveTitleFs = _actualSize(11);
-            const passiveDescFs = _actualSize(10);
-            const descLineH = descFs * 1.25;
-            const passiveLineH = passiveDescFs * 1.2;
+            // 将信息区分为5个槽位，按比例分配高度
+            // 名称(15%) | 标签(12%) | 描述(32%) | 分隔(5%) | 被动标题(14%) | 被动描述(22%)
+            const slotNameY = infoTop + infoH * 0.12;
+            const slotTagY = infoTop + infoH * 0.25;
+            const slotDescY = infoTop + infoH * 0.37;
+            const slotSepY = infoTop + infoH * 0.60;
+            const slotPassiveTitleY = infoTop + infoH * 0.67;
+            const slotPassiveDescY = infoTop + infoH * 0.79;
 
-            // 从 infoTop 开始按实际字号逐项排布
-            let curY = infoTop + nameFs + pad;
+            // 描述区域可用行高（基于剩余空间计算）
+            const descAvailH = slotSepY - slotDescY;
+            const passiveAvailH = infoBottom - slotPassiveDescY - infoH * 0.04;
+            const descLineH = Math.min(descAvailH / 2, 18 * S);
+            const passiveLineH = Math.min(passiveAvailH / 2, 16 * S);
 
             // 角色名
             ctx.font = this._font('bold', 16);
             ctx.textAlign = 'center';
             ctx.fillStyle = 'rgba(0,0,0,0.5)';
-            ctx.fillText(def.name, textCX + 1, curY + 1);
+            ctx.fillText(def.name, textCX + 1, slotNameY + 1);
             ctx.fillStyle = '#ffffff';
-            ctx.fillText(def.name, textCX, curY);
+            ctx.fillText(def.name, textCX, slotNameY);
 
             // 属性标签
-            curY += tagFs + pad;
             ctx.font = this._font(null, 11);
             ctx.fillStyle = 'rgba(0,0,0,0.35)';
             const tags = this._getCharTags(def);
-            ctx.fillText(tags, textCX + 0.5, curY + 0.5);
+            ctx.fillText(tags, textCX + 0.5, slotTagY + 0.5);
             ctx.fillStyle = 'rgba(255,255,255,0.75)';
-            ctx.fillText(tags, textCX, curY);
+            ctx.fillText(tags, textCX, slotTagY);
 
             // 描述（最多2行）
-            curY += descFs * 0.6 + pad;
             ctx.font = this._font(null, 12);
             ctx.fillStyle = 'rgba(0,0,0,0.4)';
-            this._wrapText(ctx, def.desc, textCX + 0.5, curY + 0.5, cardW - 16 * S, descLineH, 2);
+            this._wrapText(ctx, def.desc, textCX + 0.5, slotDescY + 0.5, cardW - 16 * S, descLineH, 2);
             ctx.fillStyle = 'rgba(255,255,255,0.9)';
-            const descEndY = this._wrapText(ctx, def.desc, textCX, curY, cardW - 16 * S, descLineH, 2);
+            this._wrapText(ctx, def.desc, textCX, slotDescY, cardW - 16 * S, descLineH, 2);
 
             // 分隔线
-            const sepY = descEndY + pad + 2;
             ctx.strokeStyle = 'rgba(255,255,255,0.12)';
             ctx.lineWidth = 1;
             ctx.beginPath();
-            ctx.moveTo(cx + 14 * S, sepY);
-            ctx.lineTo(cx + cardW - 14 * S, sepY);
+            ctx.moveTo(cx + 14 * S, slotSepY);
+            ctx.lineTo(cx + cardW - 14 * S, slotSepY);
             ctx.stroke();
 
             // 被动标题
-            curY = sepY + passiveTitleFs + pad;
             ctx.font = this._font('bold', 11);
             ctx.fillStyle = 'rgba(0,0,0,0.4)';
-            ctx.fillText('被动: ' + def.passive.name, textCX + 0.5, curY + 0.5);
+            ctx.fillText('被动: ' + def.passive.name, textCX + 0.5, slotPassiveTitleY + 0.5);
             ctx.fillStyle = '#feca57';
-            ctx.fillText('被动: ' + def.passive.name, textCX, curY);
+            ctx.fillText('被动: ' + def.passive.name, textCX, slotPassiveTitleY);
 
             // 被动描述（最多2行）
-            curY += passiveDescFs * 0.5 + pad;
             ctx.font = this._font(null, 10);
             ctx.fillStyle = 'rgba(0,0,0,0.35)';
-            this._wrapText(ctx, def.passive.desc, textCX + 0.5, curY + 0.5, cardW - 16 * S, passiveLineH, 2);
+            this._wrapText(ctx, def.passive.desc, textCX + 0.5, slotPassiveDescY + 0.5, cardW - 16 * S, passiveLineH, 2);
             ctx.fillStyle = 'rgba(254,202,87,0.85)';
-            this._wrapText(ctx, def.passive.desc, textCX, curY, cardW - 16 * S, passiveLineH, 2);
+            this._wrapText(ctx, def.passive.desc, textCX, slotPassiveDescY, cardW - 16 * S, passiveLineH, 2);
 
             // 关闭卡片裁剪
             ctx.restore();
