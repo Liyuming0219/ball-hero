@@ -476,68 +476,77 @@ class UISystem {
             }
         }
 
-        // === 金币显示（按钮区域上方） ===
-        const gold = (typeof MetaProgress !== 'undefined') ? MetaProgress.data.gold : 0;
-        ctx.font = this._font('bold', 16);
+        // === 返回按钮（左上角） ===
+        const backW = Math.round(90 * S);
+        const backH = Math.round(34 * S);
+        const backX = Math.round(16 * S);
+        const backBtnY = Math.round(16 * S);
+        const backHover = this.mouseX >= backX && this.mouseX <= backX + backW &&
+                          this.mouseY >= backBtnY && this.mouseY <= backBtnY + backH;
+        ctx.fillStyle = backHover ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)';
+        ctx.strokeStyle = backHover ? '#ffffff' : 'rgba(255,255,255,0.25)';
+        ctx.lineWidth = 1.5;
+        this._roundRect(ctx, backX, backBtnY, backW, backH, 17 * S);
+        ctx.fill();
+        this._roundRect(ctx, backX, backBtnY, backW, backH, 17 * S);
+        ctx.stroke();
+        ctx.font = this._font('bold', 13);
+        ctx.fillStyle = backHover ? '#fff' : '#8899aa';
         ctx.textAlign = 'center';
-        ctx.fillStyle = '#feca57';
-        ctx.fillText(`💰 ${gold} 金币`, W / 2, btnAreaY - 14 * S);
+        ctx.textBaseline = 'middle';
+        ctx.fillText('← 返回', backX + backW / 2, backBtnY + backH / 2);
+        ctx.textBaseline = 'alphabetic';
 
-        // === 按钮区域：开始战斗 + 每日挑战 + 天赋商店 ===
-        const btnW = Math.round(150 * S);
-        const btnH = Math.round(50 * S);
-        const btnGap = Math.round(16 * S);
-        const totalBtnW = btnW * 3 + btnGap * 2;
+        // === 按钮区域：开始战斗 + 每日挑战 + 天赋商店 + 皮肤商店（4个并排） ===
+        const btnCount = 4;
+        const btnW = Math.min(Math.round(140 * S), Math.floor((W - 80 * S) / btnCount - 12 * S));
+        const btnH = Math.round(48 * S);
+        const btnGap = Math.round(12 * S);
+        const totalBtnW = btnW * btnCount + btnGap * (btnCount - 1);
         const btnStartX = (W - totalBtnW) / 2;
         const btnY = btnAreaY;
 
-        // --- 开始战斗按钮（与封面"开始游戏"同款渐变） ---
+        // --- 开始战斗按钮 ---
         const startBtnX = btnStartX;
         const startHover = this.mouseX >= startBtnX && this.mouseX <= startBtnX + btnW && this.mouseY >= btnY && this.mouseY <= btnY + btnH;
 
+        ctx.save();
         const startGrad = ctx.createLinearGradient(startBtnX, btnY, startBtnX + btnW, btnY + btnH);
         startGrad.addColorStop(0, startHover ? '#66eebb' : '#4ecdc4');
         startGrad.addColorStop(1, startHover ? '#45d9a8' : '#45b7d1');
         ctx.fillStyle = startGrad;
-        this._roundRect(ctx, startBtnX, btnY, btnW, btnH, 25 * S);
+        if (startHover) { ctx.shadowColor = '#4ecdc4'; ctx.shadowBlur = 15 * S; }
+        this._roundRect(ctx, startBtnX, btnY, btnW, btnH, 24 * S);
         ctx.fill();
+        ctx.restore();
 
-        if (startHover) {
-            ctx.shadowColor = '#4ecdc4';
-            ctx.shadowBlur = 15;
-            this._roundRect(ctx, startBtnX, btnY, btnW, btnH, 25 * S);
-            ctx.fill();
-            ctx.shadowBlur = 0;
-        }
-
-        ctx.font = this._font('bold', 18);
+        ctx.font = this._font('bold', 16);
         ctx.fillStyle = '#fff';
         ctx.textAlign = 'center';
-        ctx.fillText('开始战斗', startBtnX + btnW / 2, btnY + btnH / 2 + 1);
+        ctx.textBaseline = 'middle';
+        ctx.fillText('开始战斗', startBtnX + btnW / 2, btnY + btnH / 2);
+        ctx.textBaseline = 'alphabetic';
 
-        // --- 每日挑战按钮（橙色渐变风格） ---
-        const dailyBtnX = startBtnX + btnW + btnGap;
+        // --- 每日挑战按钮 ---
+        const dailyBtnX = btnStartX + (btnW + btnGap);
         const dailyHover = this.mouseX >= dailyBtnX && this.mouseX <= dailyBtnX + btnW && this.mouseY >= btnY && this.mouseY <= btnY + btnH;
 
+        ctx.save();
         const dailyGrad = ctx.createLinearGradient(dailyBtnX, btnY, dailyBtnX + btnW, btnY + btnH);
         dailyGrad.addColorStop(0, dailyHover ? '#ffaa44' : '#ff9f43');
         dailyGrad.addColorStop(1, dailyHover ? '#ff7733' : '#ee5a24');
         ctx.fillStyle = dailyGrad;
-        this._roundRect(ctx, dailyBtnX, btnY, btnW, btnH, 25 * S);
+        if (dailyHover) { ctx.shadowColor = '#ff9f43'; ctx.shadowBlur = 15 * S; }
+        this._roundRect(ctx, dailyBtnX, btnY, btnW, btnH, 24 * S);
         ctx.fill();
+        ctx.restore();
 
-        if (dailyHover) {
-            ctx.shadowColor = '#ff9f43';
-            ctx.shadowBlur = 15;
-            this._roundRect(ctx, dailyBtnX, btnY, btnW, btnH, 25 * S);
-            ctx.fill();
-            ctx.shadowBlur = 0;
-        }
-
-        ctx.font = this._font('bold', 18);
+        ctx.font = this._font('bold', 16);
         ctx.fillStyle = '#fff';
         ctx.textAlign = 'center';
-        ctx.fillText('每日挑战', dailyBtnX + btnW / 2, btnY + btnH / 2 + 1);
+        ctx.textBaseline = 'middle';
+        ctx.fillText('每日挑战', dailyBtnX + btnW / 2, btnY + btnH / 2);
+        ctx.textBaseline = 'alphabetic';
 
         // 每日挑战信息提示（hover时显示今日角色和修饰）
         if (dailyHover && typeof DailyLeaderboard !== 'undefined') {
@@ -545,82 +554,63 @@ class UISystem {
             const charId = DailyLeaderboard.getDailyCharacter(seed);
             const charDef = CharacterDefs[charId];
             const mods = DailyLeaderboard.getDailyModifiers(seed);
-            const tipY = btnY + btnH + 8 * S;
-            ctx.font = this._font(null, 12);
+            const tipY = btnY + btnH + 10 * S;
+            ctx.font = this._font(null, 11);
             ctx.fillStyle = '#ffcc88';
             ctx.textAlign = 'center';
             const modText = mods.map(m => m.name).join(' + ');
-            ctx.fillText(`今日角色: ${charDef ? charDef.name : charId}  |  ${modText}`, W / 2, tipY);
-            const played = DailyLeaderboard.hasPlayedToday();
-            if (played) {
-                ctx.fillStyle = 'rgba(255,200,100,0.5)';
-                ctx.fillText('(今日已挑战过，可继续刷新记录)', W / 2, tipY + 16 * S);
-            }
+            ctx.fillText(`今日: ${charDef ? charDef.name : charId} | ${modText}`, W / 2, tipY);
         }
 
-        // --- 天赋商店按钮（描边透明风格） ---
-        const shopBtnX = dailyBtnX + btnW + btnGap;
+        // --- 天赋商店按钮 ---
+        const shopBtnX = btnStartX + (btnW + btnGap) * 2;
         const shopHover = this.mouseX >= shopBtnX && this.mouseX <= shopBtnX + btnW && this.mouseY >= btnY && this.mouseY <= btnY + btnH;
 
         ctx.fillStyle = shopHover ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.06)';
         ctx.strokeStyle = shopHover ? '#feca57' : 'rgba(255,255,255,0.3)';
         ctx.lineWidth = 2;
-        this._roundRect(ctx, shopBtnX, btnY, btnW, btnH, 25 * S);
+        this._roundRect(ctx, shopBtnX, btnY, btnW, btnH, 24 * S);
         ctx.fill();
-        this._roundRect(ctx, shopBtnX, btnY, btnW, btnH, 25 * S);
+        this._roundRect(ctx, shopBtnX, btnY, btnW, btnH, 24 * S);
         ctx.stroke();
 
-        ctx.font = this._font('bold', 18);
+        ctx.font = this._font('bold', 16);
         ctx.fillStyle = shopHover ? '#feca57' : 'rgba(255,255,255,0.7)';
         ctx.textAlign = 'center';
-        ctx.fillText('天赋商店', shopBtnX + btnW / 2, btnY + btnH / 2 + 1);
+        ctx.textBaseline = 'middle';
+        ctx.fillText('天赋商店', shopBtnX + btnW / 2, btnY + btnH / 2);
+        ctx.textBaseline = 'alphabetic';
 
-        // --- 皮肤商店按钮（紫色渐变，新增） ---
-        const skinBtnW = Math.round(130 * S);
-        const skinBtnH = Math.round(38 * S);
-        const skinBtnX = W / 2 - skinBtnW / 2;
-        const skinBtnY = btnY + btnH + Math.round(12 * S);
-        const skinHover = this.mouseX >= skinBtnX && this.mouseX <= skinBtnX + skinBtnW &&
-                          this.mouseY >= skinBtnY && this.mouseY <= skinBtnY + skinBtnH;
-        const skinGrad = ctx.createLinearGradient(skinBtnX, skinBtnY, skinBtnX + skinBtnW, skinBtnY + skinBtnH);
+        // --- 皮肤商店按钮（紫色渐变） ---
+        const skinBtnX = btnStartX + (btnW + btnGap) * 3;
+        const skinHover = this.mouseX >= skinBtnX && this.mouseX <= skinBtnX + btnW && this.mouseY >= btnY && this.mouseY <= btnY + btnH;
+
+        ctx.save();
+        const skinGrad = ctx.createLinearGradient(skinBtnX, btnY, skinBtnX + btnW, btnY + btnH);
         skinGrad.addColorStop(0, skinHover ? '#bb66ff' : '#9944ee');
         skinGrad.addColorStop(1, skinHover ? '#ff66aa' : '#dd44aa');
         ctx.fillStyle = skinGrad;
-        this._roundRect(ctx, skinBtnX, skinBtnY, skinBtnW, skinBtnH, 19 * S);
+        if (skinHover) { ctx.shadowColor = '#aa44ff'; ctx.shadowBlur = 15 * S; }
+        this._roundRect(ctx, skinBtnX, btnY, btnW, btnH, 24 * S);
         ctx.fill();
-        ctx.font = this._font('bold', 15);
+        ctx.restore();
+
+        ctx.font = this._font('bold', 16);
         ctx.fillStyle = '#fff';
         ctx.textAlign = 'center';
-        ctx.fillText('✨ 皮肤商店', skinBtnX + skinBtnW / 2, skinBtnY + skinBtnH / 2 + 1);
-
-        // 返回按钮（左下角）
-        const backW = Math.round(100 * S);
-        const backH = Math.round(38 * S);
-        const backX = Math.round(20 * S);
-        const backY = btnY + (btnH - backH) / 2;
-        const backHover = this.mouseX >= backX && this.mouseX <= backX + backW &&
-                          this.mouseY >= backY && this.mouseY <= backY + backH;
-        ctx.fillStyle = backHover ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)';
-        ctx.strokeStyle = backHover ? '#ffffff' : 'rgba(255,255,255,0.25)';
-        ctx.lineWidth = 1.5;
-        this._roundRect(ctx, backX, backY, backW, backH, 19 * S);
-        ctx.fill();
-        this._roundRect(ctx, backX, backY, backW, backH, 19 * S);
-        ctx.stroke();
-        ctx.font = this._font('bold', 14);
-        ctx.fillStyle = backHover ? '#fff' : '#8899aa';
-        ctx.textAlign = 'center';
-        ctx.fillText('← 返回', backX + backW / 2, backY + backH / 2 + 1);
+        ctx.textBaseline = 'middle';
+        ctx.fillText('皮肤商店', skinBtnX + btnW / 2, btnY + btnH / 2);
+        ctx.textBaseline = 'alphabetic';
 
         // 操作提示（区分PC和触屏）
-        ctx.font = this._font(null, 13);
-        ctx.fillStyle = 'rgba(255,255,255,0.4)';
+        ctx.font = this._font(null, 12);
+        ctx.fillStyle = 'rgba(255,255,255,0.35)';
         ctx.textAlign = 'center';
         const isMobile = ('ontouchstart' in window) || navigator.maxTouchPoints > 0;
         const hintText = isMobile
             ? '触屏拖拽移动 · 自动攻击 · 双指点击暂停'
-            : 'WASD / 方向键移动 · 自动攻击 · 升级后选择强化';
-        ctx.fillText(hintText, W / 2, btnY + btnH + 46 * S);
+            : 'WASD/方向键移动 · 自动攻击 · 升级后选择强化';
+        ctx.fillText(hintText, W / 2, btnY + btnH + 24 * S);
 
         if (backHover && this.consumeClick()) {
             this.clicked = false;
@@ -816,16 +806,18 @@ class UISystem {
 
             ctx.font = this._font('bold', 14);
             ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
             if (isMax) {
                 ctx.fillStyle = '#88ffaa';
-                ctx.fillText('已满级', cx + cardW / 2, buyBtnY + buyBtnH / 2 + 1);
+                ctx.fillText('已满级', cx + cardW / 2, buyBtnY + buyBtnH / 2);
             } else if (canBuy) {
                 ctx.fillStyle = '#88ff44';
-                ctx.fillText(`升级 (${cost}💰)`, cx + cardW / 2, buyBtnY + buyBtnH / 2 + 1);
+                ctx.fillText(`升级 (${cost}💰)`, cx + cardW / 2, buyBtnY + buyBtnH / 2);
             } else {
                 ctx.fillStyle = '#884433';
-                ctx.fillText(`需要 ${cost}💰`, cx + cardW / 2, buyBtnY + buyBtnH / 2 + 1);
+                ctx.fillText(`需要 ${cost}💰`, cx + cardW / 2, buyBtnY + buyBtnH / 2);
             }
+            ctx.textBaseline = 'alphabetic';
 
             // 点击购买
             if (buyHover && canBuy && this.consumeClick()) {
@@ -833,38 +825,37 @@ class UISystem {
             }
         }
 
-        // 返回按钮
-        const backW = Math.round(140 * S);
-        const backH = Math.round(44 * S);
-        const backX = (W - backW) / 2;
-        const backY = Math.min(H - 60 * S, cardY + rows * (cardH + gap) + 20 * S);
+        // 返回按钮（左上角）
+        const backW = Math.round(90 * S);
+        const backH = Math.round(34 * S);
+        const backX = Math.round(16 * S);
+        const backY = Math.round(16 * S);
         const backHover = this.mouseX >= backX && this.mouseX <= backX + backW && this.mouseY >= backY && this.mouseY <= backY + backH;
 
-        ctx.save();
-        ctx.fillStyle = backHover ? '#443333' : '#332222';
-        ctx.shadowColor = '#ff6644';
-        ctx.shadowBlur = backHover ? 12 * S : 4 * S;
-        this._roundRect(ctx, backX, backY, backW, backH, 22 * S);
-        ctx.fill();
-        ctx.strokeStyle = '#ff6644';
+        ctx.fillStyle = backHover ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)';
+        ctx.strokeStyle = backHover ? '#fff' : 'rgba(255,255,255,0.25)';
         ctx.lineWidth = 1.5;
-        this._roundRect(ctx, backX, backY, backW, backH, 22 * S);
+        this._roundRect(ctx, backX, backY, backW, backH, 17 * S);
+        ctx.fill();
+        this._roundRect(ctx, backX, backY, backW, backH, 17 * S);
         ctx.stroke();
-        ctx.restore();
 
-        ctx.font = this._font('bold', 17);
-        ctx.fillStyle = '#fff';
+        ctx.font = this._font('bold', 13);
+        ctx.fillStyle = backHover ? '#fff' : '#8899aa';
         ctx.textAlign = 'center';
-        ctx.fillText('← 返回', W / 2, backY + backH / 2 + 1);
+        ctx.textBaseline = 'middle';
+        ctx.fillText('← 返回', backX + backW / 2, backY + backH / 2);
+        ctx.textBaseline = 'alphabetic';
 
         if (backHover && this.consumeClick()) {
             this._shopOpen = false;
         }
 
         // 提示
-        ctx.font = this._font(null, 12);
+        ctx.font = this._font(null, 11);
         ctx.fillStyle = '#555566';
-        ctx.fillText('击杀敌人获得金币，永久升级在每局开始时自动生效', W / 2, backY + backH + 20 * S);
+        ctx.textAlign = 'center';
+        ctx.fillText('击杀敌人获得金币，永久升级在每局开始时自动生效', W / 2, H - 20 * S);
 
         this.clicked = false;
         return null;
@@ -928,8 +919,10 @@ class UISystem {
 
             ctx.font = this._font('bold', 11);
             ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
             ctx.fillStyle = isActive ? '#fff' : (tabHover ? '#ddd' : '#999');
-            ctx.fillText(`${series.icon} ${series.name}`, tx + tabW / 2, tabY + tabH / 2 + 1);
+            ctx.fillText(`${series.icon} ${series.name}`, tx + tabW / 2, tabY + tabH / 2);
+            ctx.textBaseline = 'alphabetic';
 
             if (tabHover && this.consumeClick()) {
                 this._skinShopTab = i;
@@ -1011,8 +1004,10 @@ class UISystem {
                     this._roundRect(ctx, btnX, btnY2, btnW2, btnH2, 10 * S); ctx.fill();
                     ctx.font = this._font('bold', 11);
                     ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
                     ctx.fillStyle = isEquipped ? '#44ff88' : (equipBtnHover ? '#88ddff' : '#88cc88');
-                    ctx.fillText(isEquipped ? '已装备' : '装备', btnX + btnW2 / 2, btnY2 + btnH2 / 2 + 1);
+                    ctx.fillText(isEquipped ? '已装备' : '装备', btnX + btnW2 / 2, btnY2 + btnH2 / 2);
+                    ctx.textBaseline = 'alphabetic';
                     if (equipBtnHover && this.consumeClick()) {
                         if (isEquipped) { skinManager.unequipAll(); }
                         else { skinManager.equipSkin('swordsman', skin.id); }
@@ -1025,8 +1020,10 @@ class UISystem {
                     this._roundRect(ctx, btnX, btnY2, btnW2, btnH2, 10 * S); ctx.fill();
                     ctx.font = this._font('bold', 11);
                     ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
                     ctx.fillStyle = canBuy ? '#feca57' : '#666';
-                    ctx.fillText(`💰${skin.price}`, btnX + btnW2 / 2, btnY2 + btnH2 / 2 + 1);
+                    ctx.fillText(`💰${skin.price}`, btnX + btnW2 / 2, btnY2 + btnH2 / 2);
+                    ctx.textBaseline = 'alphabetic';
                     if (canBuy && buyBtnHover && this.consumeClick()) {
                         skinManager.buySkin(skin.id);
                     }
@@ -1080,8 +1077,10 @@ class UISystem {
                     ctx.lineWidth = 1;
                     this._roundRect(ctx, btnX, btnY2, btnW2, btnH2, 12 * S); ctx.stroke();
                     ctx.font = this._font('bold', 12);
+                    ctx.textBaseline = 'middle';
                     ctx.fillStyle = isEquipped ? '#44ff88' : (equipBtnHover ? '#88ddff' : '#88cc88');
-                    ctx.fillText(isEquipped ? '✓ 已装备' : '装备', cx + cardW / 2, btnY2 + btnH2 / 2 + 1);
+                    ctx.fillText(isEquipped ? '✓ 已装备' : '装备', cx + cardW / 2, btnY2 + btnH2 / 2);
+                    ctx.textBaseline = 'alphabetic';
                     if (equipBtnHover && this.consumeClick()) {
                         if (isEquipped) { skinManager.unequipAll(); }
                         else { skinManager.equipSkin('swordsman', skin.id); }
@@ -1096,8 +1095,10 @@ class UISystem {
                     ctx.lineWidth = 1;
                     this._roundRect(ctx, btnX, btnY2, btnW2, btnH2, 12 * S); ctx.stroke();
                     ctx.font = this._font('bold', 12);
+                    ctx.textBaseline = 'middle';
                     ctx.fillStyle = canBuy ? '#feca57' : '#666';
-                    ctx.fillText(`💰 ${skin.price}`, cx + cardW / 2, btnY2 + btnH2 / 2 + 1);
+                    ctx.fillText(`💰 ${skin.price}`, cx + cardW / 2, btnY2 + btnH2 / 2);
+                    ctx.textBaseline = 'alphabetic';
                     if (canBuy && btnHover2 && this.consumeClick()) {
                         skinManager.buySkin(skin.id);
                     }
@@ -1105,24 +1106,26 @@ class UISystem {
             }
         }
 
-        // 返回按钮
-        const backW = Math.round(120 * S);
-        const backH = Math.round(36 * S);
-        const backX = (W - backW) / 2;
-        const backY = H - 50 * S;
+        // 返回按钮（左上角）
+        const backW = Math.round(90 * S);
+        const backH = Math.round(34 * S);
+        const backX = Math.round(16 * S);
+        const backY = Math.round(16 * S);
         const backHover = this.mouseX >= backX && this.mouseX <= backX + backW &&
                           this.mouseY >= backY && this.mouseY <= backY + backH;
         ctx.fillStyle = backHover ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)';
-        ctx.strokeStyle = backHover ? '#fff' : 'rgba(255,255,255,0.3)';
+        ctx.strokeStyle = backHover ? '#fff' : 'rgba(255,255,255,0.25)';
         ctx.lineWidth = 1.5;
-        this._roundRect(ctx, backX, backY, backW, backH, 18 * S);
+        this._roundRect(ctx, backX, backY, backW, backH, 17 * S);
         ctx.fill();
-        this._roundRect(ctx, backX, backY, backW, backH, 18 * S);
+        this._roundRect(ctx, backX, backY, backW, backH, 17 * S);
         ctx.stroke();
-        ctx.font = this._font('bold', 14);
-        ctx.fillStyle = backHover ? '#fff' : '#aaa';
+        ctx.font = this._font('bold', 13);
+        ctx.fillStyle = backHover ? '#fff' : '#8899aa';
         ctx.textAlign = 'center';
-        ctx.fillText('← 返回', backX + backW / 2, backY + backH / 2 + 1);
+        ctx.textBaseline = 'middle';
+        ctx.fillText('← 返回', backX + backW / 2, backY + backH / 2);
+        ctx.textBaseline = 'alphabetic';
 
         if (backHover && this.consumeClick()) {
             this._skinShopOpen = false;
@@ -1169,7 +1172,9 @@ class UISystem {
             ctx.font = this._font('bold', 13);
             ctx.fillStyle = '#fff';
             ctx.textAlign = 'center';
-            ctx.fillText('每日挑战', tagX + tagW / 2, tagY + tagH / 2 + 1);
+            ctx.textBaseline = 'middle';
+            ctx.fillText('每日挑战', tagX + tagW / 2, tagY + tagH / 2);
+            ctx.textBaseline = 'alphabetic';
         }
 
         // ---- 左上区域：血条 + 经验条 + 等级信息 ----
@@ -1205,12 +1210,14 @@ class UISystem {
         // HP文字
         ctx.font = this._font('bold', 13);
         ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
         ctx.strokeStyle = '#000';
         ctx.lineWidth = 3;
         const hpText = `${Math.floor(player.stats.hp)} / ${player.getMaxHp()}`;
-        ctx.strokeText(hpText, hpX + hpBarW / 2, hpY + hpBarH / 2 + 1);
+        ctx.strokeText(hpText, hpX + hpBarW / 2, hpY + hpBarH / 2);
         ctx.fillStyle = '#fff';
-        ctx.fillText(hpText, hpX + hpBarW / 2, hpY + hpBarH / 2 + 1);
+        ctx.fillText(hpText, hpX + hpBarW / 2, hpY + hpBarH / 2);
+        ctx.textBaseline = 'alphabetic';
 
         // 护盾条（在血条下方，仅有护盾时显示）
         let shieldBarOffset = 0;
@@ -1237,8 +1244,10 @@ class UISystem {
             ctx.strokeStyle = '#000';
             ctx.lineWidth = 2;
             const shieldText = `🛡 ${Math.floor(player.shield)} / ${player.bonuses.shieldMax}`;
-            ctx.strokeText(shieldText, hpX + hpBarW / 2, shieldY + shieldBarH / 2 + 1);
-            ctx.fillText(shieldText, hpX + hpBarW / 2, shieldY + shieldBarH / 2 + 1);
+            ctx.textBaseline = 'middle';
+            ctx.strokeText(shieldText, hpX + hpBarW / 2, shieldY + shieldBarH / 2);
+            ctx.fillText(shieldText, hpX + hpBarW / 2, shieldY + shieldBarH / 2);
+            ctx.textBaseline = 'alphabetic';
         }
 
         // 经验条
@@ -1910,7 +1919,9 @@ class UISystem {
         ctx.font = this._font('bold', 22);
         ctx.fillStyle = '#fff';
         ctx.textAlign = 'center';
-        ctx.fillText('再来一次', W / 2, btnY + btnH / 2 + 1);
+        ctx.textBaseline = 'middle';
+        ctx.fillText('再来一次', W / 2, btnY + btnH / 2);
+        ctx.textBaseline = 'alphabetic';
 
         if (btnHover && this.consumeClick()) {
             return true;
@@ -2037,7 +2048,9 @@ class UISystem {
         ctx.font = this._font('bold', 22);
         ctx.fillStyle = '#fff';
         ctx.textAlign = 'center';
-        ctx.fillText('返回主菜单', W / 2, btnY + btnH / 2 + 1);
+        ctx.textBaseline = 'middle';
+        ctx.fillText('返回主菜单', W / 2, btnY + btnH / 2);
+        ctx.textBaseline = 'alphabetic';
 
         if (btnHover && this.consumeClick()) {
             return true;
@@ -2327,8 +2340,10 @@ class UISystem {
 
             ctx.font = this._font('bold', 16);
             ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
             ctx.fillStyle = '#fff';
-            ctx.fillText(btn.label, bx + btnW / 2, btnY + btnH / 2 + 1);
+            ctx.fillText(btn.label, bx + btnW / 2, btnY + btnH / 2);
+            ctx.textBaseline = 'alphabetic';
 
             if (isHover && this.consumeClick()) {
                 result = btn.action;
@@ -2982,7 +2997,9 @@ _roundRect(ctx, x, y, w, h, r) {
         ctx.font = this._font('bold', 22);
         ctx.fillStyle = '#ffffff';
         ctx.textAlign = 'center';
-        ctx.fillText('\u5f00\u59cb\u6e38\u620f', W / 2, startBtnY + btnH / 2 + 1);
+        ctx.textBaseline = 'middle';
+        ctx.fillText('\u5f00\u59cb\u6e38\u620f', W / 2, startBtnY + btnH / 2);
+        ctx.textBaseline = 'alphabetic';
 
         // 游戏设置按钮
         const setBtnY = startBtnY + btnH + btnGap;
@@ -3000,7 +3017,9 @@ _roundRect(ctx, x, y, w, h, r) {
 
         ctx.font = this._font('bold', 20);
         ctx.fillStyle = setHover ? '#ddeeff' : '#8899aa';
-        ctx.fillText('\u6e38\u620f\u8bbe\u7f6e', W / 2, setBtnY + btnH / 2 + 1);
+        ctx.textBaseline = 'middle';
+        ctx.fillText('\u6e38\u620f\u8bbe\u7f6e', W / 2, setBtnY + btnH / 2);
+        ctx.textBaseline = 'alphabetic';
 
         // ── 底部装饰线 + 版本号 ──
         ctx.strokeStyle = 'rgba(100,140,180,0.15)';
@@ -3220,8 +3239,10 @@ _roundRect(ctx, x, y, w, h, r) {
             }
             ctx.font = this._font('bold', 12);
             ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
             ctx.fillStyle = isActive ? '#222' : '#aabbcc';
-            ctx.fillText(diff.label, diffStartX + diffBtnW / 2, dBtnY + diffBtnH / 2 + 1);
+            ctx.fillText(diff.label, diffStartX + diffBtnW / 2, dBtnY + diffBtnH / 2);
+            ctx.textBaseline = 'alphabetic';
             if (dHover && this.consumeClick()) {
                 this.settings.difficulty = diff.id;
             }
@@ -3246,8 +3267,10 @@ _roundRect(ctx, x, y, w, h, r) {
         ctx.fill();
         ctx.font = this._font('bold', 13);
         ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
         ctx.fillStyle = '#fff';
-        ctx.fillText(this.settings.showFps ? '开启' : '关闭', fpsBtnX + toggleBtnW / 2, fpsBtnY + toggleBtnH / 2 + 1);
+        ctx.fillText(this.settings.showFps ? '开启' : '关闭', fpsBtnX + toggleBtnW / 2, fpsBtnY + toggleBtnH / 2);
+        ctx.textBaseline = 'alphabetic';
         if (fpsHover && this.consumeClick()) {
             this.settings.showFps = !this.settings.showFps;
         }
@@ -3282,8 +3305,10 @@ _roundRect(ctx, x, y, w, h, r) {
                 }
                 ctx.font = this._font('bold', 10);
                 ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
                 ctx.fillStyle = isActive ? '#fff' : (qHover ? '#ddd' : '#889');
-                ctx.fillText(qualityLabels[qi], qx + qBtnW / 2, qBtnY + qBtnH / 2 + 1);
+                ctx.fillText(qualityLabels[qi], qx + qBtnW / 2, qBtnY + qBtnH / 2);
+                ctx.textBaseline = 'alphabetic';
                 if (qHover && this.consumeClick()) {
                     skinManager.setQuality(qualityKeys[qi]);
                     const q = skinManager.getQuality();
@@ -3314,8 +3339,10 @@ _roundRect(ctx, x, y, w, h, r) {
         ctx.stroke();
         ctx.font = this._font('bold', 13);
         ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
         ctx.fillStyle = helpHover ? '#fff' : '#aabbcc';
-        ctx.fillText('查看', helpBtnX + helpBtnW / 2, helpBtnY + helpBtnH / 2 + 1);
+        ctx.fillText('查看', helpBtnX + helpBtnW / 2, helpBtnY + helpBtnH / 2);
+        ctx.textBaseline = 'alphabetic';
         if (helpHover && this.consumeClick()) {
             this.settings.showControls = !this.settings.showControls;
         }
@@ -3337,7 +3364,9 @@ _roundRect(ctx, x, y, w, h, r) {
         ctx.font = this._font('bold', 18);
         ctx.fillStyle = backHover ? '#fff' : '#aabbcc';
         ctx.textAlign = 'center';
-        ctx.fillText('← 返回', W / 2, backBtnY + backBtnH / 2 + 1);
+        ctx.textBaseline = 'middle';
+        ctx.fillText('← 返回', W / 2, backBtnY + backBtnH / 2);
+        ctx.textBaseline = 'alphabetic';
 
         // 操作说明弹窗
         if (this.settings.showControls) {
@@ -3399,8 +3428,10 @@ _roundRect(ctx, x, y, w, h, r) {
             ctx.fill();
             ctx.font = this._font('bold', 14);
             ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
             ctx.fillStyle = '#fff';
-            ctx.fillText('知道了', W / 2, closeBtnY + closeBtnH / 2 + 1);
+            ctx.fillText('知道了', W / 2, closeBtnY + closeBtnH / 2);
+            ctx.textBaseline = 'alphabetic';
 
             if (closeHover && this.consumeClick()) {
                 this.settings.showControls = false;
