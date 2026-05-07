@@ -1165,13 +1165,24 @@ class WeaponSystem {
         ctx.translate(wx, wy);
         ctx.rotate(weaponAngle);
 
-        switch (type) {
-            case 'sword': this._drawSword(ctx, anim.active); break;
-            case 'dagger': this._drawDagger(ctx, anim.active); break;
-            case 'hammer': this._drawHammer(ctx, anim.active); break;
-            case 'fireball': this._drawStaff(ctx, anim.active); break;
-            case 'bow': this._drawBow(ctx, anim.active); break;
-            case 'necro': this._drawSkull(ctx, anim.active); break;
+        // 皮肤武器外观覆盖
+        let skinHandled = false;
+        if (typeof skinManager !== 'undefined' && window._skinRenderer) {
+            const _sk = skinManager.getEquippedSkin(this.player.def.id);
+            if (_sk) {
+                skinHandled = window._skinRenderer.renderWeapon(ctx, _sk, type, anim.active);
+            }
+        }
+
+        if (!skinHandled) {
+            switch (type) {
+                case 'sword': this._drawSword(ctx, anim.active); break;
+                case 'dagger': this._drawDagger(ctx, anim.active); break;
+                case 'hammer': this._drawHammer(ctx, anim.active); break;
+                case 'fireball': this._drawStaff(ctx, anim.active); break;
+                case 'bow': this._drawBow(ctx, anim.active); break;
+                case 'necro': this._drawSkull(ctx, anim.active); break;
+            }
         }
 
         ctx.restore();
@@ -1539,6 +1550,13 @@ class WeaponSystem {
                 ctx.closePath();
                 ctx.fill();
             } else if (p.type === 'wind_slash') {
+                // 皮肤投射物完整覆盖
+                if (typeof skinManager !== 'undefined' && window._skinRenderer) {
+                    const _sk = skinManager.getEquippedSkin(this.player.def.id);
+                    if (_sk && window._skinRenderer.renderProjectile(ctx, _sk, sx, sy, p.radius || p.width, p.angle || Math.atan2(p.vy, p.vx))) {
+                        ctx.restore(); continue;
+                    }
+                }
                 // ===== 龙卷风 — OffscreenCanvas 缓存渲染 =====
                 // 每个弹幕每隔几帧才重绘一次缓存图，中间帧直接 drawImage
                 const lifeRatio = p.life / p.maxLife;
