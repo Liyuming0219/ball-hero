@@ -822,7 +822,7 @@ class WeaponSystem {
         const px = this.player.x;
         const py = this.player.y;
         const totalCount = this.summonManager ? this.summonManager.getTotalCount() : 0;
-        const maxSummons = this.summonManager ? this.summonManager.maxSummons : 5;
+        const maxSummons = this.summonManager ? this.summonManager.maxSummons : 6;
 
         if (this.summonManager && totalCount < maxSummons) {
             // 召唤物未满时：智能轮换召唤已解锁的类型
@@ -831,25 +831,33 @@ class WeaponSystem {
             const sx = px + Math.cos(offsetAngle) * offsetDist;
             const sy = py + Math.sin(offsetAngle) * offsetDist;
             this.summonManager.spawnNext(sx, sy);
-        } else if (target) {
-            // 召唤物已满时：发射灵魂弹攻击
+        }
+
+        // 无论召唤物是否满，只要有目标就发射灵魂弹（召唤师也有输出能力）
+        if (target) {
             const angle = Utils.angle(px, py, target.x, target.y);
-            this.projectiles.push({
-                x: px, y: py,
-                vx: Math.cos(angle) * 350 * (1 + this.player.bonuses.projectileSpeed),
-                vy: Math.sin(angle) * 350 * (1 + this.player.bonuses.projectileSpeed),
-                radius: 10 * this.player.bonuses.areaMult,
-                color: '#44ccaa',
-                colors: ['#44ccaa', '#22aa88', '#66eedd'],
-                alive: true,
-                life: 2.0,
-                pierce: 1 + Math.floor(level / 3),
-                trail: true,
-                trailSize: 5,
-                type: 'necro_bolt',
-                hitEnemies: new Set(),
-                update: _projUpdateBasic,
-            });
+            const boltSpeed = 380 * (1 + this.player.bonuses.projectileSpeed);
+            const boltCount = totalCount >= maxSummons ? 2 : 1; // 满编时双发
+            const spread = boltCount > 1 ? 0.15 : 0;
+            for (let i = 0; i < boltCount; i++) {
+                const a = angle + (i - (boltCount - 1) / 2) * spread;
+                this.projectiles.push({
+                    x: px, y: py,
+                    vx: Math.cos(a) * boltSpeed,
+                    vy: Math.sin(a) * boltSpeed,
+                    radius: 11 * this.player.bonuses.areaMult,
+                    color: '#44ccaa',
+                    colors: ['#44ccaa', '#22aa88', '#66eedd'],
+                    alive: true,
+                    life: 2.2,
+                    pierce: 1 + Math.floor(level / 2),
+                    trail: true,
+                    trailSize: 5,
+                    type: 'necro_bolt',
+                    hitEnemies: new Set(),
+                    update: _projUpdateBasic,
+                });
+            }
         }
     }
 

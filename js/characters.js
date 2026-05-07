@@ -12,16 +12,16 @@ const CharacterDefs = {
         colors: ['#44aaff', '#2288dd', '#66ccff'],
         icon: '⚔️',
         baseStats: {
-            maxHp: 150,
-            hp: 150,
-            attack: 20,
+            maxHp: 160,
+            hp: 160,
+            attack: 25,
             attackSpeed: 1.3,     // 攻击/秒
             critRate: 0.12,
             critDamage: 1.8,
             moveSpeed: 210,
-            hpRegen: 1.0,        // 每秒回血
+            hpRegen: 1.2,        // 每秒回血
             pickupRange: 80,
-            armor: 3,
+            armor: 4,
         },
         passive: {
             name: '疾风剑意',
@@ -41,13 +41,13 @@ const CharacterDefs = {
         colors: ['#ff6644', '#ff4422', '#ffaa00'],
         icon: '🔥',
         baseStats: {
-            maxHp: 120,
-            hp: 120,
-            attack: 32,
-            attackSpeed: 1.1,
+            maxHp: 130,
+            hp: 130,
+            attack: 35,
+            attackSpeed: 1.15,
             critRate: 0.18,
             critDamage: 2.2,
-            moveSpeed: 190,
+            moveSpeed: 195,
             hpRegen: 1.0,
             pickupRange: 90,
             armor: 2,
@@ -70,14 +70,14 @@ const CharacterDefs = {
         colors: ['#aa44ff', '#8822dd', '#cc66ff'],
         icon: '🗡️',
         baseStats: {
-            maxHp: 95,
-            hp: 95,
-            attack: 30,
+            maxHp: 100,
+            hp: 100,
+            attack: 32,
             attackSpeed: 1.8,
             critRate: 0.30,
             critDamage: 2.5,
             moveSpeed: 250,
-            hpRegen: 0.6,
+            hpRegen: 0.8,
             pickupRange: 70,
             armor: 1,
         },
@@ -99,16 +99,16 @@ const CharacterDefs = {
         colors: ['#ffcc44', '#ffdd66', '#ffffff'],
         icon: '🛡️',
         baseStats: {
-            maxHp: 200,
-            hp: 200,
-            attack: 22,
-            attackSpeed: 0.9,
-            critRate: 0.08,
-            critDamage: 1.6,
-            moveSpeed: 170,
-            hpRegen: 2.0,
+            maxHp: 220,
+            hp: 220,
+            attack: 28,
+            attackSpeed: 0.95,
+            critRate: 0.10,
+            critDamage: 1.7,
+            moveSpeed: 175,
+            hpRegen: 2.5,
             pickupRange: 75,
-            armor: 6,
+            armor: 7,
         },
         passive: {
             name: '神圣格挡',
@@ -129,14 +129,14 @@ const CharacterDefs = {
         colors: ['#44ddaa', '#66eebb', '#88ffcc'],
         icon: '🏹',
         baseStats: {
-            maxHp: 110,
-            hp: 110,
-            attack: 20,
+            maxHp: 115,
+            hp: 115,
+            attack: 22,
             attackSpeed: 1.5,
-            critRate: 0.12,
-            critDamage: 1.8,
+            critRate: 0.14,
+            critDamage: 1.9,
             moveSpeed: 205,
-            hpRegen: 0.8,
+            hpRegen: 0.9,
             pickupRange: 100,
             armor: 2,
         },
@@ -160,16 +160,16 @@ const CharacterDefs = {
         colors: ['#44ccaa', '#22aa88', '#66eedd'],
         icon: '💀',
         baseStats: {
-            maxHp: 120,
-            hp: 120,
-            attack: 30,
-            attackSpeed: 1.0,
+            maxHp: 140,
+            hp: 140,
+            attack: 38,
+            attackSpeed: 1.1,
             critRate: 0.15,
             critDamage: 2.0,
-            moveSpeed: 190,
-            hpRegen: 1.0,
-            pickupRange: 80,
-            armor: 2,
+            moveSpeed: 195,
+            hpRegen: 1.2,
+            pickupRange: 85,
+            armor: 3,
         },
         passive: {
             name: '灵魂收割',
@@ -348,16 +348,16 @@ class Player {
             // Lv2=15, Lv5=37, Lv10=93, Lv15=231, Lv20=574
             this.expToNext = Math.floor(15 * Math.pow(1.25, this.level - 1));
 
-            // === 每级自动成长：升级时自动获得小幅属性提升 ===
-            // 攻击力：每级 +3%（乘算），10级时累积约 1.34x，20级约 1.81x
-            this.bonuses.attackMult += 0.03;
-            // 攻速：每级 +2%（乘算），10级时累积约 +0.20，20级约 +0.40
-            this.bonuses.attackSpeedMult += 0.02;
-            // 最大生命：每级 +8（10级时+80，20级时+160）
-            this.bonuses.maxHpBonus += 8;
-            this.stats.hp = Math.min(this.stats.hp + 8, this.getMaxHp());
-            // 回血：每级 +0.3/秒（10级时+3/秒，20级时+6/秒）
-            this.bonuses.hpRegenBonus += 0.3;
+            // === 每级自动成长：升级时自动获得属性提升 ===
+            // 攻击力：每级 +5%（乘算），10级时累积约 1.55x，20级约 2.65x
+            this.bonuses.attackMult += 0.05;
+            // 攻速：每级 +3%（乘算），10级时累积约 +0.30，20级约 +0.60
+            this.bonuses.attackSpeedMult += 0.03;
+            // 最大生命：每级 +12（10级时+120，20级时+240）
+            this.bonuses.maxHpBonus += 12;
+            this.stats.hp = Math.min(this.stats.hp + 12, this.getMaxHp());
+            // 回血：每级 +0.4/秒（10级时+4/秒，20级时+8/秒）
+            this.bonuses.hpRegenBonus += 0.4;
             // 护甲：每2级 +1（10级时+5，20级时+10）
             if (this.level % 2 === 0) {
                 this.bonuses.armorBonus += 1;

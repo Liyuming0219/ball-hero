@@ -45,13 +45,13 @@ const EnemyTypes = {
         color: '#7733dd',
         colors: ['#7733dd', '#aa66ff'],
         radius: 13,
-        hp: 20,
-        damage: 10,
-        speed: 42,
+        hp: 18,
+        damage: 8,
+        speed: 40,
         exp: 6,
         score: 20,
         ranged: true,
-        shootInterval: 6.0,
+        shootInterval: 6.5,
     },
     // 中期快攻 - 暗影狼
     shadowWolf: {
@@ -83,13 +83,13 @@ const EnemyTypes = {
         color: '#ff2266',
         colors: ['#ff2266', '#ff66aa'],
         radius: 14,
-        hp: 40,
-        damage: 18,
-        speed: 38,
+        hp: 35,
+        damage: 14,
+        speed: 36,
         exp: 10,
         score: 30,
         ranged: true,
-        shootInterval: 4.0,
+        shootInterval: 4.5,
     },
     // 后期群攻 - 爆破虫
     exploder: {
@@ -110,8 +110,8 @@ const EnemyTypes = {
         color: '#ff3333',
         colors: ['#ff3333', '#ff8844'],
         radius: 22,
-        hp: 150,
-        damage: 15,
+        hp: 120,
+        damage: 12,
         speed: 45,
         exp: 25,
         score: 50,
@@ -123,9 +123,9 @@ const EnemyTypes = {
         color: '#dd22aa',
         colors: ['#dd22aa', '#ff55cc'],
         radius: 24,
-        hp: 300,
-        damage: 22,
-        speed: 50,
+        hp: 250,
+        damage: 18,
+        speed: 48,
         exp: 40,
         score: 80,
         isElite: true,
@@ -136,8 +136,8 @@ const EnemyTypes = {
         color: '#ff2222',
         colors: ['#ff2222', '#ff4444', '#ffaa00'],
         radius: 35,
-        hp: 1000,
-        damage: 20,
+        hp: 800,
+        damage: 16,
         speed: 32,
         exp: 120,
         score: 500,
@@ -907,32 +907,32 @@ class WaveManager {
         this.difficulty = 1;
         this.difficultyMultiplier = 1.0; // 由设置界面控制: easy=0.6, normal=1.0, hard=1.5
 
-        // 波次配置（12阶段渐进式难度，前期更友好）
+        // 波次配置（12阶段渐进式难度，前期友好，后期靠数量而非单体膨胀）
         this.waveConfigs = [
             // 阶段1 (0~30s)：新手入门 - 少量骷髅让玩家熟悉操作
             { time: 0,   types: ['skeleton'], spawnRate: 1.8, count: 2, mult: 0.5 },
             // 阶段2 (30~75s)：加入蝙蝠，缓步加压
-            { time: 30,  types: ['skeleton', 'bat'], spawnRate: 1.5, count: 3, mult: 0.65 },
+            { time: 30,  types: ['skeleton', 'bat'], spawnRate: 1.5, count: 3, mult: 0.6 },
             // 阶段3 (75~150s)：加入史莱姆，开始出精英
-            { time: 75,  types: ['skeleton', 'bat', 'slime'], spawnRate: 1.2, count: 4, mult: 0.8, elite: 'eliteSkeleton', eliteChance: 0.015 },
+            { time: 75,  types: ['skeleton', 'bat', 'slime'], spawnRate: 1.2, count: 4, mult: 0.7, elite: 'eliteSkeleton', eliteChance: 0.015 },
             // 阶段4 (150~240s)：加入骷髅法师，精英频率提升
-            { time: 150, types: ['skeleton', 'bat', 'slime', 'skeleton', 'bat'], spawnRate: 1.0, count: 5, mult: 1.0, elite: 'eliteSkeleton', eliteChance: 0.03, rangedType: 'skeletonMage', rangedChance: 0.08 },
+            { time: 150, types: ['skeleton', 'bat', 'slime', 'skeleton', 'bat'], spawnRate: 1.0, count: 5, mult: 0.85, elite: 'eliteSkeleton', eliteChance: 0.03, rangedType: 'skeletonMage', rangedChance: 0.08 },
             // 阶段5 (240~360s)：数量渐增，更多远程
-            { time: 240, types: ['skeleton', 'bat', 'slime', 'skeleton', 'bat'], spawnRate: 0.85, count: 7, mult: 1.3, elite: 'eliteSkeleton', eliteChance: 0.05, rangedType: 'skeletonMage', rangedChance: 0.10 },
+            { time: 240, types: ['skeleton', 'bat', 'slime', 'skeleton', 'bat'], spawnRate: 0.85, count: 7, mult: 1.0, elite: 'eliteSkeleton', eliteChance: 0.05, rangedType: 'skeletonMage', rangedChance: 0.10 },
             // 阶段6 (360~480s)：加入暗影狼和石像鬼
-            { time: 360, types: ['skeleton', 'bat', 'slime', 'shadowWolf', 'gargoyle'], spawnRate: 0.7, count: 9, mult: 1.7, elite: 'eliteSkeleton', eliteChance: 0.06, rangedType: 'skeletonMage', rangedChance: 0.12 },
+            { time: 360, types: ['skeleton', 'bat', 'slime', 'shadowWolf', 'gargoyle'], spawnRate: 0.7, count: 9, mult: 1.2, elite: 'eliteSkeleton', eliteChance: 0.06, rangedType: 'skeletonMage', rangedChance: 0.12 },
             // 阶段7 (480~600s)：加入恶魔术士，精英多样化
-            { time: 480, types: ['shadowWolf', 'bat', 'slime', 'gargoyle', 'skeleton'], spawnRate: 0.6, count: 12, mult: 2.2, elite: 'eliteDemon', eliteChance: 0.08, rangedType: 'demonCaster', rangedChance: 0.15 },
-            // 阶段8 (600~750s)：加入爆破虫，全面强敌（降低mult，靠difficulty曲线提供压力）
-            { time: 600, types: ['shadowWolf', 'gargoyle', 'exploder', 'slime', 'bat'], spawnRate: 0.5, count: 15, mult: 2.2, elite: 'eliteDemon', eliteChance: 0.10, rangedType: 'demonCaster', rangedChance: 0.18 },
+            { time: 480, types: ['shadowWolf', 'bat', 'slime', 'gargoyle', 'skeleton'], spawnRate: 0.6, count: 12, mult: 1.5, elite: 'eliteDemon', eliteChance: 0.08, rangedType: 'demonCaster', rangedChance: 0.15 },
+            // 阶段8 (600~750s)：加入爆破虫，全面强敌
+            { time: 600, types: ['shadowWolf', 'gargoyle', 'exploder', 'slime', 'bat'], spawnRate: 0.5, count: 15, mult: 1.6, elite: 'eliteDemon', eliteChance: 0.10, rangedType: 'demonCaster', rangedChance: 0.18 },
             // 阶段9 (750~900s)：高难度密度
-            { time: 750, types: ['shadowWolf', 'gargoyle', 'exploder', 'demonCaster', 'slime'], spawnRate: 0.4, count: 18, mult: 2.8, elite: 'eliteDemon', eliteChance: 0.12, rangedType: 'demonCaster', rangedChance: 0.20 },
+            { time: 750, types: ['shadowWolf', 'gargoyle', 'exploder', 'demonCaster', 'slime'], spawnRate: 0.4, count: 18, mult: 1.8, elite: 'eliteDemon', eliteChance: 0.12, rangedType: 'demonCaster', rangedChance: 0.20 },
             // 阶段10 (900~1080s)：无尽噩梦
-            { time: 900, types: ['shadowWolf', 'gargoyle', 'exploder', 'demonCaster', 'slime', 'skeleton'], spawnRate: 0.35, count: 22, mult: 3.2, elite: 'eliteDemon', eliteChance: 0.15, rangedType: 'demonCaster', rangedChance: 0.22 },
+            { time: 900, types: ['shadowWolf', 'gargoyle', 'exploder', 'demonCaster', 'slime', 'skeleton'], spawnRate: 0.35, count: 22, mult: 2.0, elite: 'eliteDemon', eliteChance: 0.15, rangedType: 'demonCaster', rangedChance: 0.22 },
             // 阶段11 (1080~1260s)：终极考验
-            { time: 1080, types: ['shadowWolf', 'gargoyle', 'exploder', 'demonCaster', 'slime'], spawnRate: 0.3, count: 28, mult: 3.8, elite: 'eliteDemon', eliteChance: 0.18, rangedType: 'demonCaster', rangedChance: 0.25 },
+            { time: 1080, types: ['shadowWolf', 'gargoyle', 'exploder', 'demonCaster', 'slime'], spawnRate: 0.3, count: 28, mult: 2.3, elite: 'eliteDemon', eliteChance: 0.18, rangedType: 'demonCaster', rangedChance: 0.25 },
             // 阶段12 (1260s+)：真·无尽
-            { time: 1260, types: ['shadowWolf', 'gargoyle', 'exploder', 'demonCaster', 'slime', 'skeleton'], spawnRate: 0.25, count: 35, mult: 4.5, elite: 'eliteDemon', eliteChance: 0.22, rangedType: 'demonCaster', rangedChance: 0.28 },
+            { time: 1260, types: ['shadowWolf', 'gargoyle', 'exploder', 'demonCaster', 'slime', 'skeleton'], spawnRate: 0.25, count: 35, mult: 2.8, elite: 'eliteDemon', eliteChance: 0.22, rangedType: 'demonCaster', rangedChance: 0.28 },
         ];
 
         // 阶段Boss：首次270秒（4.5分钟），之后逐步缩短间隔（最短120秒）
@@ -951,20 +951,21 @@ class WaveManager {
         this.timer += dt;
         this.spawnTimer += dt;
 
-        // 难度递增（分段曲线 - 后期增长大幅放缓，匹配英雄成长节奏）
-        // 0~5分钟: 缓慢增长; 5~10分钟: 中速增长; 10~20分钟: 放缓增长; 20分钟+: 接近线性
+        // 难度递增（分段曲线 - 与英雄成长曲线匹配，避免中后期失衡）
+        // 英雄Lv10约5分钟: attackMult≈1.5x; Lv20约12分钟: attackMult≈2.65x
+        // 怪物难度应略低于英雄成长，保持爽快感
         const t = this.gameTime;
         if (t < 300) {
-            this.difficulty = 1 + t / 200;                // 5分钟 → 2.5x
+            this.difficulty = 1 + t / 250;                // 5分钟 → 2.2x（放缓早期压力）
         } else if (t < 600) {
-            this.difficulty = 2.5 + (t - 300) / 120;      // 10分钟 → 5.0x（原5.5x）
+            this.difficulty = 2.2 + (t - 300) / 180;      // 10分钟 → 3.87x（原5.0x，大幅降低）
         } else if (t < 1200) {
-            // 10~20分钟: 对数增长，大幅放缓（原pow 1.4指数增长）
-            // 10分钟=5.0x → 15分钟≈7.3x → 20分钟≈8.9x
-            this.difficulty = 5.0 + 3.0 * Math.log2(1 + (t - 600) / 200);
+            // 10~20分钟: 对数增长，大幅放缓
+            // 10分钟=3.87x → 15分钟≈5.5x → 20分钟≈6.6x
+            this.difficulty = 3.87 + 2.2 * Math.log2(1 + (t - 600) / 250);
         } else {
-            // 20分钟后: 非常缓慢的线性增长（每分钟 +0.3x）
-            this.difficulty = 8.9 + (t - 1200) / 200;
+            // 20分钟后: 非常缓慢的线性增长（每分钟 +0.2x）
+            this.difficulty = 6.6 + (t - 1200) / 300;
         }
 
         // 获取当前波次配置

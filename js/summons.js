@@ -9,55 +9,55 @@ const SummonDefs = {
     skeleton: {
         name: '骷髅战士',
         radius: 10,
-        hpRatio: 0.35,          // 继承玩家 maxHp 的 35%
-        baseHp: 30,
-        speed: 185,
-        dmgRatio: 0.5,          // 继承玩家攻击力的 50%
+        hpRatio: 0.45,          // 继承玩家 maxHp 的 45%
+        baseHp: 45,
+        speed: 200,
+        dmgRatio: 0.7,          // 继承玩家攻击力的 70%
         attackRange: 30,
-        attackInterval: 0.8,
+        attackInterval: 0.7,
         color: '#55ddbb',
         colors: ['#55ddbb', '#33bb99', '#88ffdd'],
-        searchRange: 300,
+        searchRange: 350,
     },
     skeleton_mage: {
         name: '骷髅法师',
         radius: 9,
-        hpRatio: 0.25,          // 较脆
-        baseHp: 20,
-        speed: 150,
-        dmgRatio: 0.7,          // 高伤害
-        attackRange: 180,       // 远程
-        attackInterval: 1.4,
+        hpRatio: 0.35,          // 较脆但提升
+        baseHp: 30,
+        speed: 160,
+        dmgRatio: 0.9,          // 高伤害
+        attackRange: 200,       // 远程
+        attackInterval: 1.2,
         color: '#ff8844',
         colors: ['#ff8844', '#ff6622', '#ffaa66'],
-        searchRange: 350,
+        searchRange: 400,
     },
     skeleton_tank: {
         name: '骷髅守卫',
         radius: 14,
-        hpRatio: 0.8,           // 高血量
-        baseHp: 60,
-        speed: 130,
-        dmgRatio: 0.3,          // 低伤害
+        hpRatio: 1.0,           // 高血量
+        baseHp: 80,
+        speed: 140,
+        dmgRatio: 0.45,         // 低伤害但提升
         attackRange: 25,
-        attackInterval: 1.0,
-        tauntRange: 120,        // 嘲讽范围
+        attackInterval: 0.9,
+        tauntRange: 140,        // 嘲讽范围加大
         color: '#4488ff',
         colors: ['#4488ff', '#2266dd', '#66aaff'],
-        searchRange: 250,
+        searchRange: 280,
     },
     beast: {
         name: '灵魂巨兽',
-        radius: 22,
-        hpRatio: 1.5,
-        baseHp: 120,
-        speed: 120,
-        dmgRatio: 1.6,
-        attackRange: 60,
-        attackInterval: 1.2,
+        radius: 24,
+        hpRatio: 2.0,
+        baseHp: 180,
+        speed: 130,
+        dmgRatio: 2.2,
+        attackRange: 70,
+        attackInterval: 1.0,
         color: '#66eedd',
         colors: ['#66eedd', '#44ccbb', '#aaffee'],
-        searchRange: 400,
+        searchRange: 450,
     },
 };
 
@@ -930,7 +930,7 @@ class SummonManager {
         this.player = player;
         this.particles = particles;
         this.summons = [];
-        this.maxSummons = 5;       // 总上限（不含巨兽）
+        this.maxSummons = 6;       // 总上限（不含巨兽）
         // 已解锁的召唤物种类
         this.unlockedTypes = ['skeleton']; // 初始只有近战骷髅
     }
