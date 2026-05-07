@@ -1489,6 +1489,13 @@ class WeaponSystem {
             ctx.save();
 
             if (p.type === 'arrow' || p.type === 'rain_arrow') {
+                // 皮肤投射物完整覆盖
+                if (typeof skinManager !== 'undefined' && window._skinRenderer) {
+                    const _sk = skinManager.getEquippedSkin(this.player.def.id);
+                    if (_sk && window._skinRenderer.renderProjectile(ctx, _sk, sx, sy, p.radius, p.angle || Math.atan2(p.vy, p.vx))) {
+                        ctx.restore(); continue;
+                    }
+                }
                 // 皮肤覆盖箭矢颜色
                 let _arrowColor = p.color;
                 if (typeof skinManager !== 'undefined') {
