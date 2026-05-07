@@ -743,74 +743,134 @@ const BGM = {
         }
     },
 
+    // --- 8-bit chiptune 工具 ---
+    _chip(freq, type, startT, dur, vol, dest) {
+        const ctx = this._ctx;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = type;
+        osc.frequency.value = freq;
+        gain.gain.setValueAtTime(vol, startT);
+        gain.gain.setValueAtTime(vol * 0.8, startT + dur * 0.6);
+        gain.gain.linearRampToValueAtTime(0, startT + dur - 0.01);
+        osc.connect(gain).connect(dest);
+        osc.start(startT);
+        osc.stop(startT + dur);
+        this._nodes.push(osc);
+    },
+
+    _noise(startT, dur, vol, dest) {
+        const ctx = this._ctx;
+        const bufSize = ctx.sampleRate * dur;
+        const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+        const data = buf.getChannelData(0);
+        for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(vol, startT);
+        gain.gain.linearRampToValueAtTime(0, startT + dur * 0.3);
+        const hp = ctx.createBiquadFilter();
+        hp.type = 'highpass'; hp.frequency.value = 8000;
+        src.connect(hp).connect(gain).connect(dest);
+        src.start(startT);
+        src.stop(startT + dur);
+        this._nodes.push(src);
+    },
+
     _playMenuPhrase() {
         if (!this._playing) return;
         const ctx = this._ctx;
         const now = ctx.currentTime;
-        // 柔和的氛围音 - 交替和弦
-        const chords = [[261.6, 329.6, 392], [293.7, 349.2, 440], [246.9, 311.1, 370], [261.6, 329.6, 392]];
-        const chordDur = 2.0;
-        chords.forEach((chord, ci) => {
-            chord.forEach(freq => {
-                const osc = ctx.createOscillator();
-                const gain = ctx.createGain();
-                osc.type = 'sine';
-                osc.frequency.value = freq;
-                gain.gain.setValueAtTime(0, now + ci * chordDur);
-                gain.gain.linearRampToValueAtTime(0.06, now + ci * chordDur + 0.5);
-                gain.gain.linearRampToValueAtTime(0.04, now + ci * chordDur + chordDur - 0.3);
-                gain.gain.linearRampToValueAtTime(0, now + ci * chordDur + chordDur);
-                osc.connect(gain).connect(this._masterGain);
-                osc.start(now + ci * chordDur);
-                osc.stop(now + ci * chordDur + chordDur);
-                this._nodes.push(osc);
-            });
-        });
-        const totalDur = chords.length * chordDur * 1000;
-        this._loopTimer = setTimeout(() => { this._nodes = []; this._playMenuPhrase(); }, totalDur - 100);
+        const bpm = 110;
+        const beat = 60 / bpm;
+
+        // 8-bit 梦幻菜单曲 — 明亮方波琶音 + 三角波低音衬底
+        // C大调 → Am → F → G 进行，16拍一轮
+        const arpPatterns = [
+            // C: C4 E4 G4 C5
+            [261.6, 329.6, 392, 523.3],
+            // Am: A3 C4 E4 A4
+            [220, 261.6, 329.6, 440],
+            // F: F3 A3 C4 F4
+            [174.6, 220, 261.6, 349.2],
+            // G: G3 B3 D4 G4
+            [196, 246.9, 293.7, 392],
+        ];
+        const bassNotes = [130.8, 110, 87.3, 98];
+
+        let t = now;
+        for (let chord = 0; chord < 4; chord++) {
+            const arp = arpPatterns[chord];
+            const bass = bassNotes[chord];
+            // 低音 — 每和弦持续4拍
+            this._chip(bass, 'triangle', t, beat * 3.8, 0.07, this._masterGain);
+            // 琶音 — 16分音符循环
+            for (let n = 0; n < 16; n++) {
+                const freq = arp[n % 4];
+                const noteT = t + n * (beat / 4);
+                this._chip(freq, 'square', noteT, beat / 4 - 0.02, 0.03, this._masterGain);
+            }
+            t += beat * 4;
+        }
+
+        const totalDur = (t - now) * 1000;
+        this._loopTimer = setTimeout(() => { this._nodes = []; this._playMenuPhrase(); }, totalDur - 50);
     },
 
     _playBattlePhrase() {
         if (!this._playing) return;
         const ctx = this._ctx;
         const now = ctx.currentTime;
-        // 节奏更强的战斗音 - 低音脉冲 + 高音旋律
-        const bassNotes = [82.4, 98, 73.4, 82.4, 110, 98, 82.4, 73.4];
-        const melodyNotes = [330, 392, 440, 392, 349, 330, 294, 330];
-        const beatDur = 0.5;
+        const bpm = 150;
+        const beat = 60 / bpm;
 
-        // 低音线
-        bassNotes.forEach((freq, i) => {
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.type = 'sawtooth';
-            osc.frequency.value = freq;
-            gain.gain.setValueAtTime(0, now + i * beatDur);
-            gain.gain.linearRampToValueAtTime(0.08, now + i * beatDur + 0.05);
-            gain.gain.exponentialRampToValueAtTime(0.001, now + i * beatDur + beatDur * 0.8);
-            osc.connect(gain).connect(this._masterGain);
-            osc.start(now + i * beatDur);
-            osc.stop(now + i * beatDur + beatDur);
-            this._nodes.push(osc);
-        });
+        // 8-bit 战斗曲 — 激烈方波旋律 + 脉冲低音 + 噪声鼓点
+        // Em 调性，16拍一循环
+        const melody = [
+            659.3, 0, 659.3, 784, 880, 0, 784, 659.3,
+            587.3, 0, 587.3, 659.3, 784, 0, 659.3, 587.3,
+            523.3, 0, 587.3, 659.3, 784, 880, 784, 659.3,
+            587.3, 0, 523.3, 587.3, 659.3, 0, 523.3, 493.9,
+        ];
+        const bass = [
+            164.8, 0, 164.8, 164.8, 196, 0, 196, 196,
+            146.8, 0, 146.8, 146.8, 164.8, 0, 164.8, 164.8,
+            130.8, 0, 130.8, 130.8, 164.8, 0, 164.8, 164.8,
+            146.8, 0, 146.8, 146.8, 130.8, 0, 130.8, 123.5,
+        ];
+        // 鼓点模式: 1=kick(低噪声), 2=snare(高噪声), 0=无
+        const drums = [
+            1, 0, 0, 2, 1, 0, 0, 2,
+            1, 0, 0, 2, 1, 0, 1, 2,
+            1, 0, 0, 2, 1, 0, 0, 2,
+            1, 0, 1, 2, 1, 2, 1, 2,
+        ];
 
-        // 旋律线
-        melodyNotes.forEach((freq, i) => {
-            const osc = ctx.createOscillator();
-            const gain = ctx.createGain();
-            osc.type = 'triangle';
-            osc.frequency.value = freq;
-            gain.gain.setValueAtTime(0, now + i * beatDur);
-            gain.gain.linearRampToValueAtTime(0.05, now + i * beatDur + 0.08);
-            gain.gain.linearRampToValueAtTime(0.03, now + i * beatDur + beatDur * 0.6);
-            gain.gain.linearRampToValueAtTime(0, now + i * beatDur + beatDur);
-            osc.connect(gain).connect(this._masterGain);
-            osc.start(now + i * beatDur);
-            osc.stop(now + i * beatDur + beatDur);
-            this._nodes.push(osc);
-        });
+        const eighthNote = beat / 2;
+        let t = now;
 
-        const totalDur = bassNotes.length * beatDur * 1000;
+        for (let i = 0; i < melody.length; i++) {
+            const noteT = t + i * eighthNote;
+            // 旋律（方波，经典8-bit音色）
+            if (melody[i] > 0) {
+                this._chip(melody[i], 'square', noteT, eighthNote * 0.85, 0.045, this._masterGain);
+            }
+            // 低音（锯齿波，厚实低频）
+            if (bass[i] > 0) {
+                this._chip(bass[i], 'sawtooth', noteT, eighthNote * 0.7, 0.05, this._masterGain);
+            }
+            // 鼓
+            if (drums[i] === 1) {
+                // Kick — 短促低频方波模拟
+                this._chip(55, 'square', noteT, 0.08, 0.09, this._masterGain);
+            } else if (drums[i] === 2) {
+                // Snare — 白噪声脉冲
+                this._noise(noteT, 0.1, 0.06, this._masterGain);
+            }
+        }
+
+        const totalDur = melody.length * eighthNote * 1000;
         this._loopTimer = setTimeout(() => { this._nodes = []; this._playBattlePhrase(); }, totalDur - 50);
     },
 };
