@@ -1163,45 +1163,99 @@ class ExpGem {
         if (sx < -20 || sx > screenW + 20 || sy < -20 || sy > screenH + 20) return;
 
         const r = this.radius;
+        const now = performance.now();
+        const pulse = 1 + Math.sin(now * 0.005 + this.bobPhase) * 0.12;
 
-        // 小宝石快速路径：用 fillRect 近似
+        // 小宝石：增强版 - 外圈发光 + 菱形主体 + 白色高光
         if (r < 7) {
-            ctx.globalAlpha = 0.3;
+            // 外圈柔光
+            ctx.globalAlpha = 0.25 * pulse;
             ctx.fillStyle = this.color;
-            const g = r + 4;
-            ctx.fillRect(sx - g, sy - g, g * 2, g * 2);
+            const g = r + 5;
+            ctx.beginPath();
+            ctx.arc(sx, sy, g, 0, TWO_PI);
+            ctx.fill();
+            // 菱形主体
+            ctx.globalAlpha = 0.95;
+            ctx.fillStyle = this.color;
+            ctx.beginPath();
+            ctx.moveTo(sx, sy - r);
+            ctx.lineTo(sx + r * 0.6, sy);
+            ctx.lineTo(sx, sy + r);
+            ctx.lineTo(sx - r * 0.6, sy);
+            ctx.closePath();
+            ctx.fill();
+            // 白色高光点
+            ctx.globalAlpha = 0.6;
+            ctx.fillStyle = '#fff';
+            ctx.beginPath();
+            ctx.arc(sx - r * 0.2, sy - r * 0.3, r * 0.25, 0, TWO_PI);
+            ctx.fill();
             ctx.globalAlpha = 1;
-            ctx.fillStyle = this.color;
-            ctx.fillRect(sx - r * 0.7, sy - r, r * 1.4, r * 2);
             return;
         }
 
-        // 大宝石：保留菱形，无save/restore
-        ctx.globalAlpha = 0.3;
+        // 大宝石：全面增强版
+        // 第一层：远距柔光晕（呼吸脉冲）
+        ctx.globalAlpha = 0.15 * pulse;
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(sx, sy, r + 12, 0, TWO_PI);
+        ctx.fill();
+
+        // 第二层：近距发光圈
+        ctx.globalAlpha = 0.3 * pulse;
         ctx.fillStyle = this.color;
         ctx.beginPath();
         ctx.arc(sx, sy, r + 6, 0, TWO_PI);
         ctx.fill();
 
+        // 第三层：白色内辉
+        ctx.globalAlpha = 0.12 * pulse;
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(sx, sy, r + 3, 0, TWO_PI);
+        ctx.fill();
+
+        // 菱形主体（带旋转感）
         ctx.globalAlpha = 1;
         ctx.fillStyle = this.color;
+        const rot = now * 0.001 + this.bobPhase;
+        const cosR = Math.cos(rot) * 0.1;
         ctx.beginPath();
-        ctx.moveTo(sx, sy - r);
-        ctx.lineTo(sx + r * 0.7, sy);
-        ctx.lineTo(sx, sy + r);
-        ctx.lineTo(sx - r * 0.7, sy);
+        ctx.moveTo(sx, sy - r * (1.05 + cosR));
+        ctx.lineTo(sx + r * (0.7 + cosR * 0.3), sy);
+        ctx.lineTo(sx, sy + r * (1.05 + cosR));
+        ctx.lineTo(sx - r * (0.7 + cosR * 0.3), sy);
         ctx.closePath();
         ctx.fill();
 
-        ctx.fillStyle = '#fff';
-        ctx.globalAlpha = 0.5;
+        // 内部亮面渐变菱形
+        ctx.globalAlpha = 0.4;
+        ctx.fillStyle = '#ffffff';
         ctx.beginPath();
         ctx.moveTo(sx, sy - r * 0.5);
-        ctx.lineTo(sx + r * 0.3, sy);
+        ctx.lineTo(sx + r * 0.25, sy - r * 0.1);
         ctx.lineTo(sx, sy + r * 0.2);
-        ctx.lineTo(sx - r * 0.3, sy - r * 0.2);
+        ctx.lineTo(sx - r * 0.25, sy - r * 0.1);
         ctx.closePath();
         ctx.fill();
+
+        // 顶部高光闪点
+        ctx.globalAlpha = 0.7 + Math.sin(now * 0.008 + this.bobPhase * 2) * 0.3;
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(sx - r * 0.2, sy - r * 0.4, r * 0.18, 0, TWO_PI);
+        ctx.fill();
+
+        // 底部反光
+        ctx.globalAlpha = 0.2;
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(sx + r * 0.15, sy + r * 0.3, r * 0.12, 0, TWO_PI);
+        ctx.fill();
+
+        ctx.globalAlpha = 1;
     }
 }
 

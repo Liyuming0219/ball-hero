@@ -1,23 +1,23 @@
 ﻿// ============================================
 // 游戏版本号
 // ============================================
-var GAME_VERSION = 'v1.7.0';
+var GAME_VERSION = 'v1.8.0';
 
 // 性能常量（避免每帧重复创建）
 const RECYCLE_DIST_SQ = 1500 * 1500; // 超出此距离回收敌人
 const COMBO_MILESTONE_PARTICLES = {
-    colors: ['#ffdd44', '#ff8800', '#ffffff'],
-    speedMin: 4, speedMax: 10,
-    sizeMin: 3, sizeMax: 8,
-    lifeMin: 0.5, lifeMax: 1.0,
-    glow: true,
+    colors: ['#ffdd44', '#ff8800', '#ffffff', '#ffee88', '#ffaa00'],
+    speedMin: 5, speedMax: 14,
+    sizeMin: 3, sizeMax: 10,
+    lifeMin: 0.5, lifeMax: 1.2,
+    glow: true, glowSize: 14, shape: 'star',
 };
 const LEVELUP_PARTICLES = {
-    colors: ['#44aaff', '#88ddff', '#ffffff', '#aaeeff'],
-    speedMin: 3, speedMax: 8,
-    sizeMin: 2, sizeMax: 7,
-    lifeMin: 0.4, lifeMax: 1.0,
-    glow: true, glowSize: 10,
+    colors: ['#44aaff', '#88ddff', '#ffffff', '#aaeeff', '#66ccff'],
+    speedMin: 4, speedMax: 12,
+    sizeMin: 3, sizeMax: 9,
+    lifeMin: 0.5, lifeMax: 1.2,
+    glow: true, glowSize: 14, shape: 'star',
 };
 const LEVELUP_STAR_PARTICLES = {
     colors: ['#ffffff', '#ffffaa'],
@@ -615,12 +615,19 @@ class Game {
                 this.particles.addComboText(this.player.x, this.player.y - 30, this.player.comboCount, this.player.getComboColor());
                 SFX.kill();
 
-                // 连杀里程碑特效
+                // 连杀里程碑特效(V3增强)
                 if (this.player._comboMilestone > 0) {
                     SFX.comboMilestone();
-                    this.particles.addShockwave(this.player.x, this.player.y, this.player.getComboColor(), 200, 0.5);
-                    this.particles.emit(this.player.x, this.player.y, 30, COMBO_MILESTONE_PARTICLES);
-                    Utils.shake(6);
+                    const cc = this.player.getComboColor();
+                    this.particles.addShockwave(this.player.x, this.player.y, cc, 250, 0.55);
+                    this.particles.addShockwave(this.player.x, this.player.y, '#fff', 150, 0.35);
+                    this.particles.emit(this.player.x, this.player.y, 45, COMBO_MILESTONE_PARTICLES);
+                    this.particles.emitRing(this.player.x, this.player.y, 16, 30, {
+                        colors: [cc, '#fff'], speedMin: 4, speedMax: 9,
+                        sizeMin: 2, sizeMax: 5, lifeMin: 0.4, lifeMax: 0.7, glow: true, glowSize: 8,
+                    });
+                    this.particles.triggerScreenFlash(cc, 0.12, 0.1);
+                    Utils.shake(8);
                     this.player._comboMilestone = 0;
                 }
 
@@ -772,9 +779,33 @@ class Game {
         this._updateScreenFlash(dt);
         this._updateAchievementPopup(dt);
 
-        // 跟踪活着的Boss
+        // 跟踪活着的Boss（增强：首次出现时触发华丽登场特效）
         if (!this.activeBoss || !this.activeBoss.alive) {
-            this.activeBoss = this.enemies.find(e => e.alive && e.isBoss) || null;
+            const newBoss = this.enemies.find(e => e.alive && e.isBoss) || null;
+            if (newBoss && newBoss !== this.activeBoss) {
+                // Boss登场特效：多层冲击波 + 屏闪 + 粒子爆发 + 震屏
+                this.screenFlash = { color: '#ff2200', alpha: 0.5 };
+                Utils.shake(12);
+                this.particles.addShockwave(newBoss.x, newBoss.y, '#ff4400', 200, 0.6);
+                this.particles.addShockwave(newBoss.x, newBoss.y, '#ffaa00', 150, 0.45);
+                this.particles.addShockwave(newBoss.x, newBoss.y, '#ffffff', 100, 0.3);
+                this.particles.emitRing(newBoss.x, newBoss.y, 30, 80, {
+                    colors: ['#ff4400', '#ffaa00', '#ff6600', '#ffffff'],
+                    speedMin: 4, speedMax: 10,
+                    sizeMin: 3, sizeMax: 8,
+                    lifeMin: 0.5, lifeMax: 1.2,
+                    shape: 'star', glow: true, glowSize: 12,
+                });
+                this.particles.emitSpiral(newBoss.x, newBoss.y, 20, {
+                    colors: ['#ff2200', '#ff8800'],
+                    speedMin: 2, speedMax: 5,
+                    sizeMin: 2, sizeMax: 5,
+                    lifeMin: 0.6, lifeMax: 1.0,
+                    glow: true, glowSize: 8,
+                });
+                this.particles.triggerScreenFlash('#ff4400', 0.3, 0.4);
+            }
+            this.activeBoss = newBoss;
         }
 
         // 更新敌人弹幕
@@ -1156,7 +1187,7 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
         // 武器弹幕
         this.weapons.renderProjectiles(ctx, cam, sw, sh);
 
-        // 环绕刀刃渲染
+        // 环绕刀刃渲染(V3增强：外发光+能量拖尾)
         const orbCount = this.player.bonuses.orbitalBlades;
         if (orbCount > 0) {
             for (let i = 0; i < orbCount; i++) {
@@ -1166,8 +1197,14 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
                 ctx.save();
                 ctx.translate(bx, by);
                 ctx.rotate(angle + Math.PI / 2);
+                // 外层能量辉光
+                ctx.globalAlpha = 0.15;
+                ctx.fillStyle = this.player.def.color;
+                ctx.beginPath();
+                ctx.arc(0, 0, 22, 0, TWO_PI);
+                ctx.fill();
                 // 刀刃光晕
-                ctx.globalAlpha = 0.3;
+                ctx.globalAlpha = 0.4;
                 ctx.fillStyle = this.player.def.color;
                 ctx.beginPath();
                 ctx.arc(0, 0, 14, 0, TWO_PI);
@@ -1176,29 +1213,35 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
                 ctx.globalAlpha = 1;
                 ctx.fillStyle = this.player.def.color;
                 ctx.beginPath();
-                ctx.moveTo(0, -14);
-                ctx.lineTo(5, 0);
-                ctx.lineTo(0, 14);
-                ctx.lineTo(-5, 0);
+                ctx.moveTo(0, -16);
+                ctx.lineTo(6, 0);
+                ctx.lineTo(0, 16);
+                ctx.lineTo(-6, 0);
                 ctx.closePath();
                 ctx.fill();
-                // 刀刃高光
+                // 刀刃白热核心
                 ctx.fillStyle = '#ffffff';
-                ctx.globalAlpha = 0.5;
+                ctx.globalAlpha = 0.7;
                 ctx.beginPath();
-                ctx.moveTo(0, -10);
-                ctx.lineTo(2, 0);
-                ctx.lineTo(0, 4);
-                ctx.lineTo(-2, 0);
+                ctx.moveTo(0, -11);
+                ctx.lineTo(2.5, 0);
+                ctx.lineTo(0, 5);
+                ctx.lineTo(-2.5, 0);
                 ctx.closePath();
                 ctx.fill();
                 ctx.restore();
             }
         }
 
-        // 冰霜光环范围视觉
+        // 冰霜光环范围视觉(V3增强：脉冲+双层)
         if (this.player.bonuses.frostAura) {
-            ctx.globalAlpha = 0.18;
+            const frostPulse = 1 + Math.sin(performance.now() / 300) * 0.06;
+            ctx.globalAlpha = 0.08;
+            ctx.fillStyle = '#aaddff';
+            ctx.beginPath();
+            ctx.arc(this.player.x - cam.x, this.player.y - cam.y, 170 * frostPulse, 0, TWO_PI);
+            ctx.fill();
+            ctx.globalAlpha = 0.2;
             ctx.fillStyle = '#88ccff';
             ctx.beginPath();
             ctx.arc(this.player.x - cam.x, this.player.y - cam.y, 150, 0, TWO_PI);
@@ -1206,37 +1249,158 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
             ctx.globalAlpha = 1;
         }
 
-        // 灼烧光环范围视觉
+        // 灼烧光环范围视觉（全面增强：多层火焰环+旋转火星+脉冲呼吸）
         if (this.player.bonuses.burnAura) {
-            const pulse = 1 + Math.sin(performance.now() / 200) * 0.05;
-            ctx.globalAlpha = 0.18;
+            const now = performance.now();
+            const px = this.player.x - cam.x;
+            const py = this.player.y - cam.y;
+            const pulse = 1 + Math.sin(now * 0.005) * 0.06;
+            const pulse2 = 1 + Math.sin(now * 0.003 + 1.5) * 0.04;
+
+            // 第一层：远距热浪光晕（最外圈）
+            ctx.globalAlpha = 0.08 * pulse;
+            ctx.fillStyle = '#ff2200';
+            ctx.beginPath();
+            ctx.arc(px, py, 135 * pulse, 0, TWO_PI);
+            ctx.fill();
+
+            // 第二层：主火焰圈
+            ctx.globalAlpha = 0.18 * pulse2;
             ctx.fillStyle = '#ff4422';
             ctx.beginPath();
-            ctx.arc(this.player.x - cam.x, this.player.y - cam.y, 120 * pulse, 0, TWO_PI);
+            ctx.arc(px, py, 120 * pulse2, 0, TWO_PI);
             ctx.fill();
-            ctx.globalAlpha = 0.35;
-            ctx.strokeStyle = '#ff6644';
-            ctx.lineWidth = 2;
+
+            // 第三层：内圈橙色热核
+            ctx.globalAlpha = 0.12;
+            ctx.fillStyle = '#ff8800';
             ctx.beginPath();
-            ctx.arc(this.player.x - cam.x, this.player.y - cam.y, 120 * pulse, 0, TWO_PI);
+            ctx.arc(px, py, 90 * pulse, 0, TWO_PI);
+            ctx.fill();
+
+            // 外圈边缘发光线 - 双层
+            ctx.globalAlpha = 0.4;
+            ctx.strokeStyle = '#ff6644';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.arc(px, py, 120 * pulse2, 0, TWO_PI);
             ctx.stroke();
+
+            ctx.globalAlpha = 0.2;
+            ctx.strokeStyle = '#ffaa44';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.arc(px, py, 125 * pulse, 0, TWO_PI);
+            ctx.stroke();
+
+            // 旋转火星粒子（8个火焰点沿圆周旋转）
+            ctx.globalAlpha = 0.7;
+            ctx.fillStyle = '#ffcc22';
+            const fireCount = 8;
+            for (let i = 0; i < fireCount; i++) {
+                const angle = now * 0.002 + (i / fireCount) * TWO_PI;
+                const fr = 118 * pulse2 + Math.sin(now * 0.008 + i * 2) * 5;
+                const fx = px + Math.cos(angle) * fr;
+                const fy = py + Math.sin(angle) * fr;
+                const fSize = 2.5 + Math.sin(now * 0.01 + i) * 1;
+                ctx.beginPath();
+                ctx.arc(fx, fy, fSize, 0, TWO_PI);
+                ctx.fill();
+            }
+
+            // 内圈逆向旋转火点（5个小火星）
+            ctx.globalAlpha = 0.5;
+            ctx.fillStyle = '#ff8844';
+            for (let i = 0; i < 5; i++) {
+                const angle = -now * 0.0015 + (i / 5) * TWO_PI;
+                const fr = 85 * pulse;
+                const fx = px + Math.cos(angle) * fr;
+                const fy = py + Math.sin(angle) * fr;
+                ctx.beginPath();
+                ctx.arc(fx, fy, 2, 0, TWO_PI);
+                ctx.fill();
+            }
+
             ctx.globalAlpha = 1;
         }
 
-        // 护盾视觉
+        // 护盾视觉（全面增强：六边形能量盾+脉冲+旋转光点+裂纹效果）
         if (this.player.shield > 0) {
+            const now = performance.now();
             const shieldRatio = this.player.shield / this.player.bonuses.shieldMax;
-            ctx.globalAlpha = 0.4 * shieldRatio + 0.15;
-            ctx.strokeStyle = '#6688ff';
-            ctx.lineWidth = 2.5 + shieldRatio * 2.5;
+            const px = this.player.x - cam.x;
+            const py = this.player.y - cam.y;
+            const shieldR = this.player.radius + 10;
+            const pulse = 1 + Math.sin(now * 0.004) * 0.06;
+
+            // 外层柔光圈
+            ctx.globalAlpha = (0.1 * shieldRatio + 0.05) * pulse;
+            ctx.fillStyle = '#4466ff';
             ctx.beginPath();
-            ctx.arc(this.player.x - cam.x, this.player.y - cam.y, this.player.radius + 8, 0, TWO_PI);
-            ctx.stroke();
-            ctx.globalAlpha = 0.15 * shieldRatio + 0.05;
+            ctx.arc(px, py, shieldR + 8, 0, TWO_PI);
+            ctx.fill();
+
+            // 六边形主体能量盾
+            ctx.globalAlpha = 0.2 * shieldRatio + 0.08;
             ctx.fillStyle = '#6688ff';
             ctx.beginPath();
-            ctx.arc(this.player.x - cam.x, this.player.y - cam.y, this.player.radius + 8, 0, TWO_PI);
+            for (let i = 0; i < 6; i++) {
+                const a = (i / 6) * TWO_PI - Math.PI / 6 + now * 0.0005;
+                const hx = px + Math.cos(a) * shieldR * pulse;
+                const hy = py + Math.sin(a) * shieldR * pulse;
+                if (i === 0) ctx.moveTo(hx, hy);
+                else ctx.lineTo(hx, hy);
+            }
+            ctx.closePath();
             ctx.fill();
+
+            // 六边形边框（亮蓝发光）
+            ctx.globalAlpha = 0.5 * shieldRatio + 0.2;
+            ctx.strokeStyle = '#88aaff';
+            ctx.lineWidth = 2 + shieldRatio * 2;
+            ctx.beginPath();
+            for (let i = 0; i < 6; i++) {
+                const a = (i / 6) * TWO_PI - Math.PI / 6 + now * 0.0005;
+                const hx = px + Math.cos(a) * shieldR * pulse;
+                const hy = py + Math.sin(a) * shieldR * pulse;
+                if (i === 0) ctx.moveTo(hx, hy);
+                else ctx.lineTo(hx, hy);
+            }
+            ctx.closePath();
+            ctx.stroke();
+
+            // 内圈白色高光环
+            ctx.globalAlpha = 0.15 * shieldRatio;
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.arc(px, py, shieldR - 3, 0, TWO_PI);
+            ctx.stroke();
+
+            // 旋转能量光点（6个）
+            ctx.fillStyle = '#aaccff';
+            ctx.globalAlpha = 0.6 * shieldRatio + 0.2;
+            for (let i = 0; i < 6; i++) {
+                const a = now * 0.003 + (i / 6) * TWO_PI;
+                const dr = shieldR * pulse;
+                const dx = px + Math.cos(a) * dr;
+                const dy = py + Math.sin(a) * dr;
+                ctx.beginPath();
+                ctx.arc(dx, dy, 2 + shieldRatio * 1.5, 0, TWO_PI);
+                ctx.fill();
+            }
+
+            // 低护盾时闪烁警告效果
+            if (shieldRatio < 0.3) {
+                const warn = Math.sin(now * 0.015) > 0 ? 0.3 : 0;
+                ctx.globalAlpha = warn;
+                ctx.strokeStyle = '#ff4444';
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.arc(px, py, shieldR + 3, 0, TWO_PI);
+                ctx.stroke();
+            }
+
             ctx.globalAlpha = 1;
         }
 
@@ -1551,8 +1715,8 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
             ctx.globalAlpha = 1;
         }
 
-        // ── 星尘粒子（固定在世界坐标）—— 移动端减少数量 ──
-        const starCount = mobile ? 20 : 120;
+        // ── 星尘粒子（全面增强：更多+更大+十字星形+发光晕）—— 移动端减少数量 ──
+        const starCount = mobile ? 30 : 180;
         if (!this._bgStars || this._bgStars._count !== starCount) {
             this._bgStars = [];
             this._bgStars._count = starCount;
@@ -1560,37 +1724,77 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
                 this._bgStars.push({
                     wx: Math.random() * 6000 - 1000,
                     wy: Math.random() * 6000 - 1000,
-                    r: 0.4 + Math.random() * 1.0,
-                    a: 0.08 + Math.random() * 0.18,
-                    twinkleSpeed: 1 + Math.random() * 2,
+                    r: 0.6 + Math.random() * 1.8,
+                    a: 0.12 + Math.random() * 0.25,
+                    twinkleSpeed: 0.8 + Math.random() * 2.5,
                     twinklePhase: Math.random() * TWO_PI,
+                    isBright: Math.random() < 0.15, // 15%的星星特别亮
+                    rotSpeed: (Math.random() - 0.5) * 0.002, // 缓慢旋转
                 });
             }
         }
         const gameTime = this.gameTime || 0;
-        // 移动端用简单方块替代 arc 绘制星尘，减少路径调用
+        // 移动端用增强方块替代
         if (mobile) {
             ctx.fillStyle = theme.starColor;
             for (const star of this._bgStars) {
                 const sx = star.wx - camera.x;
                 const sy = star.wy - camera.y;
                 if (sx < -10 || sx > W + 10 || sy < -10 || sy > H + 10) continue;
-                const alpha = star.a * (0.6 + 0.4 * Math.sin(gameTime * star.twinkleSpeed + star.twinklePhase));
+                const alpha = star.a * (0.5 + 0.5 * Math.sin(gameTime * star.twinkleSpeed + star.twinklePhase));
                 ctx.globalAlpha = alpha;
                 const r = star.r;
                 ctx.fillRect(sx - r, sy - r, r * 2, r * 2);
+                // 亮星加十字
+                if (star.isBright) {
+                    ctx.globalAlpha = alpha * 0.5;
+                    ctx.fillRect(sx - r * 2, sy - 0.5, r * 4, 1);
+                    ctx.fillRect(sx - 0.5, sy - r * 2, 1, r * 4);
+                }
             }
         } else {
             for (const star of this._bgStars) {
                 const sx = star.wx - camera.x;
                 const sy = star.wy - camera.y;
                 if (sx < -10 || sx > W + 10 || sy < -10 || sy > H + 10) continue;
-                const alpha = star.a * (0.6 + 0.4 * Math.sin(gameTime * star.twinkleSpeed + star.twinklePhase));
-                ctx.globalAlpha = alpha;
-                ctx.fillStyle = theme.starColor;
-                ctx.beginPath();
-                ctx.arc(sx, sy, star.r, 0, TWO_PI);
-                ctx.fill();
+                const twinkle = 0.5 + 0.5 * Math.sin(gameTime * star.twinkleSpeed + star.twinklePhase);
+                const alpha = star.a * twinkle;
+
+                if (star.isBright) {
+                    // 亮星：多层发光 + 十字光芒
+                    const brightR = star.r * 1.5;
+                    // 外层光晕
+                    ctx.globalAlpha = alpha * 0.25;
+                    ctx.fillStyle = theme.starColor;
+                    ctx.beginPath();
+                    ctx.arc(sx, sy, brightR + 4, 0, TWO_PI);
+                    ctx.fill();
+                    // 十字光芒
+                    ctx.globalAlpha = alpha * 0.6;
+                    ctx.fillStyle = '#ffffff';
+                    const armLen = brightR * 3 * twinkle;
+                    ctx.fillRect(sx - armLen, sy - 0.5, armLen * 2, 1);
+                    ctx.fillRect(sx - 0.5, sy - armLen, 1, armLen * 2);
+                    // 核心亮点
+                    ctx.globalAlpha = alpha * 1.2;
+                    ctx.fillStyle = '#ffffff';
+                    ctx.beginPath();
+                    ctx.arc(sx, sy, brightR * 0.8, 0, TWO_PI);
+                    ctx.fill();
+                } else {
+                    // 普通星：增强版带柔光
+                    ctx.globalAlpha = alpha * 0.3;
+                    ctx.fillStyle = theme.starColor;
+                    ctx.beginPath();
+                    ctx.arc(sx, sy, star.r + 2, 0, TWO_PI);
+                    ctx.fill();
+
+                    ctx.globalAlpha = alpha;
+                    ctx.fillStyle = theme.starColor;
+                    ctx.beginPath();
+                    ctx.arc(sx, sy, star.r, 0, TWO_PI);
+                    ctx.fill();
+                }
             }
         }
         ctx.globalAlpha = 1;

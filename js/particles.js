@@ -788,28 +788,70 @@ class ParticleSystem {
             const sx = t.x - camera.x;
             const sy = t.y - camera.y;
             if (sx < -100 || sx > screenW + 100 || sy < -50 || sy > screenH + 50) continue;
-            const alpha = Math.min(1, t.life / t.maxLife * 2);
+            const lifeRatio = t.life / t.maxLife;
+            const alpha = Math.min(1, lifeRatio * 2.5);
             const scale = t.scale || 1;
-            const fontSize = Math.floor(t.size * scale);
+
+            // 弹出缩放动画：出现时放大后回弹
+            const popProgress = 1 - lifeRatio; // 0→1 over lifetime
+            let popScale = 1;
+            if (popProgress < 0.1) {
+                popScale = 1 + (1 - popProgress / 0.1) * 0.4; // 出现瞬间1.4x→1x
+            }
+            const fontSize = Math.floor(t.size * scale * popScale);
 
             ctx.globalAlpha = alpha;
             ctx.font = `bold ${fontSize}px 'Microsoft YaHei','PingFang SC','Helvetica Neue',Arial,sans-serif`;
 
-            // 外辉光(暴击时)
             if (t.isCrit) {
-                ctx.globalAlpha = alpha * 0.3;
+                // 暴击增强：多层辉光 + 闪电纹理
+                // 第一层：远距模糊辉光
+                ctx.globalAlpha = alpha * 0.2;
+                ctx.fillStyle = '#ffaa00';
+                ctx.fillText(t.text, sx + 1, sy + 1);
+                ctx.fillText(t.text, sx - 1, sy - 1);
+
+                // 第二层：中距辉光
+                ctx.globalAlpha = alpha * 0.4;
                 ctx.fillStyle = t.outlineColor === '#ffaa00' ? '#ffaa00' : t.color;
                 ctx.fillText(t.text, sx, sy);
+
+                // 闪电线条（暴击数字周围随机短线）
+                ctx.globalAlpha = alpha * 0.6;
+                ctx.strokeStyle = '#ffff88';
+                ctx.lineWidth = 1.5;
+                const boltCount = 3;
+                for (let b = 0; b < boltCount; b++) {
+                    const ba = (b / boltCount) * Math.PI * 2 + lifeRatio * 10;
+                    const bLen = fontSize * 0.4 + Math.sin(lifeRatio * 20 + b * 3) * fontSize * 0.2;
+                    const bx1 = sx + Math.cos(ba) * fontSize * 0.35;
+                    const by1 = sy + Math.sin(ba) * fontSize * 0.35;
+                    const bx2 = sx + Math.cos(ba) * (fontSize * 0.35 + bLen);
+                    const by2 = sy + Math.sin(ba) * (fontSize * 0.35 + bLen);
+                    ctx.beginPath();
+                    ctx.moveTo(bx1, by1);
+                    // 中间折点
+                    ctx.lineTo((bx1 + bx2) / 2 + (Math.random() - 0.5) * 4, (by1 + by2) / 2 + (Math.random() - 0.5) * 4);
+                    ctx.lineTo(bx2, by2);
+                    ctx.stroke();
+                }
             }
 
             ctx.globalAlpha = alpha;
-            // 描边
+            // 加粗描边（增强对比度）
             ctx.strokeStyle = t.outlineColor;
-            ctx.lineWidth = 4;
+            ctx.lineWidth = t.isCrit ? 5 : 4;
             ctx.strokeText(t.text, sx, sy);
-            // 填充
+            // 主填充
             ctx.fillStyle = t.color;
             ctx.fillText(t.text, sx, sy);
+
+            // 暴击白色高光叠加
+            if (t.isCrit) {
+                ctx.globalAlpha = alpha * 0.3 * popScale;
+                ctx.fillStyle = '#ffffff';
+                ctx.fillText(t.text, sx, sy - 1);
+            }
         }
 
         ctx.restore();

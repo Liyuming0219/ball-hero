@@ -779,69 +779,116 @@ class Player {
 
         // === 皮肤形态渲染 ===
         if (skin && skinRenderer && skinRenderer.renderBody(ctx, skin, sx, sy, this.radius, this.facingAngle, bob, ctx.globalAlpha)) {
-            // 皮肤渲染成功 - 仅添加受伤/回血闪光
+            // 皮肤渲染成功 - 增强版受伤/回血闪光
             if (this.damageFlash > 0) {
-                ctx.globalAlpha = 0.35;
+                const dFlash = this.damageFlash / 0.15;
+                // 红色脉冲环
+                ctx.globalAlpha = 0.4 * dFlash;
                 ctx.fillStyle = '#ff0000';
                 ctx.beginPath();
-                ctx.arc(sx, sy + bob, this.radius + 6, 0, Math.PI * 2);
+                ctx.arc(sx, sy + bob, this.radius + 8 * dFlash, 0, Math.PI * 2);
+                ctx.fill();
+                // 白色核心闪
+                ctx.globalAlpha = 0.3 * dFlash;
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(sx, sy + bob, this.radius * 0.8, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.globalAlpha = 1;
             }
             if (this.healFlash > 0) {
-                ctx.globalAlpha = 0.3;
-                ctx.fillStyle = '#00ff00';
+                const hFlash = this.healFlash / 0.2;
+                // 绿色上升光环
+                ctx.globalAlpha = 0.35 * hFlash;
+                ctx.fillStyle = '#00ff88';
                 ctx.beginPath();
-                ctx.arc(sx, sy + bob, this.radius + 5, 0, Math.PI * 2);
+                ctx.arc(sx, sy + bob - 4 * (1 - hFlash), this.radius + 6, 0, Math.PI * 2);
                 ctx.fill();
+                // 白色十字闪光
+                ctx.globalAlpha = 0.4 * hFlash;
+                ctx.fillStyle = '#ffffff';
+                const crossLen = this.radius * 0.8;
+                ctx.fillRect(sx - crossLen, sy + bob - 1, crossLen * 2, 2);
+                ctx.fillRect(sx - 1, sy + bob - crossLen, 2, crossLen * 2);
                 ctx.globalAlpha = 1;
             }
         } else {
-            // 无皮肤：默认渲染
-            // 身体外圈光晕
-            ctx.globalAlpha *= 0.25;
+            // 无皮肤：增强版默认渲染
+            // 外层呼吸光晕
+            const breathPulse = 1 + Math.sin(now * 0.003) * 0.1;
+            ctx.globalAlpha = 0.2 * breathPulse;
             ctx.fillStyle = this.def.color;
             ctx.beginPath();
-            ctx.arc(sx, sy + bob, this.radius + 8, 0, Math.PI * 2);
+            ctx.arc(sx, sy + bob, this.radius + 10, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 中层光环
+            ctx.globalAlpha = 0.3;
+            ctx.fillStyle = this.def.color;
+            ctx.beginPath();
+            ctx.arc(sx, sy + bob, this.radius + 5, 0, Math.PI * 2);
             ctx.fill();
             ctx.globalAlpha = isFlashing ? 0.4 : 1;
 
-            // 身体
+            // 身体（保持渐变）
             ctx.fillStyle = this.def.color;
             ctx.beginPath();
             ctx.arc(sx, sy + bob, this.radius, 0, Math.PI * 2);
             ctx.fill();
 
-            // 受伤/回血闪光
+            // 增强版受伤闪光
             if (this.damageFlash > 0) {
-                ctx.globalAlpha = 0.35;
-                ctx.fillStyle = '#ff0000';
+                const dFlash = this.damageFlash / 0.15;
+                ctx.globalAlpha = 0.45 * dFlash;
+                ctx.fillStyle = '#ff2222';
                 ctx.beginPath();
-                ctx.arc(sx, sy + bob, this.radius + 6, 0, Math.PI * 2);
+                ctx.arc(sx, sy + bob, this.radius + 8 * dFlash, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 0.25 * dFlash;
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(sx, sy + bob, this.radius * 0.6, 0, Math.PI * 2);
                 ctx.fill();
                 ctx.globalAlpha = 1;
             }
             if (this.healFlash > 0) {
-                ctx.globalAlpha = 0.3;
-                ctx.fillStyle = '#00ff00';
+                const hFlash = this.healFlash / 0.2;
+                ctx.globalAlpha = 0.35 * hFlash;
+                ctx.fillStyle = '#00ff88';
                 ctx.beginPath();
-                ctx.arc(sx, sy + bob, this.radius + 5, 0, Math.PI * 2);
+                ctx.arc(sx, sy + bob - 3 * (1 - hFlash), this.radius + 6, 0, Math.PI * 2);
                 ctx.fill();
+                ctx.globalAlpha = 0.3 * hFlash;
+                ctx.fillStyle = '#ffffff';
+                const cLen = this.radius * 0.7;
+                ctx.fillRect(sx - cLen, sy + bob - 1, cLen * 2, 2);
+                ctx.fillRect(sx - 1, sy + bob - cLen, 2, cLen * 2);
                 ctx.globalAlpha = 1;
             }
 
-            // 内圈高光
+            // 增强内圈高光（更柔和的渐变）
             ctx.fillStyle = '#fff';
-            ctx.globalAlpha *= 0.3;
+            ctx.globalAlpha = 0.35;
             ctx.beginPath();
-            ctx.arc(sx - 3, sy - 3 + bob, this.radius * 0.6, 0, Math.PI * 2);
+            ctx.arc(sx - this.radius * 0.25, sy - this.radius * 0.25 + bob, this.radius * 0.55, 0, Math.PI * 2);
             ctx.fill();
 
-            // 眼睛
+            // 眼睛（加发光眼白）
             ctx.globalAlpha = 1;
             const eyeDist = 6;
             const eyeX = sx + Math.cos(this.facingAngle) * eyeDist;
             const eyeY = sy + Math.sin(this.facingAngle) * eyeDist + bob;
+            // 眼白发光
+            ctx.globalAlpha = 0.3;
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(eyeX - 3, eyeY - 2, 6, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(eyeX + 3, eyeY - 2, 6, 0, Math.PI * 2);
+            ctx.fill();
+            // 眼白
+            ctx.globalAlpha = 1;
             ctx.fillStyle = '#fff';
             ctx.beginPath();
             ctx.arc(eyeX - 3, eyeY - 2, 4, 0, Math.PI * 2);
