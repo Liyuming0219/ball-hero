@@ -460,6 +460,8 @@ class Game {
         this.upgradeChoices = null;
         this._pendingBossRewards = 0;
         this._isBossReward = false;
+        this._freeRerolls = 1;  // 每局1次免费重随
+        this._rerollCount = 0;  // 当前已使用的付费重随次数
         UpgradePool.resetChoices();
 
         // 新buff计时器
@@ -1981,8 +1983,32 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
         // 粒子继续更新
         this.particles.update(dt);
 
-        // 渲染升级面板
-        const selected = this.ui.renderUpgradePanel(this.upgradeChoices, this._isBossReward);
+        // 渲染升级面板（含reroll按钮）
+        const rerollCost = this._getRerollCost();
+        const canReroll = this._canReroll();
+        const panelResult = this.ui.renderUpgradePanel(this.upgradeChoices, this._isBossReward, {
+            rerollCost,
+            canReroll,
+            freeRerolls: this._freeRerolls || 0,
+        });
+
+        // 处理reroll
+        if (panelResult === 'reroll') {
+            if (this._freeRerolls > 0) {
+                this._freeRerolls--;
+            } else if (typeof MetaProgress !== 'undefined') {
+                MetaProgress.data.gold -= rerollCost;
+                MetaProgress.save();
+            }
+            this._rerollCount = (this._rerollCount || 0) + 1;
+            this.upgradeChoices = UpgradePool.generateChoices(this.player);
+            this.ui._upgradePanelOpenTime = 0;
+            this.ui.clicked = false;
+            SFX.click();
+            return;
+        }
+
+        const selected = (typeof panelResult === 'number') ? panelResult : -1;
         if (selected >= 0) {
             UpgradePool.applyUpgrade(this.player, this.upgradeChoices[selected]);
 
@@ -2020,6 +2046,19 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
                 this._isBossReward = false;
             }
         }
+    }
+
+    // === Reroll辅助方法 ===
+    _getRerollCost() {
+        // 每次reroll花费递增：50 → 100 → 150...
+        const paidRerolls = (this._rerollCount || 0) - (1 - (this._freeRerolls || 0));
+        return Math.max(50, 50 * (Math.max(0, paidRerolls) + 1));
+    }
+
+    _canReroll() {
+        if ((this._freeRerolls || 0) > 0) return true;
+        if (typeof MetaProgress === 'undefined') return false;
+        return MetaProgress.data.gold >= this._getRerollCost();
     }
 
     // === 暂停 ===

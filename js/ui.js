@@ -1766,7 +1766,7 @@ class UISystem {
     }
 
     // --- 升级面板 ---
-    renderUpgradePanel(choices, isBossReward) {
+    renderUpgradePanel(choices, isBossReward, rerollInfo) {
         const ctx = this.ctx;
         const W = this.W;
         const H = this.H;
@@ -1882,6 +1882,48 @@ class UISystem {
 
             if (isHover && this.consumeClick()) {
                 result = i;
+            }
+        }
+
+        // === Reroll按钮 ===
+        if (rerollInfo && result < 0) {
+            const btnW = Math.round(160 * S);
+            const btnH = Math.round(40 * S);
+            const btnX = W / 2 - btnW / 2;
+            const btnY = cardY + cardH + Math.round(25 * S);
+            const canReroll = rerollInfo.canReroll;
+            const freeRerolls = rerollInfo.freeRerolls || 0;
+            const cost = rerollInfo.rerollCost || 0;
+
+            const isRerollHover = this.mouseX >= btnX && this.mouseX <= btnX + btnW
+                && this.mouseY >= btnY && this.mouseY <= btnY + btnH;
+
+            // 按钮背景
+            ctx.save();
+            if (canReroll && isRerollHover) {
+                ctx.shadowColor = '#44aaff';
+                ctx.shadowBlur = 12 * S;
+            }
+            ctx.fillStyle = canReroll ? (isRerollHover ? '#2a4060' : '#1a2a40') : '#1a1a2a';
+            ctx.strokeStyle = canReroll ? '#4488ff' : '#333344';
+            ctx.lineWidth = 2;
+            this._roundRect(ctx, btnX, btnY, btnW, btnH, 8 * S);
+            ctx.fill();
+            ctx.stroke();
+            ctx.restore();
+
+            // 按钮文字
+            ctx.font = this._font('bold', 14);
+            ctx.textAlign = 'center';
+            ctx.fillStyle = canReroll ? '#88ccff' : '#555566';
+            const rerollText = freeRerolls > 0
+                ? `🔄 免费重随 (${freeRerolls})`
+                : `🔄 重随 (${cost}💰)`;
+            ctx.fillText(rerollText, W / 2, btnY + btnH / 2 + 5 * S);
+
+            // 点击处理
+            if (canReroll && isRerollHover && this.consumeClick()) {
+                return 'reroll';
             }
         }
 
