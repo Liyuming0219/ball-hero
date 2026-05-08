@@ -440,6 +440,16 @@ class Player {
             actualDamage -= absorbed;
             this.shieldRegenCD = 3; // 受伤后3秒才回复护盾
             particles.addDamageText(this.x, this.y - 35, `护盾-${Math.floor(absorbed)}`, false, '#8888ff');
+            // 融合：极寒领域 — 护盾破碎时释放冰冻冲击波
+            if (this.shield <= 0 && this.bonuses._fusionCryoField) {
+                this._cryoFieldBurst = true; // 标记，由game.js下一帧处理冻结
+                particles.addShockwave(this.x, this.y, '#88ddff', 300, 0.5);
+                particles.emit(this.x, this.y, 20, {
+                    colors: ['#88ddff', '#aaeeff', '#ffffff'],
+                    speedMin: 4, speedMax: 10, sizeMin: 3, sizeMax: 7,
+                    lifeMin: 0.4, lifeMax: 0.8,
+                });
+            }
             if (actualDamage <= 0) {
                 this.invincibleTime = 0.2;
                 this.damageFlash = 0.1;

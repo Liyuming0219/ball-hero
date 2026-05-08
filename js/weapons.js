@@ -71,9 +71,22 @@ class WeaponSystem {
         if (this.attackTimer >= interval) {
             this.attackTimer -= interval;
             this._autoAttack(enemies, camera);
-            // 双重打击
-            if (this.player.bonuses.doubleStrike > 0 && Math.random() < this.player.bonuses.doubleStrike) {
-                this._autoAttack(enemies, camera);
+            // 双重打击（融合：狂暴连击 — 低血量时概率翻倍+回血）
+            if (this.player.bonuses.doubleStrike > 0) {
+                let dblChance = this.player.bonuses.doubleStrike;
+                const furyCombo = this.player.bonuses._fusionFuryCombo;
+                if (furyCombo && this.player.stats.hp < this.player.getMaxHp() * 0.5) {
+                    dblChance = Math.min(1, dblChance * 2);
+                }
+                if (Math.random() < dblChance) {
+                    // 融合：连锁爆破 — 双重打击触发时爆炸范围翻倍
+                    if (this.player.bonuses._fusionChainExplosion) this._doubleStrikeActive = true;
+                    this._autoAttack(enemies, camera);
+                    this._doubleStrikeActive = false;
+                    if (furyCombo) {
+                        this.player.heal(15, this.particles);
+                    }
+                }
             }
         }
 
@@ -106,8 +119,8 @@ class WeaponSystem {
                 }
             }
 
-            // 追踪弹 / 集火追踪
-            if (this.player.bonuses.homingShot && enemies.length > 0 && p.type !== 'split') {
+            // 追踪弹 / 集火追踪（融合：裂变导弹 — split弹也能追踪）
+            if (this.player.bonuses.homingShot && enemies.length > 0 && (p.type !== 'split' || this.player.bonuses._fusionFission)) {
                 let target = null;
                 let turnSpeed = 2.0 * dt; // 默认微弱追踪
 
@@ -178,6 +191,17 @@ class WeaponSystem {
                                 glow: true,
                             });
                         }
+                    } else if (this.player.bonuses._fusionBulletMatrix && this.player.bonuses.homingShot && p.type !== 'split' && !p._matrixPierced) {
+                        // 融合：弹幕矩阵 — 追踪弹穿透后换目标继续
+                        p._matrixPierced = true;
+                        if (!p.hitEnemies) p.hitEnemies = new Set();
+                        p.hitEnemies.add(enemy);
+                        p.life = Math.min(p.life + 0.5, p.maxLife || 3); // 延长寿命
+                        this.particles.emit(p.x, p.y, 3, {
+                            colors: ['#aaccff', '#88aaff', '#ffffff'],
+                            speedMin: 2, speedMax: 5, sizeMin: 1, sizeMax: 3,
+                            lifeMin: 0.1, lifeMax: 0.2,
+                        });
                     } else {
                         p.alive = false;
                         // 弹幕消失粒子
@@ -940,9 +964,13 @@ class WeaponSystem {
             enemy.slowTimer = 1.5;
         }
 
-        // 吸血
+        // 吸血（融合：血族狂怒 — 低血量时吸血翻倍）
         if (this.player.bonuses.vampiric > 0) {
-            const healAmt = damage * this.player.bonuses.vampiric;
+            let vampRate = this.player.bonuses.vampiric;
+            if (this.player.bonuses._fusionBloodRage && this.player.stats.hp < this.player.getMaxHp() * 0.5) {
+                vampRate *= 2;
+            }
+            const healAmt = damage * vampRate;
             if (healAmt > 0) this.player.heal(healAmt, this.particles);
         }
 
@@ -1015,18 +1043,29 @@ class WeaponSystem {
         }
         // 爆裂击杀
         if (this.player.bonuses.explosiveKill) {
+            // 融合：暗影收割 — 爆炸范围+50%，爆炸回血30%
+            const shadowHarvest = this.player.bonuses._fusionShadowHarvest;
             const explodeDmg = this.player.getAttack() * 0.8;
-            const explodeRange = 80;
+            let explodeRange = shadowHarvest ? 120 : 80;
+            // 融合：连锁爆破 — 双重打击时爆炸范围翻倍
+            if (this._doubleStrikeActive) explodeRange *= 2;
+            let totalExpDmg = 0;
             for (const e2 of this._lastEnemies || []) {
                 if (!e2.alive || e2 === enemy) continue;
                 if (Utils.dist(enemy.x, enemy.y, e2.x, e2.y) < explodeRange) {
                     const a = Utils.angle(enemy.x, enemy.y, e2.x, e2.y);
                     const eDied = e2.takeDamage(explodeDmg, this.particles, a, 8);
-                    this._logDmg('爆裂击杀', explodeDmg, false, eDied);
-                    this.particles.addDamageText(e2.x, e2.y, Math.floor(explodeDmg), false, '#ffaa00');
+                    this._logDmg(shadowHarvest ? '暗影收割' : '爆裂击杀', explodeDmg, false, eDied);
+                    this.particles.addDamageText(e2.x, e2.y, Math.floor(explodeDmg), false, shadowHarvest ? '#cc44ff' : '#ffaa00');
+                    totalExpDmg += explodeDmg;
                 }
             }
-            this.particles.explode(enemy.x, enemy.y, ['#ff6644', '#ffaa00', '#ffff44'], 12, 5);
+            // 暗影收割：爆炸总伤害的30%转化为生命
+            if (shadowHarvest && totalExpDmg > 0) {
+                const healAmt = Math.floor(totalExpDmg * 0.3);
+                this.player.heal(healAmt, this.particles);
+            }
+            this.particles.explode(enemy.x, enemy.y, shadowHarvest ? ['#aa22ff', '#cc44ff', '#ff66ff'] : ['#ff6644', '#ffaa00', '#ffff44'], 12, 5);
             Utils.shake(4);
         }
         // 击杀回血
@@ -1061,6 +1100,17 @@ class WeaponSystem {
             const died = nearest.takeDamage(damage, this.particles, angle, 3);
             this._logDmg('闪电链', damage, false, died);
             this.particles.addDamageText(nearest.x, nearest.y, Math.floor(damage), false, '#88aaff');
+            // 融合：雷火风暴 — 闪电命中附带灼烧DOT
+            if (this.player.bonuses._fusionThunderFire && nearest.alive) {
+                nearest._burnDamage = (nearest._burnDamage || 0) + damage * 0.5;
+                nearest._blazeStacks = Math.min(5, (nearest._blazeStacks || 0) + 1);
+                nearest._blazeTimer = Math.max(nearest._blazeTimer || 0, 4.0);
+                this.particles.emit(nearest.x, nearest.y, 3, {
+                    colors: ['#ff6644', '#ffaa00', '#ff4422'],
+                    speedMin: 1, speedMax: 3, sizeMin: 2, sizeMax: 4,
+                    lifeMin: 0.2, lifeMax: 0.4,
+                });
+            }
             if (died) this._onKill(nearest);
             current = nearest;
         }

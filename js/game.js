@@ -1,7 +1,7 @@
 ﻿// ============================================
 // 游戏版本号
 // ============================================
-var GAME_VERSION = 'v2.0.0';
+var GAME_VERSION = 'v2.1.0';
 
 // 性能常量（避免每帧重复创建）
 const RECYCLE_DIST_SQ = 1500 * 1500; // 超出此距离回收敌人
@@ -735,19 +735,33 @@ class Game {
                     }
                     // 荆棘反伤
                     if (this.player.bonuses.thornAura) {
-                        const thornDmg = enemy.damage * 2;
-                        const thornRange = 100;
+                        // 融合：圣盾荆棘 — 反伤400%+击退
+                        const holyThorns = this.player.bonuses._fusionHolyThorns;
+                        const thornDmg = enemy.damage * (holyThorns ? 4 : 2);
+                        const thornRange = holyThorns ? 130 : 100;
+                        const knockForce = holyThorns ? 20 : 10;
                         for (const e2 of this.enemies) {
                             if (!e2.alive) continue;
                             if (Utils.dist(this.player.x, this.player.y, e2.x, e2.y) < thornRange) {
                                 const thornAngle = Utils.angle(this.player.x, this.player.y, e2.x, e2.y);
-                                const tDied = e2.takeDamage(thornDmg, this.particles, thornAngle, 10);
-                                this.combatLog.record('荆棘反伤', thornDmg, false, tDied);
-                                this.particles.addDamageText(e2.x, e2.y, thornDmg, false, '#44ff44');
+                                const tDied = e2.takeDamage(thornDmg, this.particles, thornAngle, knockForce);
+                                this.combatLog.record(holyThorns ? '圣盾荆棘' : '荆棘反伤', thornDmg, false, tDied);
+                                this.particles.addDamageText(e2.x, e2.y, thornDmg, false, holyThorns ? '#88ffaa' : '#44ff44');
                                 if (!e2.alive) this.weapons._onKill(e2);
                             }
                         }
-                        this.particles.addShockwave(this.player.x, this.player.y, '#44ff44', 100, 0.3);
+                        this.particles.addShockwave(this.player.x, this.player.y, holyThorns ? '#88ffaa' : '#44ff44', thornRange, 0.3);
+                    }
+                    // 融合：冰晶护甲 — 被攻击时冻结攻击者0.5秒
+                    if (this.player.bonuses._fusionIceThorn && enemy.alive) {
+                        enemy._frozen = 0.5;
+                        if (!enemy._originalSpeed) enemy._originalSpeed = enemy.speed;
+                        enemy.speed = 0;
+                        this.particles.emit(enemy.x, enemy.y, 5, {
+                            colors: ['#88ddff', '#aaeeff', '#ffffff'],
+                            speedMin: 1, speedMax: 4, sizeMin: 2, sizeMax: 5,
+                            lifeMin: 0.3, lifeMax: 0.5,
+                        });
                     }
                 }
                 // 推开怪物
@@ -782,6 +796,7 @@ class Game {
         this._updateBurnAura(dt);
         this._updateArcherArrowRain(dt);
         this._updateSummons(dt);
+        this._updateFusionEffects(dt);
 
         // === 新系统更新 ===
         this._updateMapHazards(dt);
@@ -2144,6 +2159,15 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
                         this.particles.addDamageText(enemy.x, enemy.y, Math.floor(damage), false, this.player.def.color);
                         enemy._orbitalHitCD = 0.3; // 0.3秒命中冷却
                         if (!enemy.alive) this.weapons._onKill(enemy);
+                        // 融合：雷电旋刃 — 刀刃切割时触发闪电链
+                        if (this.player.bonuses._fusionThunderBlade && enemy.alive) {
+                            this.weapons._triggerChainLightning(enemy, damage * 0.4, 3);
+                            this.particles.emit(bx, by, 3, {
+                                colors: ['#88ccff', '#aaddff', '#ffffff'],
+                                speedMin: 3, speedMax: 6, sizeMin: 2, sizeMax: 4,
+                                lifeMin: 0.1, lifeMax: 0.25,
+                            });
+                        }
                     }
                 }
                 // 冷却递减
@@ -2182,13 +2206,32 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
 
             // 伤害敌人（每0.5秒一次通过模运算简化，使用空间哈希加速）
             if (Math.floor((fire.maxLife - fire.life) * 4) > Math.floor((fire.maxLife - fire.life - dt) * 4)) {
-                const nearbyFire = this._enemySpatialHash ? this._enemySpatialHash.query(fire.x, fire.y, 20) : this.enemies;
+                const magmaMode = this.player.bonuses._fusionMagmaFission;
+                const hitRange = magmaMode ? 35 : 20;
+                const nearbyFire = this._enemySpatialHash ? this._enemySpatialHash.query(fire.x, fire.y, hitRange) : this.enemies;
                 for (const enemy of nearbyFire) {
                     if (!enemy.alive) continue;
-                    if (Utils.dist(fire.x, fire.y, enemy.x, enemy.y) < 20) {
+                    if (Utils.dist(fire.x, fire.y, enemy.x, enemy.y) < hitRange) {
                         const fDied = enemy.takeDamage(fireDamage, this.particles, 0, 0);
-                        this.combatLog.record('火焰尾迹', fireDamage, false, fDied);
+                        this.combatLog.record(magmaMode ? '岩浆裂变' : '火焰尾迹', fireDamage, false, fDied);
                         if (!enemy.alive) this.weapons._onKill(enemy);
+                        // 融合：岩浆裂变 — 踩上时小型爆炸，分裂伤害周围
+                        if (magmaMode && Math.random() < 0.3) {
+                            const splashDmg = fireDamage * 0.6;
+                            const splashRange = 50;
+                            const nearby2 = this._enemySpatialHash ? this._enemySpatialHash.query(fire.x, fire.y, splashRange) : this.enemies;
+                            for (const e2 of nearby2) {
+                                if (!e2.alive || e2 === enemy) continue;
+                                if (Utils.dist(fire.x, fire.y, e2.x, e2.y) < splashRange) {
+                                    const sa = Utils.angle(fire.x, fire.y, e2.x, e2.y);
+                                    const sDied = e2.takeDamage(splashDmg, this.particles, sa, 4);
+                                    this.combatLog.record('岩浆分裂', splashDmg, false, sDied);
+                                    if (!e2.alive) this.weapons._onKill(e2);
+                                }
+                            }
+                            this.particles.explode(fire.x, fire.y, ['#ff4400', '#ff8800', '#ffcc00'], 8, 3);
+                            fire.life = 0; // 爆炸后火焰点消失
+                        }
                     }
                 }
             }
@@ -2285,6 +2328,32 @@ const alpha = (fire.life / fire.maxLife) * 0.8;
                 lifeMin: 0.4, lifeMax: 0.8,
                 offsetX: 50, offsetY: 50,
             });
+        }
+    }
+
+    // --- 融合效果更新 ---
+    _updateFusionEffects(dt) {
+        // 极寒领域：护盾破碎冻结全屏敌人
+        if (this.player._cryoFieldBurst) {
+            this.player._cryoFieldBurst = false;
+            for (const enemy of this.enemies) {
+                if (!enemy.alive) continue;
+                enemy._frozen = 1.5; // 冻结1.5秒
+                if (!enemy._originalSpeed) enemy._originalSpeed = enemy.speed;
+                enemy.speed = 0;
+            }
+        }
+        // 处理冻结倒计时
+        for (const enemy of this.enemies) {
+            if (!enemy.alive || !enemy._frozen) continue;
+            enemy._frozen -= dt;
+            if (enemy._frozen <= 0) {
+                enemy._frozen = 0;
+                if (enemy._originalSpeed) {
+                    enemy.speed = enemy._originalSpeed;
+                    enemy._originalSpeed = null;
+                }
+            }
         }
     }
 

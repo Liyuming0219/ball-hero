@@ -919,6 +919,62 @@ const FusionDefs = {
         requires: ['double', 'explokill'],
         apply(p) { p.bonuses._fusionChainExplosion = true; },
     },
+    // 环绕刀刃 + 连锁闪电 → 雷电旋刃
+    thunder_blade: {
+        name: '雷电旋刃',
+        desc: '环绕刀刃每次切割触发闪电链，跳跃3个目标',
+        icon: '🔪⚡',
+        requires: ['orbital1', 'chain1'],
+        apply(p) { p.bonuses._fusionThunderBlade = true; },
+    },
+    // 火焰尾迹 + 分裂弹 → 岩浆裂变
+    magma_fission: {
+        name: '岩浆裂变',
+        desc: '火焰尾迹变为岩浆池，敌人踩上时触发小型爆炸分裂',
+        icon: '🔥💥',
+        requires: ['firetrail', 'split'],
+        apply(p) { p.bonuses._fusionMagmaFission = true; },
+    },
+    // 冰霜光环 + 能量护盾 → 极寒领域
+    cryo_field: {
+        name: '极寒领域',
+        desc: '护盾破碎时释放冰冻冲击波，冻结全屏敌人1.5秒',
+        icon: '❄️🛡️',
+        requires: ['frost', 'shield1'],
+        apply(p) { p.bonuses._fusionCryoField = true; },
+    },
+    // 吸血 + 爆裂击杀 → 暗影收割
+    shadow_harvest: {
+        name: '暗影收割',
+        desc: '爆裂击杀回复爆炸伤害30%的生命，爆炸范围+50%',
+        icon: '🧛💣',
+        requires: ['vamp1', 'explokill'],
+        apply(p) { p.bonuses._fusionShadowHarvest = true; },
+    },
+    // 追踪术 + 额外弹幕 → 弹幕矩阵
+    bullet_matrix: {
+        name: '弹幕矩阵',
+        desc: '追踪弹获得穿透能力，穿透后换目标继续追踪',
+        icon: '🎯🌟',
+        requires: ['homing', 'proj1'],
+        apply(p) { p.bonuses._fusionBulletMatrix = true; },
+    },
+    // 荆棘 + 铁骨铮铮 → 圣盾荆棘
+    holy_thorns: {
+        name: '圣盾荆棘',
+        desc: '荆棘反伤提升至400%，反伤附带击退效果',
+        icon: '🌵🏛️',
+        requires: ['thorn', 'dmgred1'],
+        apply(p) { p.bonuses._fusionHolyThorns = true; },
+    },
+    // 狂战士之怒 + 双重打击 → 狂暴连击
+    fury_combo: {
+        name: '狂暴连击',
+        desc: '低血量时双重打击概率翻倍，且每次触发回复15HP',
+        icon: '😡✨',
+        requires: ['rage1', 'double'],
+        apply(p) { p.bonuses._fusionFuryCombo = true; },
+    },
 };
 
 // ============================================
