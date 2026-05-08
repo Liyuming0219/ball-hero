@@ -982,6 +982,8 @@ class WeaponSystem {
 
         // 暴击视觉反馈增强
         if (isCrit) {
+            // 触发屏幕暴击模糊特效
+            if (window._game) window._game._critBlurTimer = 0.1;
             // 基础暴击闪光 + 星光爆发
             this.particles.addFlash(enemy.x, enemy.y, '#ffcc00', 30, 0.15);
             Utils.shake(3);
@@ -1185,6 +1187,7 @@ class WeaponSystem {
         const sy = p.y - camera.y + (p.isMoving ? Math.sin(p.bodyBob) * 3 : 0);
         const anim = this.weaponAnim;
         const type = p.def.weaponType;
+        const isMelee = type === 'sword' || type === 'dagger' || type === 'hammer';
 
         // 计算武器角度：攻击中用攻击角度，否则用面朝角度
         let baseAngle = p.facingAngle;
@@ -1194,7 +1197,7 @@ class WeaponSystem {
             baseAngle = anim.angle;
             const t = anim.timer / anim.duration; // 0→1 进度
             // 挥舞弧度：从-60°到+60°（近战），远程是后坐力
-            if (type === 'sword' || type === 'dagger' || type === 'hammer') {
+            if (isMelee) {
                 swingOffset = (t < 0.5)
                     ? Utils.lerp(-1.0, 1.0, t * 2) * anim.swingDir
                     : Utils.lerp(1.0, 0, (t - 0.5) * 2) * anim.swingDir;
@@ -1210,6 +1213,49 @@ class WeaponSystem {
         const weaponDist = p.radius + 6;
         const wx = sx + Math.cos(weaponAngle) * weaponDist;
         const wy = sy + Math.sin(weaponAngle) * weaponDist;
+
+        // 挥砍弧线拖影（仅近战攻击中绘制）
+        if (isMelee && anim.active) {
+            if (!this._swingTrail) this._swingTrail = [];
+            // 武器尖端位置（距离玩家更远处）
+            const tipDist = weaponDist + (type === 'hammer' ? 18 : 22);
+            const tipX = sx + Math.cos(weaponAngle) * tipDist;
+            const tipY = sy + Math.sin(weaponAngle) * tipDist;
+            this._swingTrail.push({ x: tipX, y: tipY, alpha: 1.0 });
+            // 限制拖影长度
+            if (this._swingTrail.length > 12) this._swingTrail.shift();
+            // 绘制拖影弧线
+            if (this._swingTrail.length > 2) {
+                ctx.save();
+                const trailColor = type === 'sword' ? '#88ccff' : type === 'dagger' ? '#cc88ff' : '#ffaa44';
+                for (let i = 1; i < this._swingTrail.length; i++) {
+                    const prev = this._swingTrail[i - 1];
+                    const cur = this._swingTrail[i];
+                    const progress = i / this._swingTrail.length;
+                    ctx.globalAlpha = progress * 0.6;
+                    ctx.strokeStyle = trailColor;
+                    ctx.lineWidth = progress * 4;
+                    ctx.beginPath();
+                    ctx.moveTo(prev.x, prev.y);
+                    ctx.lineTo(cur.x, cur.y);
+                    ctx.stroke();
+                }
+                // 外发光层
+                ctx.globalAlpha = 0.15;
+                ctx.lineWidth = 8;
+                ctx.strokeStyle = trailColor;
+                ctx.beginPath();
+                ctx.moveTo(this._swingTrail[0].x, this._swingTrail[0].y);
+                for (let i = 1; i < this._swingTrail.length; i++) {
+                    ctx.lineTo(this._swingTrail[i].x, this._swingTrail[i].y);
+                }
+                ctx.stroke();
+                ctx.restore();
+            }
+        } else {
+            // 不在攻击中时清空拖影
+            if (this._swingTrail && this._swingTrail.length > 0) this._swingTrail = [];
+        }
 
         ctx.save();
         ctx.translate(wx, wy);

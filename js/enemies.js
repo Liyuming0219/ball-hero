@@ -197,6 +197,46 @@ const BossVariants = [
     { name: '混沌之眼', color: '#bb44dd', colors: ['#bb44dd', '#dd66ff', '#ff88ff'], pattern: 'bulletHell' },
 ];
 
+// 主题专属Boss - 每个地图主题对应一个独特多阶段Boss
+const ThemeBosses = {
+    void: {
+        name: '虚空裂隙守卫',
+        color: '#9944ff',
+        colors: ['#6622cc', '#9944ff', '#cc88ff'],
+        pattern: 'voidGuardian',
+        hpMult: 1.8,
+        radiusMult: 1.3,
+        desc: '传送+暗能量射线+虚空黑洞',
+    },
+    crimson: {
+        name: '猩红屠夫',
+        color: '#cc1111',
+        colors: ['#881111', '#cc1111', '#ff4444'],
+        pattern: 'crimsonButcher',
+        hpMult: 2.0,
+        radiusMult: 1.4,
+        desc: '狂暴冲锋+旋风斩+血刃风暴',
+    },
+    frost: {
+        name: '永冻冰龙',
+        color: '#44ccee',
+        colors: ['#2288bb', '#44ccee', '#aaeeff'],
+        pattern: 'frostDragon',
+        hpMult: 2.2,
+        radiusMult: 1.5,
+        desc: '冰息吐息+冰晶牢笼+暴风雪',
+    },
+    corruption: {
+        name: '腐化之母',
+        color: '#44cc44',
+        colors: ['#227722', '#44cc44', '#88ff88'],
+        pattern: 'corruptionMother',
+        hpMult: 2.5,
+        radiusMult: 1.6,
+        desc: '毒雾区域+触手拍击+分裂增殖',
+    },
+};
+
 class Enemy {
     constructor(type, x, y, waveMultiplier = 1) {
         this.type = type;
@@ -228,6 +268,28 @@ class Enemy {
         this.bodyBob = Math.random() * TWO_PI;
         this.slowTimer = 0;
         this.slowMult = 1;
+
+        // AI行为模式: direct(直追), orbit(环绕), ambush(伏击), formation(编队)
+        this._aiMode = 'direct';
+        this._aiTimer = 0;
+        this._aiPhase = 0;
+        this._orbitAngle = Math.random() * TWO_PI;
+        this._orbitDir = Math.random() < 0.5 ? 1 : -1;
+        this._ambushReady = false;
+        this._formationSlot = 0;
+        // 根据类型分配AI模式概率
+        if (type === 'bat' || type === 'shadowWolf') {
+            // 快速单位：30%环绕，20%伏击
+            const r = Math.random();
+            if (r < 0.3) this._aiMode = 'orbit';
+            else if (r < 0.5) this._aiMode = 'ambush';
+        } else if (type === 'skeleton' || type === 'slime' || type === 'gargoyle') {
+            // 近战单位：20%编队
+            if (Math.random() < 0.2) this._aiMode = 'formation';
+        } else if (type === 'skeletonMage' || type === 'demonCaster') {
+            // 远程单位：40%环绕(保持距离)
+            if (Math.random() < 0.4) this._aiMode = 'orbit';
+        }
 
         // 攻击冷却
         this.attackCooldown = 0;
@@ -275,6 +337,30 @@ class Enemy {
         else if (v.pattern === 'bulletHell') { this.speed *= 0.5; }
     }
 
+    // 应用主题专属Boss配置
+    applyThemeBoss(themeKey) {
+        const tb = ThemeBosses[themeKey];
+        if (!tb) return;
+        this.name = tb.name;
+        this.color = tb.color;
+        this.colors = tb.colors;
+        this.bossPattern = tb.pattern;
+        this.maxHp = Math.floor(this.maxHp * tb.hpMult);
+        this.hp = this.maxHp;
+        this.radius = Math.floor(this.radius * tb.radiusMult);
+        this._isThemeBoss = true;
+        this._themeKey = themeKey;
+        // 主题Boss专属状态
+        this._tbPhase = 0; // 当前阶段(多技能循环)
+        this._tbSkillTimer = 0;
+        this._tbTeleportCooldown = 0;
+        this._tbBladeAngle = 0;
+        this._tbSpiralAngle = 0;
+        this._tbTentacles = [];
+        this._tbSplitCount = 0;
+        this.speed *= 0.6;
+    }
+
     takeDamage(amount, particles, knockbackAngle = 0, knockbackForce = 0) {
         // 精英护盾吸收
         if (this._shielded && this._shieldHp > 0) {
@@ -315,9 +401,15 @@ class Enemy {
             // 开启死亡动画
             this.dying = true;
             this.deathTimer = 0;
-            this.deathDuration = this.isBoss ? 1.0 : (this.isElite ? 0.5 : 0.3);
+            this.deathDuration = this.isBoss ? 1.0 : (this.isElite ? 0.5 : 0.35);
             this.deathX = this.x;
             this.deathY = this.y;
+            // 随机死亡动画风格（普通敌人多样化）
+            if (!this.isBoss && !this.isElite) {
+                this._deathStyle = Math.floor(Math.random() * 4); // 0=碎片 1=蒸发 2=内爆 3=像素化
+            } else {
+                this._deathStyle = 0;
+            }
             return true; // died
         }
         return false;
@@ -363,16 +455,86 @@ class Enemy {
             const dx = tx - this.x;
             const dy = ty - this.y;
             const distSq = dx * dx + dy * dy;
+
+            if (this.slowTimer > 0) {
+                this.slowTimer -= dt;
+                if (this.slowTimer <= 0) this.slowMult = 1;
+            }
+            const spd = this.speed * this.slowMult;
+
             if (distSq > 1) { // > 1px² 避免除零
                 const stopDist = this.ranged ? 200 : (this.bossPattern === 'bulletHell' ? 250 : 0);
-                if (distSq > stopDist * stopDist) {
-                    if (this.slowTimer > 0) {
-                        this.slowTimer -= dt;
-                        if (this.slowTimer <= 0) this.slowMult = 1;
+                const dist = Math.sqrt(distSq);
+
+                // AI行为模式分支（Boss和精英始终直追）
+                if (this._aiMode !== 'direct' && !this.isBoss && !this.isElite) {
+                    this._aiTimer += dt;
+                    switch (this._aiMode) {
+                        case 'orbit': {
+                            // 环绕型：保持一定距离绕玩家转圈
+                            const orbitDist = this.ranged ? 220 : 130;
+                            this._orbitAngle += this._orbitDir * (spd / orbitDist) * dt;
+                            const targetX = tx + Math.cos(this._orbitAngle) * orbitDist;
+                            const targetY = ty + Math.sin(this._orbitAngle) * orbitDist;
+                            const odx = targetX - this.x;
+                            const ody = targetY - this.y;
+                            const oDist = Math.sqrt(odx * odx + ody * ody);
+                            if (oDist > 5) {
+                                this.x += (odx / oDist) * spd * dt;
+                                this.y += (ody / oDist) * spd * dt;
+                            }
+                            // 距离太远时切回直追接近
+                            if (dist > orbitDist * 2.5) {
+                                this.x += (dx / dist) * spd * dt * 0.5;
+                                this.y += (dy / dist) * spd * dt * 0.5;
+                            }
+                            break;
+                        }
+                        case 'ambush': {
+                            // 伏击型：先接近到一定距离后停住蓄力，然后冲刺
+                            if (!this._ambushReady) {
+                                // 接近阶段：缓慢接近到冲刺距离
+                                if (dist > 180) {
+                                    this.x += (dx / dist) * spd * 0.6 * dt;
+                                    this.y += (dy / dist) * spd * 0.6 * dt;
+                                } else {
+                                    this._ambushReady = true;
+                                    this._aiTimer = 0;
+                                }
+                            } else {
+                                // 蓄力后冲刺
+                                if (this._aiTimer < 0.8) {
+                                    // 蓄力等待（原地抖动）
+                                    this.x += (Math.random() - 0.5) * 2;
+                                    this.y += (Math.random() - 0.5) * 2;
+                                } else if (this._aiTimer < 1.4) {
+                                    // 冲刺阶段
+                                    this.x += (dx / dist) * spd * 3.0 * dt;
+                                    this.y += (dy / dist) * spd * 3.0 * dt;
+                                } else {
+                                    // 冲刺结束重置
+                                    this._ambushReady = false;
+                                    this._aiTimer = 0;
+                                }
+                            }
+                            break;
+                        }
+                        case 'formation': {
+                            // 编队型：维持与附近同类的间距，集群移动
+                            const formAngle = Utils.angle(this.x, this.y, tx, ty);
+                            // 主方向移动
+                            this.x += Math.cos(formAngle) * spd * dt;
+                            this.y += Math.sin(formAngle) * spd * dt;
+                            // 横向微偏移保持编队感（sin波动）
+                            const lateralOffset = Math.sin(this._aiTimer * 2 + this._formationSlot) * 0.8;
+                            this.x += Math.cos(formAngle + Math.PI / 2) * lateralOffset;
+                            this.y += Math.sin(formAngle + Math.PI / 2) * lateralOffset;
+                            break;
+                        }
                     }
-                    const spd = this.speed * this.slowMult;
-                    // 只在需要移动时才算 sqrt（已过停止距离检查）
-                    const invDist = 1 / Math.sqrt(distSq);
+                } else if (distSq > stopDist * stopDist) {
+                    // 默认直追逻辑
+                    const invDist = 1 / dist;
                     this.x += dx * invDist * spd * dt;
                     this.y += dy * invDist * spd * dt;
                 }
@@ -452,6 +614,167 @@ class Enemy {
                     this.bossBulletTimer = 0;
                     this.bossBulletAngle += 0.5;
                     return { type: 'bossBullets', x: this.x, y: this.y, baseAngle: this.bossBulletAngle, count: 5 };
+                }
+                break;
+            }
+
+            // ========== 主题专属Boss AI ==========
+
+            // 虚空裂隙守卫: 传送→暗能量射线→虚空黑洞 三阶段循环
+            case 'voidGuardian': {
+                this._tbSkillTimer += dt;
+                this._tbTeleportCooldown -= dt;
+                const phase = this._tbPhase % 3;
+                if (phase === 0) {
+                    // 阶段0: 传送到玩家附近随机位置
+                    if (this._tbSkillTimer >= 2.5) {
+                        this._tbSkillTimer = 0;
+                        const tpAngle = Math.random() * TWO_PI;
+                        const tpDist = 120 + Math.random() * 80;
+                        this.x = playerX + Math.cos(tpAngle) * tpDist;
+                        this.y = playerY + Math.sin(tpAngle) * tpDist;
+                        this._tbPhase++;
+                        return { type: 'voidTeleport', x: this.x, y: this.y };
+                    }
+                } else if (phase === 1) {
+                    // 阶段1: 暗能量射线 - 向玩家发射扇形弹幕
+                    if (this._tbSkillTimer >= 1.5) {
+                        this._tbSkillTimer = 0;
+                        this._tbPhase++;
+                        const aimAngle = Utils.angle(this.x, this.y, playerX, playerY);
+                        return { type: 'voidRay', x: this.x, y: this.y, angle: aimAngle, spread: 0.8, count: 7 };
+                    }
+                } else {
+                    // 阶段2: 虚空黑洞 - 在玩家位置生成吸引区域
+                    if (this._tbSkillTimer >= 3.0) {
+                        this._tbSkillTimer = 0;
+                        this._tbPhase++;
+                        return { type: 'voidBlackhole', x: playerX, y: playerY, radius: 140, duration: 2.5 };
+                    }
+                }
+                break;
+            }
+
+            // 猩红屠夫: 狂暴冲锋→旋风斩→血刃风暴 三阶段循环
+            case 'crimsonButcher': {
+                this._tbSkillTimer += dt;
+                const cPhase = this._tbPhase % 3;
+                if (cPhase === 0) {
+                    // 阶段0: 狂暴冲锋 - 连续3次短距冲刺
+                    if (!this.bossCharging) {
+                        if (this._tbSkillTimer >= 2.0) {
+                            this._tbSkillTimer = 0;
+                            this.bossChargeDir = Utils.angle(this.x, this.y, playerX, playerY);
+                            this.bossCharging = true;
+                            this.bossChargeSpeed = 550;
+                            this._chargeTime = 0;
+                            if (!this._tbChargeCount) this._tbChargeCount = 0;
+                            this._tbChargeCount++;
+                        }
+                    } else {
+                        this._chargeTime += dt;
+                        if (this._chargeTime >= 0.5) {
+                            this.bossCharging = false;
+                            this.bossChargeSpeed = 0;
+                            if (this._tbChargeCount >= 3) {
+                                this._tbChargeCount = 0;
+                                this._tbPhase++;
+                                this._tbSkillTimer = 0;
+                            }
+                            return { type: 'bossSlam', x: this.x, y: this.y, radius: 60 };
+                        }
+                    }
+                } else if (cPhase === 1) {
+                    // 阶段1: 旋风斩 - 持续旋转造成范围伤害
+                    this._tbBladeAngle += dt * 12;
+                    if (this._tbSkillTimer >= 3.0) {
+                        this._tbSkillTimer = 0;
+                        this._tbPhase++;
+                        this._tbWhirlHitTimer = 0;
+                        return { type: 'crimsonWhirlwind', x: this.x, y: this.y, radius: 120, duration: 3.0 };
+                    }
+                    if (!this._tbWhirlHitTimer) this._tbWhirlHitTimer = 0;
+                    this._tbWhirlHitTimer += dt;
+                    if (this._tbWhirlHitTimer >= 0.4) {
+                        this._tbWhirlHitTimer = 0;
+                        return { type: 'bossSlam', x: this.x, y: this.y, radius: 100 };
+                    }
+                } else {
+                    // 阶段2: 血刃风暴 - 全方向投射飞刃
+                    if (this._tbSkillTimer >= 2.5) {
+                        this._tbSkillTimer = 0;
+                        this._tbPhase++;
+                        return { type: 'bossBullets', x: this.x, y: this.y, baseAngle: Math.random() * TWO_PI, count: 12 };
+                    }
+                }
+                break;
+            }
+
+            // 永冻冰龙: 冰息吐息→冰晶牢笼→暴风雪 三阶段循环
+            case 'frostDragon': {
+                this._tbSkillTimer += dt;
+                const fPhase = this._tbPhase % 3;
+                if (fPhase === 0) {
+                    // 阶段0: 冰息吐息 - 锥形范围持续伤害
+                    if (this._tbSkillTimer >= 3.0) {
+                        this._tbSkillTimer = 0;
+                        this._tbPhase++;
+                        const breathAngle = Utils.angle(this.x, this.y, playerX, playerY);
+                        return { type: 'frostBreath', x: this.x, y: this.y, angle: breathAngle, coneWidth: 1.0, range: 250, duration: 2.0 };
+                    }
+                } else if (fPhase === 1) {
+                    // 阶段1: 冰晶牢笼 - 在玩家周围生成冰墙阻挡
+                    if (this._tbSkillTimer >= 3.5) {
+                        this._tbSkillTimer = 0;
+                        this._tbPhase++;
+                        return { type: 'frostCage', x: playerX, y: playerY, radius: 100, pillars: 8 };
+                    }
+                } else {
+                    // 阶段2: 暴风雪 - 全屏减速+散弹
+                    if (this._tbSkillTimer >= 4.0) {
+                        this._tbSkillTimer = 0;
+                        this._tbPhase++;
+                        this._tbSpiralAngle = 0;
+                        return { type: 'frostStorm', x: this.x, y: this.y, duration: 3.0 };
+                    }
+                    // 暴风雪期间持续散射冰弹
+                    this._tbSpiralAngle += dt * 3;
+                    if (this.bossPhaseTimer % 0.5 < dt) {
+                        return { type: 'bossBullets', x: this.x, y: this.y, baseAngle: this._tbSpiralAngle, count: 4 };
+                    }
+                }
+                break;
+            }
+
+            // 腐化之母: 毒雾区域→触手拍击→分裂增殖 三阶段循环
+            case 'corruptionMother': {
+                this._tbSkillTimer += dt;
+                const mPhase = this._tbPhase % 3;
+                if (mPhase === 0) {
+                    // 阶段0: 毒雾区域 - 多个持续伤害地带
+                    if (this._tbSkillTimer >= 3.0) {
+                        this._tbSkillTimer = 0;
+                        this._tbPhase++;
+                        return { type: 'poisonCloud', x: this.x, y: this.y, targetX: playerX, targetY: playerY, count: 4, radius: 80, duration: 4.0 };
+                    }
+                } else if (mPhase === 1) {
+                    // 阶段1: 触手拍击 - 从Boss周围伸出触手攻击
+                    if (this._tbSkillTimer >= 2.5) {
+                        this._tbSkillTimer = 0;
+                        this._tbPhase++;
+                        const tentacleAngle = Utils.angle(this.x, this.y, playerX, playerY);
+                        return { type: 'tentacleSlam', x: this.x, y: this.y, angle: tentacleAngle, count: 3, range: 200 };
+                    }
+                } else {
+                    // 阶段2: 分裂增殖 - 召唤小怪 + Boss获得短暂护盾
+                    if (this._tbSkillTimer >= 4.0) {
+                        this._tbSkillTimer = 0;
+                        this._tbPhase++;
+                        this._tbSplitCount++;
+                        // 每次分裂增殖越来越多
+                        const spawnCount = Math.min(3 + this._tbSplitCount, 8);
+                        return { type: 'corruptionSpawn', x: this.x, y: this.y, count: spawnCount, shieldHp: Math.floor(this.maxHp * 0.1) };
+                    }
                 }
                 break;
             }
@@ -846,27 +1169,98 @@ class Enemy {
             ctx.arc(sx, sy, this.radius * (1 + t * 2), 0, TWO_PI);
             ctx.fill();
         } else {
-            // 普通/精英死亡：碎片扩散 + 闪白 + 光环
-            // 初始闪白(更亮更大)
-            if (t < 0.2) {
-                const ft = t / 0.2;
-                ctx.globalAlpha = (1 - ft) * 0.7;
-                ctx.fillStyle = '#ffffff';
+            const style = this._deathStyle || 0;
+            if (style === 0) {
+                // 风格0：经典碎片扩散
+                if (t < 0.2) {
+                    const ft = t / 0.2;
+                    ctx.globalAlpha = (1 - ft) * 0.7;
+                    ctx.fillStyle = '#ffffff';
+                    ctx.beginPath();
+                    ctx.arc(sx, sy, this.radius * (1 + ft * 2.5), 0, TWO_PI);
+                    ctx.fill();
+                }
+                ctx.globalAlpha = (1 - t) * 0.8;
+                ctx.fillStyle = this.color;
+                const pieces = this.isElite ? 12 : 6;
+                for (let i = 0; i < pieces; i++) {
+                    const angle = (i / pieces) * TWO_PI + t * 4;
+                    const dist = this.radius * t * (this.isElite ? 4 : 2.5);
+                    const size = this.radius * (this.isElite ? 0.35 : 0.28) * (1 - t);
+                    ctx.beginPath();
+                    ctx.arc(sx + Math.cos(angle) * dist, sy + Math.sin(angle) * dist, size, 0, TWO_PI);
+                    ctx.fill();
+                }
+            } else if (style === 1) {
+                // 风格1：蒸发（从下向上溶解 + 淡出粒子上升）
+                ctx.globalAlpha = (1 - t) * 0.9;
+                ctx.fillStyle = this.color;
                 ctx.beginPath();
-                ctx.arc(sx, sy, this.radius * (1 + ft * 2.5), 0, TWO_PI);
+                ctx.arc(sx, sy - t * this.radius * 2, this.radius * (1 - t * 0.6), 0, TWO_PI);
                 ctx.fill();
-            }
-            // 碎片(更多更亮)
-            ctx.globalAlpha = (1 - t) * 0.8;
-            ctx.fillStyle = this.color;
-            const pieces = this.isElite ? 12 : 6;
-            for (let i = 0; i < pieces; i++) {
-                const angle = (i / pieces) * TWO_PI + t * 4;
-                const dist = this.radius * t * (this.isElite ? 4 : 2.5);
-                const size = this.radius * (this.isElite ? 0.35 : 0.28) * (1 - t);
-                ctx.beginPath();
-                ctx.arc(sx + Math.cos(angle) * dist, sy + Math.sin(angle) * dist, size, 0, TWO_PI);
-                ctx.fill();
+                // 上升蒸汽粒子
+                for (let i = 0; i < 4; i++) {
+                    const px = sx + (Math.random() - 0.5) * this.radius * 2;
+                    const py = sy - t * this.radius * 3 - i * 5;
+                    ctx.globalAlpha = (1 - t) * 0.4;
+                    ctx.fillStyle = '#ffffff';
+                    ctx.beginPath();
+                    ctx.arc(px, py, 2 * (1 - t), 0, TWO_PI);
+                    ctx.fill();
+                }
+            } else if (style === 2) {
+                // 风格2：内爆（先缩小后爆炸环）
+                if (t < 0.5) {
+                    // 缩小阶段
+                    const shrink = 1 - t * 1.8;
+                    ctx.globalAlpha = 0.9;
+                    ctx.fillStyle = this.color;
+                    ctx.beginPath();
+                    ctx.arc(sx, sy, this.radius * Math.max(0.1, shrink), 0, TWO_PI);
+                    ctx.fill();
+                    // 吸收线条
+                    ctx.strokeStyle = this.color;
+                    ctx.lineWidth = 1.5;
+                    ctx.globalAlpha = (0.5 - t) * 1.2;
+                    for (let i = 0; i < 6; i++) {
+                        const a = (i / 6) * TWO_PI;
+                        const outerD = this.radius * 3 * (0.5 - t);
+                        ctx.beginPath();
+                        ctx.moveTo(sx + Math.cos(a) * outerD, sy + Math.sin(a) * outerD);
+                        ctx.lineTo(sx, sy);
+                        ctx.stroke();
+                    }
+                } else {
+                    // 爆发环
+                    const et = (t - 0.5) / 0.5;
+                    ctx.globalAlpha = (1 - et) * 0.8;
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 3 * (1 - et);
+                    ctx.beginPath();
+                    ctx.arc(sx, sy, this.radius * (0.5 + et * 3), 0, TWO_PI);
+                    ctx.stroke();
+                    ctx.strokeStyle = this.color;
+                    ctx.lineWidth = 2 * (1 - et);
+                    ctx.beginPath();
+                    ctx.arc(sx, sy, this.radius * (0.3 + et * 2), 0, TWO_PI);
+                    ctx.stroke();
+                }
+            } else {
+                // 风格3：像素化消散
+                ctx.globalAlpha = (1 - t) * 0.85;
+                const pixSize = Math.max(2, this.radius * 0.35);
+                const gridN = Math.ceil(this.radius * 2 / pixSize);
+                for (let gx = 0; gx < gridN; gx++) {
+                    for (let gy = 0; gy < gridN; gy++) {
+                        // 每个块以不同速率飘散
+                        const seed = (gx * 7 + gy * 13) % 17 / 17;
+                        if (seed < t * 1.2) continue; // 逐步消失
+                        const ox = (gx - gridN / 2) * pixSize + (Math.random() - 0.5) * t * 8;
+                        const oy = (gy - gridN / 2) * pixSize + t * seed * 15;
+                        ctx.fillStyle = this.color;
+                        ctx.fillRect(sx + ox - pixSize / 2, sy + oy - pixSize / 2, pixSize * (1 - t * 0.5), pixSize * (1 - t * 0.5));
+                    }
+                }
             }
             // 精英额外：双层扩散光环
             if (this.isElite) {
@@ -1033,7 +1427,18 @@ class WaveManager {
             const bossMultiplier = 1 + (this.stageBossCount - 1) * 0.5;
             const boss = new Enemy('boss', pos.x, pos.y, bossMultiplier * this.difficulty);
             boss._isStageBoss = true;
-            boss.applyBossVariant(this.stageBossCount - 1); // 每次不同变体
+
+            // 主题专属Boss: 每个主题首次Boss使用主题Boss, 之后交替普通变体
+            const currentTheme = this._getCurrentMapTheme();
+            if (currentTheme && !this._themesBossSpawned) this._themesBossSpawned = {};
+            if (currentTheme && !this._themesBossSpawned[currentTheme]) {
+                // 该主题首次出Boss → 生成主题专属Boss
+                boss.applyThemeBoss(currentTheme);
+                this._themesBossSpawned[currentTheme] = true;
+            } else {
+                boss.applyBossVariant(this.stageBossCount - 1); // 普通变体循环
+            }
+
             // 每日修饰符：Boss血量加成
             if (this.bossHpMult > 1) {
                 boss.maxHp = Math.floor(boss.maxHp * this.bossHpMult);
@@ -1041,6 +1446,22 @@ class WaveManager {
             }
             enemies.push(boss);
             this.activeStageBoss = boss;
+
+            // 极端修饰符：镜像噩梦 - Boss双生
+            if (this.mirrorBoss) {
+                const pos2 = this._getSpawnPos(playerX, playerY);
+                const mirrorBoss = new Enemy('boss', pos2.x, pos2.y, bossMultiplier * this.difficulty);
+                mirrorBoss._isStageBoss = true;
+                mirrorBoss.applyBossVariant((this.stageBossCount) % BossVariants.length);
+                mirrorBoss.maxHp = Math.floor(mirrorBoss.maxHp * 0.7); // 镜像体血量稍低
+                mirrorBoss.hp = mirrorBoss.maxHp;
+                if (this.bossHpMult > 1) {
+                    mirrorBoss.maxHp = Math.floor(mirrorBoss.maxHp * this.bossHpMult);
+                    mirrorBoss.hp = mirrorBoss.maxHp;
+                }
+                enemies.push(mirrorBoss);
+            }
+
             // Boss间隔逐步缩短：270s → 240s → 210s → 180s → 150s → 120s（最短）
             this.stageBossInterval = Math.max(120, 270 - this.stageBossCount * 30);
             this.nextStageBossTime = this.gameTime + this.stageBossInterval;
@@ -1087,6 +1508,15 @@ class WaveManager {
             x: playerX + Math.cos(angle) * dist,
             y: playerY + Math.sin(angle) * dist,
         };
+    }
+
+    // 获取当前地图主题ID (基于gameTime)
+    _getCurrentMapTheme() {
+        if (typeof MapThemes === 'undefined') return null;
+        for (let i = MapThemes.length - 1; i >= 0; i--) {
+            if (this.gameTime >= MapThemes[i].timeRange[0]) return MapThemes[i].id;
+        }
+        return MapThemes[0].id;
     }
 }
 
@@ -1381,13 +1811,13 @@ class DropItem {
 // 地图危险区域
 // ============================================
 class MapHazard {
-    constructor(x, y, type) {
+    constructor(x, y, type, radius, life) {
         this.x = x;
         this.y = y;
         this.type = type;
-        this.radius = Utils.rand(60, 100);
+        this.radius = radius || Utils.rand(60, 100);
         this.timer = 0;
-        this.life = Utils.rand(20, 40);
+        this.life = life || Utils.rand(20, 40);
         this.alive = true;
         this.damageTimer = 0;
 
@@ -1395,6 +1825,8 @@ class MapHazard {
             poison: { color: '#44aa44', glowColor: '#66cc66', damage: 3, interval: 0.5, icon: '\u2620\uFE0F' },
             fire: { color: '#ff6622', glowColor: '#ff8844', damage: 6, interval: 0.4, icon: '\uD83D\uDD25' },
             slow: { color: '#4488ff', glowColor: '#66aaff', damage: 0, interval: 0, icon: '\u2744\uFE0F' },
+            ice: { color: '#44ccee', glowColor: '#88eeff', damage: 2, interval: 0.8, icon: '\u2744\uFE0F' },
+            voidHole: { color: '#6622cc', glowColor: '#9944ff', damage: 4, interval: 0.3, icon: '\uD83C\uDF00' },
         };
         const def = defs[type] || defs.poison;
         this.color = def.color;
@@ -1402,6 +1834,12 @@ class MapHazard {
         this.damage = def.damage;
         this.damageInterval = def.interval;
         this.icon = def.icon;
+
+        // 扩展属性 (由创建方设置)
+        this._pullForce = 0;     // 吸引力
+        this._followBoss = null; // 跟随Boss移动
+        this._slowAura = 0;      // 减速光环
+        this._isWall = false;    // 阻挡物（冰柱）
     }
 
     update(dt, player) {
@@ -1409,12 +1847,53 @@ class MapHazard {
         this.life -= dt;
         if (this.life <= 0) { this.alive = false; return 0; }
 
+        // 跟随Boss移动
+        if (this._followBoss && this._followBoss.alive) {
+            this.x = this._followBoss.x;
+            this.y = this._followBoss.y;
+        }
+
         const dx = this.x - player.x;
         const dy = this.y - player.y;
+        const distSq = dx * dx + dy * dy;
         const r = this.radius + player.radius;
-        if (dx * dx + dy * dy < r * r) {
-            if (this.type === 'slow') {
+
+        // 吸引效果 (虚空黑洞)
+        if (this._pullForce > 0 && distSq < (this.radius * 2.5) * (this.radius * 2.5)) {
+            const dist = Math.sqrt(distSq);
+            if (dist > 10) {
+                const pullStrength = this._pullForce * dt * (1 - dist / (this.radius * 2.5));
+                player.x += (this.x - player.x) / dist * pullStrength;
+                player.y += (this.y - player.y) / dist * pullStrength;
+            }
+        }
+
+        // 减速光环
+        if (this._slowAura > 0 && distSq < this.radius * this.radius) {
+            player._hazardSlow = this._slowAura;
+        }
+
+        // 碰撞阻挡 (冰柱)
+        if (this._isWall && distSq < r * r) {
+            const dist = Math.sqrt(distSq);
+            if (dist > 0) {
+                const overlap = r - dist;
+                player.x -= dx / dist * overlap;
+                player.y -= dy / dist * overlap;
+            }
+            return 0;
+        }
+
+        if (distSq < r * r) {
+            if (this.type === 'slow' || this.type === 'ice') {
                 player._hazardSlow = 0.5;
+                if (this.type === 'ice' && this.damage > 0) {
+                    this.damageTimer += dt;
+                    if (this.damageTimer >= this.damageInterval) {
+                        this.damageTimer = 0;
+                        return this.damage;
+                    }
+                }
                 return 0;
             }
             this.damageTimer += dt;

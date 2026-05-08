@@ -117,7 +117,11 @@ class SkinManager {
         for (const sk of Object.keys(SkinSeries)) for (const id of Object.keys(SkinSeries[sk].skins)) list.push(SkinSeries[sk].skins[id]);
         return list;
     }
-    getEquippedSkin(charId) { const id = this.equippedSkins[charId]; return id ? this.getSkinById(id) : null; }
+    getEquippedSkin(charId) {
+        // 试玩模式优先使用临时皮肤
+        if (this._trialSkinId) { const s = this.getSkinById(this._trialSkinId); if (s) return s; }
+        const id = this.equippedSkins[charId]; return id ? this.getSkinById(id) : null;
+    }
     getSkinById(skinId) {
         for (const sk of Object.keys(SkinSeries)) if (SkinSeries[sk].skins[skinId]) return SkinSeries[sk].skins[skinId];
         return null;

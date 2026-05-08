@@ -1105,13 +1105,34 @@ const DailyLeaderboard = {
             { name: '铁壁试炼', desc: 'Boss血量+40%', key: 'bossHpBoost', value: 1.4 },
             { name: '幸运星', desc: '遗物掉率+25%', key: 'relicBoost', value: 1.25 },
         ];
-        // 每天选2个修饰
+        // 极端修饰符（高风险高回报，有概率在周末出现）
+        const extremePool = [
+            { name: '玻璃大炮', desc: '伤害x2 但生命上限=1', key: 'glassCannon', value: 1, extreme: true },
+            { name: '无尽潮涌', desc: '敌人数量x2 经验x1.5', key: 'endlessTide', value: 1, extreme: true },
+            { name: '时间加速', desc: '全局2倍速 包括玩家', key: 'timeWarp', value: 2.0, extreme: true },
+            { name: '黑暗降临', desc: '视野缩小50% 但暴击率+30%', key: 'darkness', value: 1, extreme: true },
+            { name: '武器封印', desc: '随机封印1个武器槽 攻击力+50%', key: 'weaponSeal', value: 1, extreme: true },
+            { name: '死神契约', desc: '每30秒失去10%当前血量 击杀回血', key: 'deathPact', value: 1, extreme: true },
+            { name: '巨人化', desc: '体积x2 伤害x1.5 移速-30%', key: 'gigantism', value: 1, extreme: true },
+            { name: '镜像噩梦', desc: 'Boss同时出现2只 经验x2', key: 'mirrorBoss', value: 1, extreme: true },
+        ];
+        // 每天选2个普通修饰 + 周末(seed%7 < 2)额外加1个极端修饰
         const shuffled = modPool.slice();
         for (let i = shuffled.length - 1; i > 0; i--) {
             const j = Math.floor(rng() * (i + 1));
             [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
         }
-        return shuffled.slice(0, 2);
+        const result = shuffled.slice(0, 2);
+        // 约30%概率出现极端修饰符(seed决定)
+        if (rng() < 0.3) {
+            const eShuffled = extremePool.slice();
+            for (let i = eShuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(rng() * (i + 1));
+                [eShuffled[i], eShuffled[j]] = [eShuffled[j], eShuffled[i]];
+            }
+            result.push(eShuffled[0]);
+        }
+        return result;
     },
 
     // 读取排行榜数据
