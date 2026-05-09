@@ -2074,61 +2074,7 @@ class Game {
             ctx.globalAlpha = 1;
         }
 
-        // ── 视差层：远景慢速移动的装饰元素 ──
-        if (!this._parallaxLayers) {
-            this._parallaxLayers = [];
-            // 生成3层视差粒子（远→近速度递增）
-            const layerConfigs = [
-                { count: mobile ? 10 : 30, speed: 0.2, sizeMin: 3, sizeMax: 7, alpha: 0.12 },
-                { count: mobile ? 15 : 40, speed: 0.4, sizeMin: 4, sizeMax: 10, alpha: 0.16 },
-                { count: mobile ? 8 : 25, speed: 0.65, sizeMin: 6, sizeMax: 16, alpha: 0.20 },
-            ];
-            for (const cfg of layerConfigs) {
-                const layer = { ...cfg, items: [] };
-                for (let i = 0; i < cfg.count; i++) {
-                    layer.items.push({
-                        x: Math.random() * 5000 - 500,
-                        y: Math.random() * 5000 - 500,
-                        size: cfg.sizeMin + Math.random() * (cfg.sizeMax - cfg.sizeMin),
-                        shape: Math.random() < 0.5 ? 'circle' : 'diamond',
-                    });
-                }
-                this._parallaxLayers.push(layer);
-            }
-        }
-        for (const layer of this._parallaxLayers) {
-            ctx.globalAlpha = layer.alpha;
-            ctx.fillStyle = theme.decorColor || theme.starColor;
-            const angle = gt * 0.2 * layer.speed;
-            const cos = Math.cos(angle), sin = Math.sin(angle);
-            for (const item of layer.items) {
-                const px = item.x - camera.x * layer.speed;
-                const py = item.y - camera.y * layer.speed;
-                // 包裹到屏幕区域
-                const wrappedX = ((px % W) + W) % W;
-                const wrappedY = ((py % H) + H) % H;
-                if (item.shape === 'circle') {
-                    ctx.beginPath();
-                    ctx.arc(wrappedX, wrappedY, item.size, 0, TWO_PI);
-                    ctx.fill();
-                } else {
-                    // 手动旋转钻石顶点，避免save/translate/rotate/restore
-                    const s = item.size, s6 = s * 0.6;
-                    const x0 = -sin * s, y0 = -cos * s;       // top (0, -s) rotated
-                    const x1 = cos * s6, y1 = -sin * s6;      // right (s6, 0) rotated
-                    const x2 = sin * s, y2 = cos * s;          // bottom (0, s) rotated
-                    const x3 = -cos * s6, y3 = sin * s6;       // left (-s6, 0) rotated
-                    ctx.beginPath();
-                    ctx.moveTo(wrappedX + x0, wrappedY + y0);
-                    ctx.lineTo(wrappedX + x1, wrappedY + y1);
-                    ctx.lineTo(wrappedX + x2, wrappedY + y2);
-                    ctx.lineTo(wrappedX + x3, wrappedY + y3);
-                    ctx.closePath();
-                    ctx.fill();
-                }
-            }
-        }
-        ctx.globalAlpha = 1;
+        // （已移除漂浮球球/菱形视差层）
 
         // ── 星尘粒子（全面增强：更多+更大+十字星形+发光晕）—— 移动端减少数量 ──
         const starCount = mobile ? 45 : 220;
@@ -2246,16 +2192,16 @@ class Game {
             }
         }
 
-        // ── 环境装饰物（固定在世界坐标）—— 移动端减少数量 ──
-        const decorCount = mobile ? 6 : 40;
+        // ── 环境装饰物（固定在世界坐标）—— 大幅增加数量 ──
+        const decorCount = mobile ? 20 : 120;
         if (!this._mapDecors || this._mapDecors._count !== decorCount) {
             this._mapDecors = [];
             this._mapDecors._count = decorCount;
             for (let i = 0; i < decorCount; i++) {
                 this._mapDecors.push({
-                    wx: Math.random() * 5000 - 500,
-                    wy: Math.random() * 5000 - 500,
-                    scale: 0.5 + Math.random() * 0.8,
+                    wx: Math.random() * 6000 - 1000,
+                    wy: Math.random() * 6000 - 1000,
+                    scale: 0.4 + Math.random() * 1.2,
                     rot: Math.random() * TWO_PI,
                     variant: Math.floor(Math.random() * 3),
                 });
@@ -2272,9 +2218,9 @@ class Game {
         for (const d of this._mapDecors) {
             const sx = d.wx - camera.x;
             const sy = d.wy - camera.y;
-            if (sx < -60 || sx > W + 60 || sy < -60 || sy > H + 60) continue;
+            if (sx < -80 || sx > W + 80 || sy < -80 || sy > H + 80) continue;
 
-            ctx.globalAlpha = 0.15 + 0.05 * Math.sin(gt * 0.5 + d.rot);
+            ctx.globalAlpha = 0.30 + 0.10 * Math.sin(gt * 0.5 + d.rot);
             ctx.save();
             ctx.translate(sx, sy);
             ctx.scale(d.scale, d.scale);
@@ -2388,7 +2334,7 @@ class Game {
     _renderAmbientEffect(ctx, camera, theme, W, H, gt) {
         if (!theme.specialEffect) return;
         const mobile = this.isMobile;
-        const count = mobile ? 12 : (theme.ambientParticles ? theme.ambientParticles.count : 15);
+        const count = mobile ? 25 : (theme.ambientParticles ? theme.ambientParticles.count : 30);
 
         // 初始化环境粒子（只在地图切换时重建）
         if (!this._ambientFx || this._ambientFx._mapId !== theme.id) {
