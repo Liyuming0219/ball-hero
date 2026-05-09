@@ -12,16 +12,16 @@ const CharacterDefs = {
         colors: ['#44aaff', '#2288dd', '#66ccff'],
         icon: '⚔️',
         baseStats: {
-            maxHp: 160,
-            hp: 160,
-            attack: 25,
-            attackSpeed: 1.3,     // 攻击/秒
-            critRate: 0.12,
-            critDamage: 1.8,
-            moveSpeed: 210,
-            hpRegen: 1.2,        // 每秒回血
-            pickupRange: 80,
-            armor: 4,
+            maxHp: 120,
+            hp: 120,
+            attack: 16,
+            attackSpeed: 1.1,     // 攻击/秒
+            critRate: 0.08,
+            critDamage: 1.5,
+            moveSpeed: 195,
+            hpRegen: 0.6,        // 每秒回血
+            pickupRange: 70,
+            armor: 2,
         },
         passive: {
             name: '疾风剑意',
@@ -41,16 +41,16 @@ const CharacterDefs = {
         colors: ['#ff6644', '#ff4422', '#ffaa00'],
         icon: '🔥',
         baseStats: {
-            maxHp: 130,
-            hp: 130,
-            attack: 35,
-            attackSpeed: 1.15,
-            critRate: 0.18,
-            critDamage: 2.2,
-            moveSpeed: 195,
-            hpRegen: 1.0,
-            pickupRange: 90,
-            armor: 2,
+            maxHp: 95,
+            hp: 95,
+            attack: 22,
+            attackSpeed: 0.95,
+            critRate: 0.12,
+            critDamage: 1.8,
+            moveSpeed: 180,
+            hpRegen: 0.5,
+            pickupRange: 80,
+            armor: 1,
         },
         passive: {
             name: '元素共鸣',
@@ -70,16 +70,16 @@ const CharacterDefs = {
         colors: ['#aa44ff', '#8822dd', '#cc66ff'],
         icon: '🗡️',
         baseStats: {
-            maxHp: 100,
-            hp: 100,
-            attack: 32,
-            attackSpeed: 1.8,
-            critRate: 0.30,
-            critDamage: 2.5,
-            moveSpeed: 250,
-            hpRegen: 0.8,
-            pickupRange: 70,
-            armor: 1,
+            maxHp: 75,
+            hp: 75,
+            attack: 20,
+            attackSpeed: 1.5,
+            critRate: 0.20,
+            critDamage: 2.0,
+            moveSpeed: 230,
+            hpRegen: 0.4,
+            pickupRange: 65,
+            armor: 0,
         },
         passive: {
             name: '暗影步',
@@ -99,16 +99,16 @@ const CharacterDefs = {
         colors: ['#ffcc44', '#ffdd66', '#ffffff'],
         icon: '🛡️',
         baseStats: {
-            maxHp: 220,
-            hp: 220,
-            attack: 28,
-            attackSpeed: 0.95,
-            critRate: 0.10,
-            critDamage: 1.7,
-            moveSpeed: 175,
-            hpRegen: 2.5,
-            pickupRange: 75,
-            armor: 7,
+            maxHp: 160,
+            hp: 160,
+            attack: 18,
+            attackSpeed: 0.8,
+            critRate: 0.06,
+            critDamage: 1.5,
+            moveSpeed: 165,
+            hpRegen: 1.2,
+            pickupRange: 70,
+            armor: 4,
         },
         passive: {
             name: '神圣格挡',
@@ -129,16 +129,16 @@ const CharacterDefs = {
         colors: ['#44ddaa', '#66eebb', '#88ffcc'],
         icon: '🏹',
         baseStats: {
-            maxHp: 115,
-            hp: 115,
-            attack: 22,
-            attackSpeed: 1.5,
-            critRate: 0.14,
-            critDamage: 1.9,
-            moveSpeed: 205,
-            hpRegen: 0.9,
-            pickupRange: 100,
-            armor: 2,
+            maxHp: 85,
+            hp: 85,
+            attack: 14,
+            attackSpeed: 1.25,
+            critRate: 0.10,
+            critDamage: 1.6,
+            moveSpeed: 190,
+            hpRegen: 0.5,
+            pickupRange: 85,
+            armor: 1,
         },
         passive: {
             name: '箭雨·专注',
@@ -160,16 +160,16 @@ const CharacterDefs = {
         colors: ['#44ccaa', '#22aa88', '#66eedd'],
         icon: '💀',
         baseStats: {
-            maxHp: 140,
-            hp: 140,
-            attack: 38,
-            attackSpeed: 1.1,
-            critRate: 0.15,
-            critDamage: 2.0,
-            moveSpeed: 195,
-            hpRegen: 1.2,
-            pickupRange: 85,
-            armor: 3,
+            maxHp: 105,
+            hp: 105,
+            attack: 24,
+            attackSpeed: 0.9,
+            critRate: 0.10,
+            critDamage: 1.7,
+            moveSpeed: 180,
+            hpRegen: 0.6,
+            pickupRange: 75,
+            armor: 1,
         },
         passive: {
             name: '灵魂收割',
@@ -348,18 +348,18 @@ class Player {
             // Lv2=15, Lv5=37, Lv10=93, Lv15=231, Lv20=574
             this.expToNext = Math.floor(15 * Math.pow(1.25, this.level - 1));
 
-            // === 每级自动成长：升级时自动获得属性提升 ===
-            // 攻击力：每级 +5%（乘算），10级时累积约 1.55x，20级约 2.65x
-            this.bonuses.attackMult += 0.05;
-            // 攻速：每级 +3%（乘算），10级时累积约 +0.30，20级约 +0.60
-            this.bonuses.attackSpeedMult += 0.03;
-            // 最大生命：每级 +12（10级时+120，20级时+240）
-            this.bonuses.maxHpBonus += 12;
-            this.stats.hp = Math.min(this.stats.hp + 12, this.getMaxHp());
-            // 回血：每级 +0.4/秒（10级时+4/秒，20级时+8/秒）
-            this.bonuses.hpRegenBonus += 0.4;
-            // 护甲：每2级 +1（10级时+5，20级时+10）
-            if (this.level % 2 === 0) {
+            // === 每级自动成长（削弱版）===
+            // 攻击力：每级 +2.5%（10级时累积约 1.25x，20级约 1.55x）
+            this.bonuses.attackMult += 0.025;
+            // 攻速：每级 +1.5%（10级时累积约 +0.15，20级约 +0.30）
+            this.bonuses.attackSpeedMult += 0.015;
+            // 最大生命：每级 +6（10级时+60，20级时+120）
+            this.bonuses.maxHpBonus += 6;
+            this.stats.hp = Math.min(this.stats.hp + 6, this.getMaxHp());
+            // 回血：每级 +0.15/秒（10级时+1.5/秒，20级时+3/秒）
+            this.bonuses.hpRegenBonus += 0.15;
+            // 护甲：每3级 +1（10级时+3，20级时+6）
+            if (this.level % 3 === 0) {
                 this.bonuses.armorBonus += 1;
             }
 
@@ -418,19 +418,11 @@ class Player {
             actualDamage *= (1 - Math.min(0.65, this.bonuses.damageReduction));
         }
 
-        // === 防暴毙机制1: 单次伤害上限（不超过当前最大生命的35%） ===
-        // 防止后期敌人一击秒杀，给玩家反应和回血的时间窗口
-        const maxSingleHit = this.getMaxHp() * 0.35;
+        // === 防暴毙机制: 单次伤害上限（不超过当前最大生命的60%） ===
+        // 仅防止极端一击秒杀，不过度保护玩家
+        const maxSingleHit = this.getMaxHp() * 0.60;
         if (actualDamage > maxSingleHit) {
             actualDamage = maxSingleHit;
-        }
-
-        // === 防暴毙机制2: 低血量紧急减伤 ===
-        // 血量低于30%时获得额外减伤，越低减伤越高（最高额外50%减伤）
-        const hpRatio = this.stats.hp / this.getMaxHp();
-        if (hpRatio < 0.3) {
-            const emergencyReduction = 0.5 * (1 - hpRatio / 0.3); // 30%血=0%, 0%血=50%
-            actualDamage *= (1 - emergencyReduction);
         }
 
         // 护盾吸收
