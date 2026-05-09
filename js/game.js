@@ -1108,11 +1108,17 @@ class Game {
         // 触发Boss奖励（优先于普通升级）
         if (this._pendingBossRewards > 0) {
             this._pendingBossRewards--;
-            this.upgradeChoices = UpgradePool.generateChoices(this.player);
-            this._isBossReward = true; // 标记当前为Boss奖励（UI可用来显示不同标题）
-            this.state = 'upgrading';
-            this.ui.clicked = false; // 清除残留点击，防止自动选技能
-            this.ui._upgradePanelOpenTime = 0; // 重置面板防误触时间戳（下帧会用performance.now()初始化）
+            // 皮肤试玩模式：自动随机升级，不弹面板
+            if (this._skinTrialMode) {
+                const autoChoices = UpgradePool.generateChoices(this.player);
+                if (autoChoices.length > 0) UpgradePool.applyUpgrade(this.player, autoChoices[0]);
+            } else {
+                this.upgradeChoices = UpgradePool.generateChoices(this.player);
+                this._isBossReward = true; // 标记当前为Boss奖励（UI可用来显示不同标题）
+                this.state = 'upgrading';
+                this.ui.clicked = false; // 清除残留点击，防止自动选技能
+                this.ui._upgradePanelOpenTime = 0; // 重置面板防误触时间戳（下帧会用performance.now()初始化）
+            }
             // Boss击败时的华丽特效
             this.particles.superExplode(this.player.x, this.player.y, ['#ffaa00', '#ff6644', '#ffff44']);
             this.particles.addShockwave(this.player.x, this.player.y, '#ffaa00', 300, 0.5);
@@ -1123,11 +1129,17 @@ class Game {
         // 触发升级
         if (this.pendingLevelUps > 0) {
             this.pendingLevelUps--;
-            this.upgradeChoices = UpgradePool.generateChoices(this.player);
-            this._isBossReward = false;
-            this.state = 'upgrading';
-            this.ui.clicked = false; // 清除残留点击，防止自动选技能
-            this.ui._upgradePanelOpenTime = 0; // 重置面板防误触时间戳
+            // 皮肤试玩模式：自动随机升级，不弹面板
+            if (this._skinTrialMode) {
+                const autoChoices = UpgradePool.generateChoices(this.player);
+                if (autoChoices.length > 0) UpgradePool.applyUpgrade(this.player, autoChoices[0]);
+            } else {
+                this.upgradeChoices = UpgradePool.generateChoices(this.player);
+                this._isBossReward = false;
+                this.state = 'upgrading';
+                this.ui.clicked = false; // 清除残留点击，防止自动选技能
+                this.ui._upgradePanelOpenTime = 0; // 重置面板防误触时间戳
+            }
             return;
         }
 
@@ -2352,7 +2364,7 @@ class Game {
             this.upgradeChoices = UpgradePool.generateChoices(this.player);
             this.ui._upgradePanelOpenTime = 0;
             this.ui.clicked = false;
-            SFX.click();
+            SFX.selectBuff();
             return;
         }
 
