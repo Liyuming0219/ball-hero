@@ -192,7 +192,7 @@ class Player {
 this.stats = { ...charDef.baseStats };
 this.level = 1;
 this.exp = 0;
-this.expToNext = 50;
+this.expToNext = 80;
         this.kills = 0;
 
         // 状态
@@ -344,9 +344,9 @@ this.expToNext = 50;
         while (this.exp >= this.expToNext) {
             this.exp -= this.expToNext;
             this.level++;
-            // 经验曲线：前期慢热后期平稳，整体节奏从容
-            // Lv2=50, Lv5=102, Lv10=197, Lv15=320, Lv20=472
-            this.expToNext = Math.floor(50 + (this.level - 1) * 12 + Math.pow(this.level - 1, 1.6));
+            // 经验曲线：参考VS节奏，8-10分钟到Lv36
+            // Lv2=80, Lv5=141, Lv10=266, Lv15=415, Lv20=585, Lv30=986
+            this.expToNext = Math.floor(80 + (this.level - 1) * 18 + Math.pow(this.level - 1, 1.8));
 
             // === 每级自动成长（削弱版）===
             // 攻击力：每级 +2.5%（10级时累积约 1.25x，20级约 1.55x）
