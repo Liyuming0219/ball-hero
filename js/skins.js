@@ -175,7 +175,10 @@ class SkinRenderer {
         const fn = this['_proj_' + skin.id];
         if (!fn) return false;
         ctx.save();
-        fn.call(this, ctx, x, y, radius, angle);
+        // 保障投射物最小尺寸（箭矢等小弹幕radius很小，皮肤特效按比例缩放后几乎不可见）
+        const safeRadius = Math.max(radius, 10);
+        ctx.globalAlpha = 1;
+        fn.call(this, ctx, x, y, safeRadius, angle);
         ctx.restore();
         return true;
     }
