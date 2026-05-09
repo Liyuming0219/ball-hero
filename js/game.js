@@ -1329,12 +1329,8 @@ class Game {
 
     _render() {
         const ctx = this.ctx;
-        // Screen pulse 衰减
-        if (this._screenPulse > 0) {
-            this._screenPulse *= 0.9; // 快速衰减
-            if (this._screenPulse < 0.002) this._screenPulse = 0;
-        }
-        const pulseFactor = 1 + (this._screenPulse || 0);
+        // Screen pulse 已禁用
+        const pulseFactor = 1;
         const zoom = this.gameZoom;
         const cam = {
             x: this.camera.x + Utils.screenShake.x,
@@ -1804,20 +1800,7 @@ class Game {
             ctx.restore();
         }
 
-        // 暴击模糊特效（短暂径向模糊感）
-        if (this._critBlurTimer > 0) {
-            const bt = Math.min(1, this._critBlurTimer / 0.08);
-            ctx.save();
-            ctx.globalAlpha = bt * 0.18;
-            ctx.globalCompositeOperation = 'screen';
-            // 模拟径向缩放残影
-            const bCx = screenW / 2, bCy = screenH / 2;
-            ctx.translate(bCx, bCy);
-            ctx.scale(1.012, 1.012);
-            ctx.translate(-bCx, -bCy);
-            ctx.drawImage(this.canvas, 0, 0, screenW, screenH);
-            ctx.restore();
-        }
+        // 暴击模糊特效 - 已禁用
 
         // 边界警告渐变（仅在对应方向屏幕边缘高亮）
         if (this._boundaryVignette > 0) {
