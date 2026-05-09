@@ -189,10 +189,10 @@ class Player {
         this.radius = 16;
 
         // 属性
-        this.stats = { ...charDef.baseStats };
-        this.level = 1;
-        this.exp = 0;
-        this.expToNext = 30;
+this.stats = { ...charDef.baseStats };
+this.level = 1;
+this.exp = 0;
+this.expToNext = 50;
         this.kills = 0;
 
         // 状态
@@ -344,9 +344,9 @@ class Player {
         while (this.exp >= this.expToNext) {
             this.exp -= this.expToNext;
             this.level++;
-            // 经验曲线：线性+小幅指数混合，前期不会太快，后期不会太慢
-            // Lv2=30, Lv5=54, Lv10=92, Lv15=138, Lv20=192
-            this.expToNext = Math.floor(30 + (this.level - 1) * 8 + Math.pow(this.level - 1, 1.3));
+            // 经验曲线：前期慢热后期平稳，整体节奏从容
+            // Lv2=50, Lv5=102, Lv10=197, Lv15=320, Lv20=472
+            this.expToNext = Math.floor(50 + (this.level - 1) * 12 + Math.pow(this.level - 1, 1.6));
 
             // === 每级自动成长（削弱版）===
             // 攻击力：每级 +2.5%（10级时累积约 1.25x，20级约 1.55x）

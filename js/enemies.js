@@ -1354,42 +1354,42 @@ class WaveManager {
         this.difficulty = 1;
         this.difficultyMultiplier = 1.0; // 由设置界面控制: easy=0.6, normal=1.0, hard=1.5
 
-        // 波次配置（平滑递进，每阶段间隔均匀，线性加压）
+        // 波次配置（慢节奏平滑递进，给玩家充足适应时间）
         this.waveConfigs = [
-            // 阶段1 (0~30s)：新手期，少量基础怪
-            { time: 0,   types: ['skeleton', 'bat'], spawnRate: 1.2, count: 4, mult: 1.0 },
-            // 阶段2 (30~70s)：加入史莱姆
-            { time: 30,  types: ['skeleton', 'bat', 'slime'], spawnRate: 1.0, count: 6, mult: 1.0, elite: 'eliteSkeleton', eliteChance: 0.03 },
-            // 阶段3 (70~120s)：加入暗影狼+远程
-            { time: 70,  types: ['skeleton', 'bat', 'slime', 'shadowWolf'], spawnRate: 0.85, count: 8, mult: 1.0, elite: 'eliteSkeleton', eliteChance: 0.05, rangedType: 'skeletonMage', rangedChance: 0.12 },
-            // 阶段4 (120~180s)：加入石像鬼
-            { time: 120, types: ['skeleton', 'bat', 'slime', 'shadowWolf', 'gargoyle'], spawnRate: 0.7, count: 10, mult: 1.0, elite: 'eliteSkeleton', eliteChance: 0.07, rangedType: 'skeletonMage', rangedChance: 0.15 },
-            // 阶段5 (180~250s)：中期加压
-            { time: 180, types: ['shadowWolf', 'bat', 'slime', 'gargoyle', 'skeleton'], spawnRate: 0.6, count: 13, mult: 1.0, elite: 'eliteSkeleton', eliteChance: 0.09, rangedType: 'skeletonMage', rangedChance: 0.18 },
-            // 阶段6 (250~330s)：加入爆破虫+恶魔术士
-            { time: 250, types: ['shadowWolf', 'gargoyle', 'exploder', 'slime', 'bat'], spawnRate: 0.5, count: 16, mult: 1.0, elite: 'eliteDemon', eliteChance: 0.10, rangedType: 'demonCaster', rangedChance: 0.20 },
-            // 阶段7 (330~420s)：密度提升
-            { time: 330, types: ['shadowWolf', 'gargoyle', 'exploder', 'demonCaster', 'slime'], spawnRate: 0.4, count: 20, mult: 1.0, elite: 'eliteDemon', eliteChance: 0.13, rangedType: 'demonCaster', rangedChance: 0.24 },
-            // 阶段8 (420~520s)：后期挑战
-            { time: 420, types: ['shadowWolf', 'gargoyle', 'exploder', 'demonCaster', 'slime'], spawnRate: 0.32, count: 25, mult: 1.0, elite: 'eliteDemon', eliteChance: 0.16, rangedType: 'demonCaster', rangedChance: 0.28 },
-            // 阶段9 (520~640s)：高压
-            { time: 520, types: ['shadowWolf', 'gargoyle', 'exploder', 'demonCaster', 'slime', 'skeleton'], spawnRate: 0.26, count: 30, mult: 1.0, elite: 'eliteDemon', eliteChance: 0.20, rangedType: 'demonCaster', rangedChance: 0.32 },
-            // 阶段10 (640~780s)：极限
-            { time: 640, types: ['shadowWolf', 'gargoyle', 'exploder', 'demonCaster', 'slime'], spawnRate: 0.2, count: 36, mult: 1.0, elite: 'eliteDemon', eliteChance: 0.24, rangedType: 'demonCaster', rangedChance: 0.35 },
-            // 阶段11 (780~950s)：终极
-            { time: 780, types: ['shadowWolf', 'gargoyle', 'exploder', 'demonCaster', 'slime'], spawnRate: 0.16, count: 42, mult: 1.0, elite: 'eliteDemon', eliteChance: 0.28, rangedType: 'demonCaster', rangedChance: 0.38 },
-            // 阶段12 (950s+)：无尽
-            { time: 950, types: ['shadowWolf', 'gargoyle', 'exploder', 'demonCaster', 'slime', 'skeleton'], spawnRate: 0.12, count: 50, mult: 1.0, elite: 'eliteDemon', eliteChance: 0.32, rangedType: 'demonCaster', rangedChance: 0.40 },
+            // 阶段1 (0~45s)：新手期，稀疏基础怪
+            { time: 0,   types: ['skeleton', 'bat'], spawnRate: 1.8, count: 3, mult: 1.0 },
+            // 阶段2 (45~100s)：加入史莱姆
+            { time: 45,  types: ['skeleton', 'bat', 'slime'], spawnRate: 1.5, count: 4, mult: 1.0, elite: 'eliteSkeleton', eliteChance: 0.02 },
+            // 阶段3 (100~180s)：加入暗影狼+远程
+            { time: 100, types: ['skeleton', 'bat', 'slime', 'shadowWolf'], spawnRate: 1.3, count: 6, mult: 1.0, elite: 'eliteSkeleton', eliteChance: 0.04, rangedType: 'skeletonMage', rangedChance: 0.10 },
+            // 阶段4 (180~270s)：加入石像鬼
+            { time: 180, types: ['skeleton', 'bat', 'slime', 'shadowWolf', 'gargoyle'], spawnRate: 1.1, count: 8, mult: 1.0, elite: 'eliteSkeleton', eliteChance: 0.06, rangedType: 'skeletonMage', rangedChance: 0.12 },
+            // 阶段5 (270~380s)：中期加压
+            { time: 270, types: ['shadowWolf', 'bat', 'slime', 'gargoyle', 'skeleton'], spawnRate: 0.9, count: 10, mult: 1.0, elite: 'eliteSkeleton', eliteChance: 0.08, rangedType: 'skeletonMage', rangedChance: 0.15 },
+            // 阶段6 (380~500s)：加入爆破虫+恶魔术士
+            { time: 380, types: ['shadowWolf', 'gargoyle', 'exploder', 'slime', 'bat'], spawnRate: 0.75, count: 12, mult: 1.0, elite: 'eliteDemon', eliteChance: 0.09, rangedType: 'demonCaster', rangedChance: 0.18 },
+            // 阶段7 (500~640s)：密度提升
+            { time: 500, types: ['shadowWolf', 'gargoyle', 'exploder', 'demonCaster', 'slime'], spawnRate: 0.6, count: 15, mult: 1.0, elite: 'eliteDemon', eliteChance: 0.11, rangedType: 'demonCaster', rangedChance: 0.22 },
+            // 阶段8 (640~800s)：后期挑战
+            { time: 640, types: ['shadowWolf', 'gargoyle', 'exploder', 'demonCaster', 'slime'], spawnRate: 0.5, count: 18, mult: 1.0, elite: 'eliteDemon', eliteChance: 0.14, rangedType: 'demonCaster', rangedChance: 0.26 },
+            // 阶段9 (800~1000s)：高压
+            { time: 800, types: ['shadowWolf', 'gargoyle', 'exploder', 'demonCaster', 'slime', 'skeleton'], spawnRate: 0.4, count: 22, mult: 1.0, elite: 'eliteDemon', eliteChance: 0.17, rangedType: 'demonCaster', rangedChance: 0.30 },
+            // 阶段10 (1000~1250s)：极限
+            { time: 1000, types: ['shadowWolf', 'gargoyle', 'exploder', 'demonCaster', 'slime'], spawnRate: 0.32, count: 28, mult: 1.0, elite: 'eliteDemon', eliteChance: 0.20, rangedType: 'demonCaster', rangedChance: 0.33 },
+            // 阶段11 (1250~1500s)：终极
+            { time: 1250, types: ['shadowWolf', 'gargoyle', 'exploder', 'demonCaster', 'slime'], spawnRate: 0.25, count: 34, mult: 1.0, elite: 'eliteDemon', eliteChance: 0.24, rangedType: 'demonCaster', rangedChance: 0.36 },
+            // 阶段12 (1500s+)：无尽
+            { time: 1500, types: ['shadowWolf', 'gargoyle', 'exploder', 'demonCaster', 'slime', 'skeleton'], spawnRate: 0.2, count: 40, mult: 1.0, elite: 'eliteDemon', eliteChance: 0.28, rangedType: 'demonCaster', rangedChance: 0.40 },
         ];
 
-        // 阶段Boss：首次180秒（3分钟），之后逐步缩短间隔（最短90秒）
-        this.stageBossInterval = 180;
+        // 阶段Boss：首次240秒（4分钟），之后逐步缩短间隔（最短120秒）
+        this.stageBossInterval = 240;
         this.nextStageBossTime = this.stageBossInterval;
         this.stageBossCount = 0;
         this.activeStageBoss = null; // 当前存活的阶段Boss引用
 
-        // 精英围攻波次：首次120秒，之后逐步缩短间隔
-        this.nextSiegeTime = 120;
+        // 精英围攻波次：首次180秒，之后逐步缩短间隔
+        this.nextSiegeTime = 180;
         this.siegeCount = 0;
     }
 
@@ -1398,11 +1398,10 @@ class WaveManager {
         this.timer += dt;
         this.spawnTimer += dt;
 
-        // 难度递增（线性平滑曲线 - 每分钟稳定增长，不会突然暴涨）
+        // 难度递增（缓慢线性 - 每90秒+1.0x，节奏从容）
         const t = this.gameTime;
-        // 基础线性增长：每60秒 +1.0x，匀速持续加压
-        // 60s=2x, 120s=3x, 180s=4x, 300s=6x, 600s=11x
-        this.difficulty = 1 + t / 60;
+        // 90s=2x, 180s=3x, 270s=4x, 450s=6x, 900s=11x
+        this.difficulty = 1 + t / 90;
 
         // 获取当前波次配置
         let config = this.waveConfigs[0];
@@ -1420,7 +1419,7 @@ class WaveManager {
 
         if (this.spawnTimer >= config.spawnRate && enemies.length < ENEMY_CAP) {
             this.spawnTimer = 0;
-            let count = config.count + Math.floor(this.gameTime / 90);
+            let count = config.count + Math.floor(this.gameTime / 150);
 
             // 软上限：接近上限时按比例减少生成数量
             if (enemies.length > ENEMY_SOFT_CAP) {
@@ -1506,8 +1505,8 @@ class WaveManager {
                 enemies.push(mirrorBoss);
             }
 
-// Boss间隔逐步缩短：180s → 160s → 140s → ... → 90s（最短）
-this.stageBossInterval = Math.max(90, 180 - this.stageBossCount * 20);
+// Boss间隔逐步缩短：240s → 220s → 200s → ... → 120s（最短）
+this.stageBossInterval = Math.max(120, 240 - this.stageBossCount * 20);
             this.nextStageBossTime = this.gameTime + this.stageBossInterval;
             Utils.shake(10);
         }
