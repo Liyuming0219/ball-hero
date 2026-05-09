@@ -484,6 +484,7 @@ class Game {
         this.dropItems = [];
         this.waveManager = new WaveManager(this.gameMode === 'daily' ? this.dailyRng : null);
         this.waveManager._isMobile = this.isMobile;
+        this.waveManager._selectedMapId = this.selectedMapId;
         // 应用难度设置（每日挑战固定normal难度）
         const diffSetting = this.gameMode === 'daily' ? 'normal' : this.ui.settings.difficulty;
         this.waveManager.difficultyMultiplier = diffSetting === 'easy' ? 0.4 : diffSetting === 'hard' ? 1.2 : 0.75;
@@ -1993,14 +1994,14 @@ class Game {
         }
     }
 
-    _getMapTheme(t) {
-        // 优先使用玩家选择的地图（锁定，不随时间变化）
+    _getMapTheme() {
+        // 固定使用玩家选择的地图，不随时间变化
         if (this.selectedMapId) {
             const map = GameMaps.find(m => m.id === this.selectedMapId);
             if (map) return map;
         }
-        // 回退：固定使用第一张地图，避免主题突然切换导致背景闪黑
-        return MapThemes[0];
+        // 回退：固定第一张地图
+        return GameMaps[0];
     }
 
     _renderBackground(ctx, camera) {
@@ -2015,7 +2016,7 @@ class Game {
         const endX = startX + W + gridSize;
         const endY = startY + H + gridSize;
         const gt = this.waveManager ? this.waveManager.gameTime : 0;
-        const theme = this._getMapTheme(gt);
+        const theme = this._getMapTheme();
 
         // ── 渐变底色（主题驱动） ──
         const gradKey = theme.id + '_' + H;

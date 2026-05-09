@@ -1554,13 +1554,11 @@ this.stageBossInterval = Math.max(90, 180 - this.stageBossCount * 20);
         };
     }
 
-    // 获取当前地图主题ID (基于gameTime)
+    // 获取当前地图主题ID（固定，不随时间变化）
     _getCurrentMapTheme() {
-        if (typeof MapThemes === 'undefined') return null;
-        for (let i = MapThemes.length - 1; i >= 0; i--) {
-            if (this.gameTime >= MapThemes[i].timeRange[0]) return MapThemes[i].id;
-        }
-        return MapThemes[0].id;
+        if (typeof GameMaps === 'undefined') return null;
+        // 使用游戏实例选择的地图，回退到第一张
+        return this._selectedMapId || GameMaps[0].id;
     }
 }
 

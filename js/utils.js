@@ -1123,13 +1123,8 @@ const GameMaps = [
     },
 ];
 
-// 旧版 MapThemes 兼容（敌人系统引用）—— 映射为第一张地图
-const MapThemes = GameMaps.map((m, i) => ({
-    ...m,
-    id: m.id,
-    name: m.name,
-    timeRange: [i * 90, (i + 1) * 90],
-}));
+// MapThemes 兼容引用（不再按时间切换，仅保留数组结构）
+const MapThemes = GameMaps;
 
 // ============================================
 // 每日挑战排行榜 - localStorage 持久化
