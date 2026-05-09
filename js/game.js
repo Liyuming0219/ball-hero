@@ -2032,10 +2032,9 @@ class Game {
 
         // （已移除角落光晕球）
 
-        // ── 氛围雾气（增强可见度）——
+        // ── 氛围雾气（极淡，仅提供微微色调偏移）——
         if (theme.fogColor) {
-            const fogPhase = gt * 0.3;
-            ctx.globalAlpha = mobile ? 0.5 : (0.8 + 0.2 * Math.sin(fogPhase));
+            ctx.globalAlpha = 0.08;
             ctx.fillStyle = theme.fogColor;
             ctx.fillRect(0, 0, W, H);
             ctx.globalAlpha = 1;
@@ -2045,8 +2044,8 @@ class Game {
 
         // （已移除网格线和交叉点）
 
-        // ── 环境装饰物（固定在世界坐标）—— 大幅增加数量 ──
-        const decorCount = mobile ? 40 : 200;
+        // ── 环境装饰物（固定在世界坐标）──
+        const decorCount = mobile ? 15 : 50;
         if (!this._mapDecors || this._mapDecors._count !== decorCount) {
             this._mapDecors = [];
             this._mapDecors._count = decorCount;
@@ -2073,7 +2072,7 @@ class Game {
             const sy = d.wy - camera.y;
             if (sx < -80 || sx > W + 80 || sy < -80 || sy > H + 80) continue;
 
-            ctx.globalAlpha = 0.55 + 0.15 * Math.sin(gt * 0.5 + d.rot);
+            ctx.globalAlpha = 0.2 + 0.05 * Math.sin(gt * 0.5 + d.rot);
             ctx.save();
             ctx.translate(sx, sy);
             ctx.scale(d.scale, d.scale);
@@ -2187,7 +2186,7 @@ class Game {
     _renderAmbientEffect(ctx, camera, theme, W, H, gt) {
         if (!theme.specialEffect) return;
         const mobile = this.isMobile;
-        const count = mobile ? 25 : (theme.ambientParticles ? theme.ambientParticles.count : 30);
+        const count = mobile ? 10 : 20;
 
         // 初始化环境粒子（只在地图切换时重建）
         if (!this._ambientFx || this._ambientFx._mapId !== theme.id) {
@@ -2251,15 +2250,7 @@ class Game {
                 if (p.y > H) { p.y = -5; p.x = Math.random() * W; }
             }
 
-            ctx.globalAlpha = p.alpha;
-            if (pGlow && !mobile) {
-                // 发光效果：画两层
-                ctx.globalAlpha = p.alpha * 0.3;
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, p.size + 3, 0, TWO_PI);
-                ctx.fill();
-                ctx.globalAlpha = p.alpha;
-            }
+            ctx.globalAlpha = p.alpha * 0.6;
             ctx.beginPath();
             ctx.arc(p.x, p.y, p.size, 0, TWO_PI);
             ctx.fill();

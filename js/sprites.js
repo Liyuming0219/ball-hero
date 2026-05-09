@@ -66,23 +66,13 @@ class SpriteLoader {
             canvas.height = drawSize;
             var ctx = canvas.getContext('2d');
 
-            // 外发光层1：宽范围柔和光晕
+            // 外发光层：轻柔边缘光，提升辨识度但不脏
             ctx.save();
             ctx.shadowColor = def.color || '#ffffff';
-            ctx.shadowBlur = 12;
+            ctx.shadowBlur = 5;
             ctx.shadowOffsetX = 0;
             ctx.shadowOffsetY = 0;
-            ctx.globalAlpha = 0.7;
-            ctx.drawImage(tmpCanvas, 0, 0);
-            ctx.restore();
-
-            // 外发光层2：窄范围锐利光边
-            ctx.save();
-            ctx.shadowColor = '#ffffff';
-            ctx.shadowBlur = 4;
-            ctx.shadowOffsetX = 0;
-            ctx.shadowOffsetY = 0;
-            ctx.globalAlpha = 0.4;
+            ctx.globalAlpha = 0.35;
             ctx.drawImage(tmpCanvas, 0, 0);
             ctx.restore();
 
