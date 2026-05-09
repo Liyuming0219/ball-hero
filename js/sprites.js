@@ -23,6 +23,12 @@ class SpriteLoader {
     }
 
     getFrame(type, bodyBob) {
+        // 优先返回 SVG 精灵（静态高质量图）
+        if (svgSpriteLoader && svgSpriteLoader.ready) {
+            var svgEntry = svgSpriteLoader.getEnemyImage(type);
+            if (svgEntry) return svgEntry.img;
+        }
+        // 回退到程序化帧动画
         var frames = this.sprites[type];
         if (!frames) return null;
         var norm = ((bodyBob % (TWO_PI)) + TWO_PI) % (TWO_PI);

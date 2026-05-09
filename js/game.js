@@ -1,7 +1,7 @@
 ﻿// ============================================
 // 游戏版本号
 // ============================================
-var GAME_VERSION = 'v2.2.0';
+var GAME_VERSION = 'v2.3.0';
 
 // 性能常量（避免每帧重复创建）
 const RECYCLE_DIST_SQ = 1500 * 1500; // 超出此距离回收敌人
@@ -309,9 +309,13 @@ class Game {
     }
 
     start() {
-        // 初始化精灵图系统：程序化生成所有怪物精灵帧（~10ms，一次性开销）
-        spriteLoader = new SpriteLoader();
-        spriteLoader.generateAll();
+// 初始化精灵图系统：程序化生成所有怪物精灵帧（~10ms，一次性开销）
+spriteLoader = new SpriteLoader();
+spriteLoader.generateAll();
+
+// 初始化 SVG 高质量精灵系统（异步加载，就绪后自动替代程序化帧）
+svgSpriteLoader = new SvgSpriteLoader();
+svgSpriteLoader.loadAll();
 
         this.lastTime = performance.now();
         requestAnimationFrame((t) => this.loop(t));

@@ -700,7 +700,18 @@ this.expToNext = 80;
         // === 皮肤系统渲染（优先）===
         const skinRendered = skin && skinRenderer && skinRenderer.renderBody(ctx, skin, sx, sy, this.radius, this.facingAngle, bob, ctx.globalAlpha);
 
-        if (!skinRendered) {
+        // === SVG 精灵渲染（次优先）===
+        let svgHeroRendered = false;
+        if (!skinRendered && svgSpriteLoader && svgSpriteLoader.ready) {
+            const svgHero = svgSpriteLoader.getHeroImage(this.def.id);
+            if (svgHero) {
+                const drawSize = this.radius * 2.4;
+                ctx.drawImage(svgHero.img, sx - drawSize/2, sy + bob - drawSize/2, drawSize, drawSize);
+                svgHeroRendered = true;
+            }
+        }
+
+        if (!skinRendered && !svgHeroRendered) {
             // 默认渲染（无皮肤）
             // 脚下光圈（增强：脉冲效果）
             const footPulse = 1 + Math.sin(now * 0.003) * 0.15;
