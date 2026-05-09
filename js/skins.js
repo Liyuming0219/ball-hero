@@ -863,79 +863,84 @@ class SkinRenderer {
     // 宝石系列
     // ============================================
 
-    // 钻石 - 高真实感明亮式切割钻石，多层冠面+pavilion+火彩+内部折射
+    // 钻石 - 六棱形钻石，正六边形切割+闪光+彩虹折射
     _body_diamond(ctx, x, y, r, angle) {
         const t = this._time;
         this._shadow(ctx, x, y, r);
-        this._glow(ctx, x, y, r, '#88ccff', 0.2 + Math.sin(t*3)*0.05);
+        this._glow(ctx, x, y, r * 1.1, '#88ccff', 0.2 + Math.sin(t*3)*0.05);
         ctx.save(); ctx.translate(x, y);
-        // Brilliant-cut diamond (octagonal crown facets)
-        const crownPath = () => {
+        // 六棱形轮廓 (正六边形, 尖角朝上)
+        const hexPath = () => {
             ctx.beginPath();
-            for (let i = 0; i < 8; i++) {
-                const a = (i/8)*TWO_PI_SK - Math.PI/8;
-                const pr = r * (i%2 === 0 ? 1.0 : 0.92);
-                ctx.lineTo(Math.cos(a)*pr, Math.sin(a)*pr);
+            for (let i = 0; i < 6; i++) {
+                const a = (i / 6) * TWO_PI_SK - Math.PI / 2; // 顶点朝上
+                ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
             }
             ctx.closePath();
         };
-        ctx.save(); crownPath(); ctx.clip();
-        // Icy blue-white base
+        // 填充: 冰蓝渐变底色
+        ctx.save(); hexPath(); ctx.clip();
         const baseG = ctx.createLinearGradient(-r, -r, r, r);
-        baseG.addColorStop(0, '#f0f8ff'); baseG.addColorStop(0.25, '#ddeeff');
-        baseG.addColorStop(0.5, '#ffffff'); baseG.addColorStop(0.75, '#cce5ff');
+        baseG.addColorStop(0, '#f0f8ff'); baseG.addColorStop(0.2, '#ddeeff');
+        baseG.addColorStop(0.5, '#ffffff'); baseG.addColorStop(0.8, '#cce5ff');
         baseG.addColorStop(1, '#88aacc');
         ctx.fillStyle = baseG; ctx.fillRect(-r, -r, r*2, r*2);
-        // Star facet lines from center
+        // 六条切面线 (从中心到6个顶点)
         ctx.strokeStyle = 'rgba(180,210,255,0.6)'; ctx.lineWidth = 0.8;
-        for (let i = 0; i < 8; i++) {
-            const a = (i/8)*TWO_PI_SK;
+        for (let i = 0; i < 6; i++) {
+            const a = (i / 6) * TWO_PI_SK - Math.PI / 2;
             ctx.beginPath(); ctx.moveTo(0, 0);
-            ctx.lineTo(Math.cos(a)*r*0.95, Math.sin(a)*r*0.95); ctx.stroke();
+            ctx.lineTo(Math.cos(a) * r * 0.95, Math.sin(a) * r * 0.95); ctx.stroke();
         }
-        // Kite facets (alternating shimmer)
-        for (let i = 0; i < 8; i++) {
-            const a1 = (i/8)*TWO_PI_SK;
-            const a2 = ((i+1)/8)*TWO_PI_SK;
-            const shimmer = (Math.sin(t*4 + i*1.2) + 1) / 2;
-            ctx.fillStyle = shimmer > 0.5 ? 'rgba(255,255,255,0.25)' : 'rgba(100,180,255,0.12)';
+        // 六个三角形切面 (交替闪烁)
+        for (let i = 0; i < 6; i++) {
+            const a1 = (i / 6) * TWO_PI_SK - Math.PI / 2;
+            const a2 = ((i + 1) / 6) * TWO_PI_SK - Math.PI / 2;
+            const shimmer = (Math.sin(t * 4 + i * 1.05) + 1) / 2;
+            ctx.fillStyle = shimmer > 0.5 ? 'rgba(255,255,255,0.3)' : 'rgba(100,180,255,0.15)';
             ctx.beginPath(); ctx.moveTo(0, 0);
-            ctx.lineTo(Math.cos(a1)*r*0.6, Math.sin(a1)*r*0.6);
-            ctx.lineTo(Math.cos((a1+a2)/2)*r*0.95, Math.sin((a1+a2)/2)*r*0.95);
-            ctx.lineTo(Math.cos(a2)*r*0.6, Math.sin(a2)*r*0.6);
+            ctx.lineTo(Math.cos(a1) * r * 0.95, Math.sin(a1) * r * 0.95);
+            ctx.lineTo(Math.cos(a2) * r * 0.95, Math.sin(a2) * r * 0.95);
             ctx.closePath(); ctx.fill();
         }
         ctx.restore();
-        // Outer octagonal edge
-        ctx.strokeStyle = 'rgba(200,230,255,0.7)'; ctx.lineWidth = 1.5;
-        crownPath(); ctx.stroke();
-        // Sparkle flashes (rotating)
-        ctx.globalAlpha = 0.7;
+        // 六棱形描边 (清晰的棱角轮廓)
+        ctx.strokeStyle = 'rgba(200,230,255,0.8)'; ctx.lineWidth = 1.8;
+        hexPath(); ctx.stroke();
+        // 内层小六边形 (增加层次感)
+        ctx.strokeStyle = 'rgba(180,220,255,0.4)'; ctx.lineWidth = 1;
+        ctx.beginPath();
+        for (let i = 0; i < 6; i++) {
+            const a = (i / 6) * TWO_PI_SK - Math.PI / 2;
+            ctx.lineTo(Math.cos(a) * r * 0.5, Math.sin(a) * r * 0.5);
+        }
+        ctx.closePath(); ctx.stroke();
+        // 旋转闪光点 (4颗十字星)
+        ctx.globalAlpha = 0.8;
         for (let i = 0; i < 4; i++) {
-            const sa = t*2 + i*Math.PI/2;
-            const sd = r * (0.4 + Math.sin(t*5+i)*0.2);
-            const sparkX = Math.cos(sa)*sd, sparkY = Math.sin(sa)*sd;
-            // 4-pointed star sparkle
+            const sa = t * 2 + i * Math.PI / 2;
+            const sd = r * (0.35 + Math.sin(t * 5 + i) * 0.2);
+            const sparkX = Math.cos(sa) * sd, sparkY = Math.sin(sa) * sd;
             ctx.fillStyle = '#ffffff';
             ctx.beginPath();
-            ctx.moveTo(sparkX, sparkY - 3); ctx.lineTo(sparkX + 1, sparkY);
-            ctx.lineTo(sparkX, sparkY + 3); ctx.lineTo(sparkX - 1, sparkY);
+            ctx.moveTo(sparkX, sparkY - 3.5); ctx.lineTo(sparkX + 1, sparkY);
+            ctx.lineTo(sparkX, sparkY + 3.5); ctx.lineTo(sparkX - 1, sparkY);
             ctx.closePath(); ctx.fill();
         }
         ctx.globalAlpha = 1;
-        // Rainbow refraction flash
+        // 彩虹折射闪光
         if (this.quality.detailLevel >= 2) {
             const rAngle = t * 1.5;
             const rLen = r * 0.6;
             ctx.globalAlpha = 0.15;
             const rainbow = ctx.createLinearGradient(
-                Math.cos(rAngle)*rLen, Math.sin(rAngle)*rLen,
-                -Math.cos(rAngle)*rLen, -Math.sin(rAngle)*rLen
+                Math.cos(rAngle) * rLen, Math.sin(rAngle) * rLen,
+                -Math.cos(rAngle) * rLen, -Math.sin(rAngle) * rLen
             );
             rainbow.addColorStop(0, '#ff0000'); rainbow.addColorStop(0.2, '#ff8800');
             rainbow.addColorStop(0.4, '#ffff00'); rainbow.addColorStop(0.6, '#00ff00');
             rainbow.addColorStop(0.8, '#0088ff'); rainbow.addColorStop(1, '#8800ff');
-            ctx.fillStyle = rainbow; crownPath(); ctx.fill();
+            ctx.fillStyle = rainbow; hexPath(); ctx.fill();
             ctx.globalAlpha = 1;
         }
         ctx.restore();
@@ -1252,68 +1257,48 @@ class SkinRenderer {
         if (this.quality.glowEnabled) this._glow(ctx, x, y, r * 1.0, '#aa44ff', 0.35);
     }
 
-    // 黑洞 - 事件视界+吸积盘+引力透镜
+    // 黑洞 - 纯黑核心+椭圆吸积盘+事件视界边缘光
     _body_blackhole(ctx, x, y, r, angle) {
         const t = this._time;
         this._shadow(ctx, x, y, r);
         ctx.save(); ctx.translate(x, y);
-        // Accretion disk - spectacular glowing ring
-        ctx.save(); ctx.rotate(t * 0.5);
-        // Outer fiery ring (very bright, dramatic)
-        for (let layer = 3; layer >= 0; layer--) {
-            const ringR = r * (0.9 + layer * 0.12);
-            const ringW = r * (0.12 + layer * 0.04);
-            ctx.globalAlpha = 0.5 - layer * 0.08;
-            const ringG = ctx.createLinearGradient(-ringR, 0, ringR, 0);
-            const colors = ['#ff4400', '#ffaa00', '#ffff44', '#ffaa00', '#ff4400'];
-            if (layer === 0) {
-                ringG.addColorStop(0, '#ff2200'); ringG.addColorStop(0.3, '#ffcc00');
-                ringG.addColorStop(0.5, '#ffffff'); ringG.addColorStop(0.7, '#ffcc00');
-                ringG.addColorStop(1, '#ff2200');
-            } else {
-                ringG.addColorStop(0, '#ff440044'); ringG.addColorStop(0.5, '#ffaa0066');
-                ringG.addColorStop(1, '#ff440044');
-            }
-            ctx.strokeStyle = ringG; ctx.lineWidth = ringW;
-            ctx.beginPath(); ctx.arc(0, 0, ringR, 0, TWO_PI_SK); ctx.stroke();
-        }
-        ctx.globalAlpha = 1;
-        // Plasma jets (vertical beams shooting up/down)
-        if (this.quality.detailLevel >= 2) {
-            ctx.globalAlpha = 0.3;
-            const jetG1 = ctx.createLinearGradient(0, -r*1.5, 0, -r*0.4);
-            jetG1.addColorStop(0, 'transparent'); jetG1.addColorStop(0.5, '#8844ff');
-            jetG1.addColorStop(1, '#ffffff');
-            ctx.fillStyle = jetG1;
-            ctx.beginPath(); ctx.moveTo(-r*0.08, -r*0.4); ctx.lineTo(0, -r*1.5);
-            ctx.lineTo(r*0.08, -r*0.4); ctx.closePath(); ctx.fill();
-            const jetG2 = ctx.createLinearGradient(0, r*0.4, 0, r*1.5);
-            jetG2.addColorStop(0, '#ffffff'); jetG2.addColorStop(0.5, '#8844ff');
-            jetG2.addColorStop(1, 'transparent');
-            ctx.fillStyle = jetG2;
-            ctx.beginPath(); ctx.moveTo(-r*0.08, r*0.4); ctx.lineTo(0, r*1.5);
-            ctx.lineTo(r*0.08, r*0.4); ctx.closePath(); ctx.fill();
+        // Accretion disk glow
+        if (this.quality.glowEnabled) {
+            var glowR = r * 1.8;
+            var gg = ctx.createRadialGradient(0, 0, r * 0.9, 0, 0, glowR);
+            gg.addColorStop(0, '#ff8800'); gg.addColorStop(0.3, '#ff4400');
+            gg.addColorStop(0.6, '#aa2200'); gg.addColorStop(1, 'transparent');
+            ctx.fillStyle = gg; ctx.globalAlpha = 0.4;
+            ctx.beginPath(); ctx.arc(0, 0, glowR, 0, TWO_PI_SK); ctx.fill();
             ctx.globalAlpha = 1;
         }
-        ctx.restore();
-        // Event horizon (black core with distortion edge)
-        const coreG = ctx.createRadialGradient(0, 0, r*0.1, 0, 0, r*0.5);
-        coreG.addColorStop(0, '#000000'); coreG.addColorStop(0.7, '#000000');
-        coreG.addColorStop(0.85, '#110022'); coreG.addColorStop(1, '#220044');
-        ctx.fillStyle = coreG;
-        ctx.beginPath(); ctx.arc(0, 0, r*0.5, 0, TWO_PI_SK); ctx.fill();
-        // Gravitational lensing ring (bright white-blue edge)
-        ctx.strokeStyle = '#aaccff'; ctx.lineWidth = 1.5; ctx.globalAlpha = 0.4 + Math.sin(t*4)*0.2;
-        ctx.beginPath(); ctx.arc(0, 0, r*0.52, 0, TWO_PI_SK); ctx.stroke();
-        ctx.globalAlpha = 1;
-        // Infalling matter sparks
-        ctx.fillStyle = '#ffcc44';
-        for (let i = 0; i < 6; i++) {
-            const sa = t*3 + i*1.05;
-            const sd = r*(0.55 + Math.sin(t*2+i)*0.15);
-            ctx.globalAlpha = 0.5 + Math.sin(t*5+i)*0.3;
-            ctx.beginPath(); ctx.arc(Math.cos(sa)*sd, Math.sin(sa)*sd, 1.5, 0, TWO_PI_SK); ctx.fill();
+        // Accretion disk ring - elliptical perspective
+        ctx.save();
+        ctx.rotate(t * 0.3);
+        ctx.scale(1, 0.4);
+        for (var i = 0; i < 3; i++) {
+            var diskR = r * (1.2 + i * 0.15);
+            ctx.globalAlpha = 0.7 - i * 0.2;
+            ctx.strokeStyle = i === 0 ? '#ffcc44' : (i === 1 ? '#ff8800' : '#ff4400');
+            ctx.lineWidth = r * 0.15 - i * 2;
+            ctx.beginPath(); ctx.arc(0, 0, diskR, 0, TWO_PI_SK); ctx.stroke();
         }
+        ctx.globalAlpha = 0.8; ctx.fillStyle = '#ffffff';
+        for (var j = 0; j < 4; j++) {
+            var pa = t * 2 + j * TWO_PI_SK / 4;
+            ctx.beginPath(); ctx.arc(Math.cos(pa) * r * 1.2, Math.sin(pa) * r * 1.2, 1.5, 0, TWO_PI_SK); ctx.fill();
+        }
+        ctx.restore();
+        // Pure black core
+        ctx.globalAlpha = 1;
+        var bg = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
+        bg.addColorStop(0, '#000000'); bg.addColorStop(0.7, '#000000');
+        bg.addColorStop(0.85, '#110000'); bg.addColorStop(1, '#220000');
+        ctx.fillStyle = bg;
+        ctx.beginPath(); ctx.arc(0, 0, r, 0, TWO_PI_SK); ctx.fill();
+        // Event horizon edge glow
+        ctx.strokeStyle = '#ff6600'; ctx.lineWidth = 1.5; ctx.globalAlpha = 0.6;
+        ctx.beginPath(); ctx.arc(0, 0, r, 0, TWO_PI_SK); ctx.stroke();
         ctx.globalAlpha = 1;
         ctx.restore();
     }
