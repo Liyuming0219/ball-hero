@@ -1728,7 +1728,7 @@ const DropItemTypes = {
         color: '#ff4466',
         glowColor: '#ff6688',
         desc: '恢复30%最大生命值',
-        dropChance: 0.015,   // 1.5%概率
+        dropChance: 0.0075,  // 0.75%概率
     },
     bomb: {
         name: '全屏炸弹',
@@ -1736,7 +1736,7 @@ const DropItemTypes = {
         color: '#ff8844',
         glowColor: '#ffaa66',
         desc: '消灭屏幕内所有敌人',
-        dropChance: 0.005,   // 0.5%概率
+        dropChance: 0.0025,  // 0.25%概率
     },
     magnet: {
         name: '经验磁铁',
@@ -1744,7 +1744,7 @@ const DropItemTypes = {
         color: '#44aaff',
         glowColor: '#66ccff',
         desc: '吸收场地上所有经验宝石',
-        dropChance: 0.01,    // 1%概率
+        dropChance: 0.005,   // 0.5%概率
     },
 };
 
