@@ -526,6 +526,11 @@ class Game {
         this.envObjects = [];
         this._envSpawnTimer = 0;
         this._envSpawnInterval = 30; // 首次30秒后生成
+
+        // ── 地图专属机制系统 ──
+        this._mapMechanicTimer = 0;
+        this._mapMechanicInterval = 8; // 首次8秒后触发地图机制
+        this._mapStaticHazards = []; // 固定地形障碍（不消失）
         this.activeBoss = null;
         this.screenFlash = { color: '#fff', alpha: 0 };
         this.freezeTimer = 0;
@@ -869,6 +874,11 @@ class Game {
                 }
                 if (enemy.canAttack()) {
                     const result = this.player.takeDamage(enemy.damage, this.particles);
+                    // 地图buff：冰霜触感（冰封虚域敌人攻击减速玩家）
+                    if (enemy._frostTouch && result && result !== 'blocked') {
+                        this.player._hazardSlow = 0.5;
+                        this.player._frostSlowFrames = 90; // 持续约1.5秒（60帧/秒）
+                    }
                     // 受伤反馈（格挡不触发红色渐变）
                     if (result && result !== 'blocked') {
                         SFX.hurt();
@@ -966,6 +976,7 @@ class Game {
 
         // === 新系统更新 ===
         this._updateMapHazards(dt);
+        this._updateMapMechanics(dt);
         this._updateEnvObjects(dt);
         this._updateRelicDrops(dt);
         this._updateDeathAnimations(dt);
@@ -3018,6 +3029,155 @@ class Game {
                     this.particles.superExplode(this.player.x, this.player.y, this.player.def.colors, 60);
                     return;
                 }
+            }
+        }
+    }
+
+    // --- 地图专属机制更新 ---
+    _updateMapMechanics(dt) {
+        if (!this.waveManager) return;
+        const gt = this.waveManager.gameTime;
+        const mapId = this.selectedMapId || 'void_abyss';
+        const px = this.player.x, py = this.player.y;
+
+        this._mapMechanicTimer += dt;
+        if (this._mapMechanicTimer < this._mapMechanicInterval) return;
+        this._mapMechanicTimer = 0;
+
+        // 随游戏时间缩短间隔（更频繁的地图事件）
+        this._mapMechanicInterval = Math.max(3, 8 - gt / 120);
+
+        switch (mapId) {
+            case 'void_abyss': {
+                // 虚空深渊：随机生成虚空裂隙（吸引+伤害区域）
+                const angle = Math.random() * TWO_PI;
+                const dist = 200 + Math.random() * 500;
+                const vx = px + Math.cos(angle) * dist;
+                const vy = py + Math.sin(angle) * dist;
+                const rift = new MapHazard(vx, vy, 'voidHole', 80 + Math.random() * 60, 6 + Math.random() * 4);
+                rift._pullForce = 80 + gt * 0.1;
+                this.mapHazards.push(rift);
+                // 紫色粒子预警
+                this.particles.emit(vx, vy, 8, { colors: ['#7744cc', '#aa66ff'], speedMin: 1, speedMax: 3, sizeMin: 3, sizeMax: 6, lifeMin: 0.5, lifeMax: 1.0, glow: true });
+                break;
+            }
+            case 'crimson_waste': {
+                // 猩红荒原：地面火焰喷射（多条火线从随机方向扫来）
+                const count = 2 + Math.floor(gt / 180);
+                for (let i = 0; i < Math.min(count, 5); i++) {
+                    const a = Math.random() * TWO_PI;
+                    const d = 150 + Math.random() * 400;
+                    const fx = px + Math.cos(a) * d;
+                    const fy = py + Math.sin(a) * d;
+                    const fire = new MapHazard(fx, fy, 'fire', 70 + Math.random() * 50, 4 + Math.random() * 3);
+                    this.mapHazards.push(fire);
+                }
+                break;
+            }
+            case 'frost_realm': {
+                // 冰封虚域：冰冻风暴区域（大面积减速+轻微伤害）
+                const angle = Math.random() * TWO_PI;
+                const dist = 100 + Math.random() * 350;
+                const ix = px + Math.cos(angle) * dist;
+                const iy = py + Math.sin(angle) * dist;
+                const ice = new MapHazard(ix, iy, 'ice', 120 + Math.random() * 80, 7 + Math.random() * 4);
+                ice._slowAura = 0.4; // 减速40%
+                this.mapHazards.push(ice);
+                // 冰晶粒子
+                this.particles.emit(ix, iy, 12, { colors: ['#88ccff', '#aaeeff', '#ffffff'], speedMin: 1, speedMax: 4, sizeMin: 2, sizeMax: 5, lifeMin: 0.8, lifeMax: 1.5, glow: true });
+                break;
+            }
+            case 'dark_forest': {
+                // 暗影森林：毒雾区域扩散 + 藤蔓陷阱
+                const angle = Math.random() * TWO_PI;
+                const dist = 100 + Math.random() * 400;
+                const tx = px + Math.cos(angle) * dist;
+                const ty = py + Math.sin(angle) * dist;
+                const poison = new MapHazard(tx, ty, 'poison', 100 + Math.random() * 80, 10 + Math.random() * 6);
+                this.mapHazards.push(poison);
+                // 额外生成藤蔓陷阱（短暂定身）
+                if (Math.random() < 0.4) {
+                    const va = Math.random() * TWO_PI;
+                    const vd = 150 + Math.random() * 300;
+                    const vine = new MapHazard(px + Math.cos(va) * vd, py + Math.sin(va) * vd, 'slow', 50, 5);
+                    vine._slowAura = 0.7;
+                    this.mapHazards.push(vine);
+                }
+                break;
+            }
+            case 'nether_volcano': {
+                // 熔岩地狱：岩浆喷发（高伤害+大面积）
+                const count = 1 + Math.floor(gt / 200);
+                for (let i = 0; i < Math.min(count, 4); i++) {
+                    const a = Math.random() * TWO_PI;
+                    const d = 120 + Math.random() * 500;
+                    const lx = px + Math.cos(a) * d;
+                    const ly = py + Math.sin(a) * d;
+                    const lava = new MapHazard(lx, ly, 'fire', 90 + Math.random() * 70, 5 + Math.random() * 3);
+                    lava.damage = 10 + Math.floor(gt / 60); // 伤害随时间提升
+                    this.mapHazards.push(lava);
+                }
+                // 火焰粒子
+                this.particles.emit(px, py, 5, { colors: ['#ff6600', '#ffaa00', '#ff3300'], speedMin: 2, speedMax: 5, sizeMin: 3, sizeMax: 8, lifeMin: 0.3, lifeMax: 0.7, glow: true });
+                break;
+            }
+            case 'celestial_ruins': {
+                // 天界废墟：审判光柱（延迟落下高伤害窄圈）
+                const count = 2 + Math.floor(gt / 150);
+                for (let i = 0; i < Math.min(count, 6); i++) {
+                    const a = Math.random() * TWO_PI;
+                    const d = 80 + Math.random() * 400;
+                    const sx = px + Math.cos(a) * d;
+                    const sy = py + Math.sin(a) * d;
+                    // 使用fire类型模拟圣光灼烧
+                    const smite = new MapHazard(sx, sy, 'fire', 45 + Math.random() * 30, 2.5);
+                    smite.damage = 15 + Math.floor(gt / 50);
+                    this.mapHazards.push(smite);
+                }
+                // 金色光效
+                this.particles.emit(px, py, 6, { colors: ['#ffdd66', '#ffaa00', '#ffffff'], speedMin: 3, speedMax: 8, sizeMin: 2, sizeMax: 5, lifeMin: 0.3, lifeMax: 0.6, glow: true });
+                break;
+            }
+        }
+
+        // 地图机制给敌人施加地图buff
+        this._applyMapEnemyBuffs(mapId, gt);
+    }
+
+    // --- 地图对敌人的特殊增强 ---
+    _applyMapEnemyBuffs(mapId, gt) {
+        // 每次机制触发时，给场上的新敌人施加地图专属buff
+        const buffStrength = 1 + gt / 300; // 随时间增强
+        for (const enemy of this.enemies) {
+            if (enemy._mapBuffed) continue;
+            enemy._mapBuffed = true;
+
+            switch (mapId) {
+                case 'void_abyss':
+                    // 虚空：敌人有概率传送靠近玩家
+                    if (Math.random() < 0.15) enemy._canTeleport = true;
+                    break;
+                case 'crimson_waste':
+                    // 猩红：敌人更高伤害
+                    enemy.damage = Math.floor(enemy.damage * (1 + 0.2 * buffStrength));
+                    break;
+                case 'frost_realm':
+                    // 冰封：敌人攻击带减速
+                    enemy._frostTouch = true;
+                    break;
+                case 'dark_forest':
+                    // 暗影：敌人有概率隐身接近
+                    if (Math.random() < 0.2) enemy._stealth = true;
+                    break;
+                case 'nether_volcano':
+                    // 熔岩：敌人更高血量
+                    enemy.maxHp = Math.floor(enemy.maxHp * (1 + 0.25 * buffStrength));
+                    enemy.hp = enemy.maxHp;
+                    break;
+                case 'celestial_ruins':
+                    // 天界：敌人移速更快
+                    enemy.speed *= (1 + 0.15 * buffStrength);
+                    break;
             }
         }
     }

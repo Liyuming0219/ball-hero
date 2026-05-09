@@ -1020,7 +1020,7 @@ const GameMaps = [
     {
         id: 'void_abyss',
         name: '虚空深渊',
-        desc: '紫色水晶漂浮的无尽虚空，神秘而幽深',
+        desc: '虚空裂隙吸引你靠近，敌人可传送突袭',
         icon: '🌌',
         // 视觉主题配置
         bgGrad: ['#0a0a20', '#141438', '#0e0e2a'],
@@ -1039,7 +1039,7 @@ const GameMaps = [
     {
         id: 'crimson_waste',
         name: '猩红荒原',
-        desc: '炽热的红色荒漠，残破石柱矗立在血色天空下',
+        desc: '火焰喷射覆盖地面，敌人伤害大幅提升',
         icon: '🔥',
         bgGrad: ['#180808', '#281010', '#200c0c'],
         glowA: 'rgba(140,20,10,0.38)',
@@ -1056,7 +1056,7 @@ const GameMaps = [
     {
         id: 'frost_realm',
         name: '冰封虚域',
-        desc: '永恒冰雪覆盖的极寒之地，冰晶折射着幽蓝光芒',
+        desc: '冰冻风暴减速移动，敌人攻击带冰霜效果',
         icon: '❄️',
         bgGrad: ['#081428', '#102840', '#0c1e34'],
         glowA: 'rgba(20,50,140,0.35)',
@@ -1073,7 +1073,7 @@ const GameMaps = [
     {
         id: 'dark_forest',
         name: '暗影森林',
-        desc: '腐化蔓延的远古密林，萤火虫在毒雾中闪烁',
+        desc: '毒雾与藤蔓陷阱密布，敌人可隐身接近',
         icon: '🌲',
         bgGrad: ['#0c1a10', '#163018', '#102410'],
         glowA: 'rgba(10,70,25,0.32)',
@@ -1090,7 +1090,7 @@ const GameMaps = [
     {
         id: 'nether_volcano',
         name: '熔岩地狱',
-        desc: '岩浆翻涌的地下世界，热浪扭曲着空气',
+        desc: '岩浆喷发高伤害，敌人血量大幅增强',
         icon: '🌋',
         bgGrad: ['#180800', '#2c1200', '#220e00'],
         glowA: 'rgba(180,40,0,0.38)',
@@ -1107,7 +1107,7 @@ const GameMaps = [
     {
         id: 'celestial_ruins',
         name: '天界废墟',
-        desc: '崩塌的天空神殿，金色碎片在虚空中缓慢旋转',
+        desc: '审判光柱随机降下，敌人移速极快',
         icon: '✨',
         bgGrad: ['#101028', '#1a1a40', '#141432'],
         glowA: 'rgba(80,60,10,0.35)',

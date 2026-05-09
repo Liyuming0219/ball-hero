@@ -555,7 +555,10 @@ class Player {
             const nx = inputDir.x / len;
             const ny = inputDir.y / len;
             let speed = this.getMoveSpeed();
-            if (this._hazardSlow > 0) {
+            if (this._frostSlowFrames > 0) {
+                this._frostSlowFrames--;
+                speed *= 0.5;
+            } else if (this._hazardSlow > 0) {
                 speed *= this._hazardSlow;
                 this._hazardSlow = 0; // 每帧重置
             }
