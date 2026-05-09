@@ -6,8 +6,8 @@ const EnemyTypes = {
     // 普通小怪 - 骷髅
     skeleton: {
         name: '骷髅',
-        color: '#c8e0c0',
-        colors: ['#c8e0c0', '#a0d090'],
+        color: '#e0ffd8',
+        colors: ['#e0ffd8', '#b8f0a8'],
         radius: 12,
         hp: 35,
         damage: 8,
@@ -18,8 +18,8 @@ const EnemyTypes = {
     // 快速小怪 - 蝙蝠
     bat: {
         name: '蝙蝠',
-        color: '#9955cc',
-        colors: ['#9955cc', '#cc88ff'],
+        color: '#bb77ee',
+        colors: ['#bb77ee', '#dd99ff'],
         radius: 10,
         hp: 22,
         damage: 6,
@@ -42,8 +42,8 @@ const EnemyTypes = {
     // 远程 - 骷髅法师
     skeletonMage: {
         name: '骷髅法师',
-        color: '#7733dd',
-        colors: ['#7733dd', '#aa66ff'],
+        color: '#9955ff',
+        colors: ['#9955ff', '#bb88ff'],
         radius: 13,
         hp: 45,
         damage: 14,
@@ -56,8 +56,8 @@ const EnemyTypes = {
     // 中期快攻 - 暗影狼
     shadowWolf: {
         name: '暗影狼',
-        color: '#3355aa',
-        colors: ['#3355aa', '#5588dd'],
+        color: '#5588dd',
+        colors: ['#5588dd', '#77aaff'],
         radius: 11,
         hp: 55,
         damage: 10,
@@ -68,8 +68,8 @@ const EnemyTypes = {
     // 中期肉盾 - 石像鬼
     gargoyle: {
         name: '石像鬼',
-        color: '#bb8844',
-        colors: ['#bb8844', '#ddaa66'],
+        color: '#ddaa55',
+        colors: ['#ddaa55', '#ffcc77'],
         radius: 20,
         hp: 200,
         damage: 14,

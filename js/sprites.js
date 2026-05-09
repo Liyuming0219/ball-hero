@@ -45,19 +45,50 @@ class SpriteLoader {
         var frames = [];
 
         for (var f = 0; f < this.frameCount; f++) {
-            var canvas = document.createElement('canvas');
-            canvas.width = drawSize;
-            canvas.height = drawSize;
-            var ctx = canvas.getContext('2d');
-            ctx.scale(2, 2);
+            // 先在临时canvas绘制怪物本体
+            var tmpCanvas = document.createElement('canvas');
+            tmpCanvas.width = drawSize;
+            tmpCanvas.height = drawSize;
+            var tmpCtx = tmpCanvas.getContext('2d');
+            tmpCtx.scale(2, 2);
             var phase = f / this.frameCount;
             var cx = size / 2;
             var cy = size / 2;
             var r = def.radius;
 
+            tmpCtx.save();
+            this._drawType(tmpCtx, type, cx, cy, r, phase, def);
+            tmpCtx.restore();
+
+            // 在最终canvas上合成：外发光 + 本体
+            var canvas = document.createElement('canvas');
+            canvas.width = drawSize;
+            canvas.height = drawSize;
+            var ctx = canvas.getContext('2d');
+
+            // 外发光层1：宽范围柔和光晕
             ctx.save();
-            this._drawType(ctx, type, cx, cy, r, phase, def);
+            ctx.shadowColor = def.color || '#ffffff';
+            ctx.shadowBlur = 12;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
+            ctx.globalAlpha = 0.7;
+            ctx.drawImage(tmpCanvas, 0, 0);
             ctx.restore();
+
+            // 外发光层2：窄范围锐利光边
+            ctx.save();
+            ctx.shadowColor = '#ffffff';
+            ctx.shadowBlur = 4;
+            ctx.shadowOffsetX = 0;
+            ctx.shadowOffsetY = 0;
+            ctx.globalAlpha = 0.4;
+            ctx.drawImage(tmpCanvas, 0, 0);
+            ctx.restore();
+
+            // 本体层：清晰绘制
+            ctx.drawImage(tmpCanvas, 0, 0);
+
             frames.push(canvas);
         }
         this.sprites[type] = frames;
@@ -123,7 +154,7 @@ class SpriteLoader {
         var breathe = Math.sin(phase * TWO_PI) * r * 0.02;
 
         // 脊椎
-        ctx.strokeStyle = '#b0c8a0';
+        ctx.strokeStyle = '#d0e8c0';
         ctx.lineWidth = r * 0.08;
         ctx.lineCap = 'round';
         ctx.beginPath();
@@ -131,7 +162,7 @@ class SpriteLoader {
         ctx.lineTo(cx, cy + r * 0.65);
         ctx.stroke();
         // 椎骨节
-        ctx.fillStyle = '#c0d8b0';
+        ctx.fillStyle = '#e0f8d0';
         for (var v = 0; v < 4; v++) {
             var vy = cy + r * 0.05 + v * r * 0.17;
             ctx.beginPath();
@@ -140,7 +171,7 @@ class SpriteLoader {
         }
 
         // 肋骨（6对弧形）
-        ctx.strokeStyle = '#d0e8c0';
+        ctx.strokeStyle = '#e8ffd8';
         ctx.lineWidth = r * 0.04;
         for (var i = 0; i < 6; i++) {
             var ry = cy + r * 0.0 + i * r * 0.1;
@@ -155,10 +186,10 @@ class SpriteLoader {
         var headR = r * 0.48;
         // 底色
         var skullGrad = ctx.createRadialGradient(cx - headR * 0.2, headCy - headR * 0.2, headR * 0.1, cx, headCy, headR);
-        skullGrad.addColorStop(0, '#fffff0');
-        skullGrad.addColorStop(0.5, '#e8e8cc');
-        skullGrad.addColorStop(0.8, '#c0d8a8');
-        skullGrad.addColorStop(1, '#88b868');
+        skullGrad.addColorStop(0, '#fffff8');
+        skullGrad.addColorStop(0.5, '#f0f0dd');
+        skullGrad.addColorStop(0.8, '#d8f0c0');
+        skullGrad.addColorStop(1, '#a0d888');
         ctx.fillStyle = skullGrad;
         ctx.beginPath();
         ctx.arc(cx, headCy, headR, 0, TWO_PI);
@@ -259,9 +290,9 @@ class SpriteLoader {
         ctx.globalAlpha = wingAlpha;
         // 左翼膜
         var wingGrad = ctx.createLinearGradient(cx - wingSpan, cy, cx, cy);
-        wingGrad.addColorStop(0, '#3a1550');
-        wingGrad.addColorStop(0.5, '#6633aa');
-        wingGrad.addColorStop(1, '#9955cc');
+        wingGrad.addColorStop(0, '#5533aa');
+        wingGrad.addColorStop(0.5, '#8855cc');
+        wingGrad.addColorStop(1, '#bb77ee');
         ctx.fillStyle = wingGrad;
         ctx.beginPath();
         ctx.moveTo(cx - r * 0.3, cy - r * 0.1);
@@ -273,9 +304,9 @@ class SpriteLoader {
         ctx.fill();
         // 右翼膜
         var wingGrad2 = ctx.createLinearGradient(cx, cy, cx + wingSpan, cy);
-        wingGrad2.addColorStop(0, '#9955cc');
-        wingGrad2.addColorStop(0.5, '#6633aa');
-        wingGrad2.addColorStop(1, '#3a1550');
+        wingGrad2.addColorStop(0, '#bb77ee');
+        wingGrad2.addColorStop(0.5, '#8855cc');
+        wingGrad2.addColorStop(1, '#5533aa');
         ctx.fillStyle = wingGrad2;
         ctx.beginPath();
         ctx.moveTo(cx + r * 0.3, cy - r * 0.1);
@@ -320,9 +351,9 @@ class SpriteLoader {
 
         // 毛茸茸身体
         var bodyGrad = ctx.createRadialGradient(cx - r * 0.1, cy - r * 0.2, 0, cx, cy, r * 0.7);
-        bodyGrad.addColorStop(0, '#bb88ee');
-        bodyGrad.addColorStop(0.6, '#7744bb');
-        bodyGrad.addColorStop(1, '#4a2277');
+        bodyGrad.addColorStop(0, '#dd99ff');
+        bodyGrad.addColorStop(0.6, '#9966dd');
+        bodyGrad.addColorStop(1, '#6633aa');
         ctx.fillStyle = bodyGrad;
         ctx.beginPath();
         ctx.ellipse(cx, cy, r * 0.55, r * 0.7, 0, 0, TWO_PI);
@@ -529,9 +560,9 @@ class SpriteLoader {
 
         // 法袍（梯形 + 渐变）
         var robeGrad = ctx.createLinearGradient(cx, cy - r * 0.5, cx, cy + r);
-        robeGrad.addColorStop(0, '#4a2266');
-        robeGrad.addColorStop(0.5, '#33155a');
-        robeGrad.addColorStop(1, '#1a0a33');
+        robeGrad.addColorStop(0, '#7744aa');
+        robeGrad.addColorStop(0.5, '#553388');
+        robeGrad.addColorStop(1, '#331a66');
         ctx.fillStyle = robeGrad;
         ctx.beginPath();
         ctx.moveTo(cx - r * 0.45, cy - r * 0.35 + floatY);
@@ -639,10 +670,10 @@ class SpriteLoader {
 
         // 身体（长椭圆 + 多层毛色）
         var bodyGrad = ctx.createRadialGradient(cx - r * 0.2, cy - r * 0.15, r * 0.1, cx, cy, r * 1.1);
-        bodyGrad.addColorStop(0, '#6688cc');
-        bodyGrad.addColorStop(0.4, '#3355aa');
-        bodyGrad.addColorStop(0.8, '#223388');
-        bodyGrad.addColorStop(1, '#112255');
+        bodyGrad.addColorStop(0, '#99bbff');
+        bodyGrad.addColorStop(0.4, '#5588dd');
+        bodyGrad.addColorStop(0.8, '#3366bb');
+        bodyGrad.addColorStop(1, '#224499');
         ctx.fillStyle = bodyGrad;
         ctx.beginPath();
         ctx.ellipse(cx, cy, r * 1.1, r * 0.6, 0, 0, TWO_PI);
@@ -663,8 +694,8 @@ class SpriteLoader {
         // 尾巴（蓬松）
         ctx.save();
         var tailGrad = ctx.createLinearGradient(cx + r * 0.8, cy, cx + r * 1.4, cy - r * 0.6);
-        tailGrad.addColorStop(0, '#3355aa');
-        tailGrad.addColorStop(1, '#223388');
+        tailGrad.addColorStop(0, '#5588dd');
+        tailGrad.addColorStop(1, '#3366bb');
         ctx.strokeStyle = tailGrad;
         ctx.lineWidth = r * 0.22;
         ctx.lineCap = 'round';
@@ -678,21 +709,21 @@ class SpriteLoader {
         var headX = cx - r * 0.7;
         var headY = cy - r * 0.05;
         var headGrad = ctx.createRadialGradient(headX, headY, r * 0.05, headX, headY, r * 0.45);
-        headGrad.addColorStop(0, '#5577bb');
-        headGrad.addColorStop(0.7, '#3355aa');
-        headGrad.addColorStop(1, '#223388');
+        headGrad.addColorStop(0, '#88aaee');
+        headGrad.addColorStop(0.7, '#5588dd');
+        headGrad.addColorStop(1, '#3366bb');
         ctx.fillStyle = headGrad;
         ctx.beginPath();
         ctx.ellipse(headX, headY, r * 0.45, r * 0.35, -0.1, 0, TWO_PI);
         ctx.fill();
         // 口吻（前突）
-        ctx.fillStyle = '#2a3366';
+        ctx.fillStyle = '#4466aa';
         ctx.beginPath();
         ctx.ellipse(headX - r * 0.35, headY + r * 0.08, r * 0.2, r * 0.13, -0.1, 0, TWO_PI);
         ctx.fill();
 
         // 尖耳
-        ctx.fillStyle = '#1a2255';
+        ctx.fillStyle = '#334488';
         ctx.beginPath();
         ctx.moveTo(headX - r * 0.15, headY - r * 0.3);
         ctx.lineTo(headX - r * 0.25, headY - r * 0.7);
@@ -774,8 +805,8 @@ class SpriteLoader {
         // 石翅
         ctx.save();
         var wGrad = ctx.createLinearGradient(cx - r * 1.3, cy, cx, cy);
-        wGrad.addColorStop(0, '#886633');
-        wGrad.addColorStop(1, '#bb8844');
+        wGrad.addColorStop(0, '#bb8844');
+        wGrad.addColorStop(1, '#ddaa66');
         ctx.fillStyle = wGrad;
         ctx.beginPath();
         ctx.moveTo(cx - r * 0.5, cy - r * 0.15);
@@ -797,10 +828,10 @@ class SpriteLoader {
 
         // 主体（石块质感）
         var stoneGrad = ctx.createRadialGradient(cx - r * 0.2, cy - r * 0.3, r * 0.1, cx, cy + r * 0.1, r);
-        stoneGrad.addColorStop(0, '#eecca8');
-        stoneGrad.addColorStop(0.3, '#cc9966');
-        stoneGrad.addColorStop(0.7, '#aa7744');
-        stoneGrad.addColorStop(1, '#775522');
+        stoneGrad.addColorStop(0, '#ffddbb');
+        stoneGrad.addColorStop(0.3, '#eebb88');
+        stoneGrad.addColorStop(0.7, '#cc9955');
+        stoneGrad.addColorStop(1, '#997733');
         ctx.fillStyle = stoneGrad;
         ctx.beginPath();
         ctx.moveTo(cx - r * 0.75, cy - r * 0.55);
