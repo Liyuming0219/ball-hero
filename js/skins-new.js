@@ -355,6 +355,21 @@ SkinRenderer.prototype._body_steambot = function(ctx, x, y, r, angle) {
     // === 胸部装甲板缝 ===
     ctx.strokeStyle = 'rgba(80,50,20,0.4)'; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(-r * 0.5, r * 0.1); ctx.lineTo(r * 0.5, r * 0.1); ctx.stroke();
+    
+    // Enhanced: More steam puffs and glowing rivets
+    ctx.globalAlpha = 0.3;
+    for (let i = 0; i < 4; i++) {
+        const sa = t * 2 + i * 1.57;
+        const sx = Math.cos(sa) * r * 0.3;
+        const sy = -r * 0.8 - Math.sin(t*3+i) * r * 0.15 - ((t*20+i*10)%30)/30 * r * 0.3;
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath(); ctx.arc(sx, sy, r*0.06 + Math.sin(t*2+i)*r*0.02, 0, TWO_PI_NEW); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    // Glowing pressure indicator
+    ctx.fillStyle = (Math.sin(t*2) > 0.5) ? '#ff4400' : '#44ff00';
+    ctx.globalAlpha = 0.6; ctx.beginPath(); ctx.arc(r*0.4, -r*0.3, r*0.05, 0, TWO_PI_NEW); ctx.fill();
+    ctx.globalAlpha = 1;
     ctx.restore();
 };;
 SkinRenderer.prototype._proj_steambot = function(ctx, x, y, r, angle) {
@@ -522,53 +537,65 @@ SkinRenderer.prototype._proj_nanocore = function(ctx, x, y, r, angle) {
 // 鍏冪礌棰嗕富绯诲垪 - SkinRenderer 韬綋+寮逛綋
 // ============================================
 SkinRenderer.prototype._body_thunder = function(ctx, x, y, r, angle) {
-    var t = this._time;
+    const t = this._time;
     this._shadow(ctx, x, y, r);
-    this._glow(ctx, x, y, r, '#4488ff', 0.2);
     ctx.save(); ctx.translate(x, y);
-    // Electric blue sphere
-    var tg = ctx.createRadialGradient(-r*0.2, -r*0.2, 0, 0, 0, r);
-    tg.addColorStop(0, '#ffffff'); tg.addColorStop(0.2, '#aaddff');
-    tg.addColorStop(0.5, '#4488ff'); tg.addColorStop(0.8, '#2244aa');
-    tg.addColorStop(1, '#111144');
-    ctx.fillStyle = tg;
+    // Electric blue core sphere
+    const coreG = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
+    coreG.addColorStop(0, '#ffffff'); coreG.addColorStop(0.2, '#aaddff');
+    coreG.addColorStop(0.5, '#4488ff'); coreG.addColorStop(0.8, '#2244aa');
+    coreG.addColorStop(1, '#112266');
+    ctx.fillStyle = coreG;
     ctx.beginPath(); ctx.arc(0, 0, r, 0, TWO_PI_NEW); ctx.fill();
-    // Lightning bolts radiating outward - the key visual
-    var boltCount = 4;
-    ctx.strokeStyle = '#88ddff'; ctx.lineWidth = 2; ctx.lineCap = 'round';
-    for (var i = 0; i < boltCount; i++) {
-        var ba = i * TWO_PI_NEW / boltCount + t * 2;
-        ctx.globalAlpha = 0.7 + Math.sin(t * 8 + i * 3) * 0.3;
+    // Inner electric arcs (contained within sphere)
+    ctx.strokeStyle = '#88ddff'; ctx.lineWidth = 1.5; ctx.globalAlpha = 0.6;
+    for (let i = 0; i < 3; i++) {
+        const startA = t * 8 + i * 2.1;
         ctx.beginPath();
-        var bx = Math.cos(ba) * r * 0.8, by = Math.sin(ba) * r * 0.8;
-        ctx.moveTo(bx, by);
-        // Zigzag outward
-        var midA = ba + (Math.sin(t*10+i) > 0 ? 0.3 : -0.3);
-        var mx = Math.cos(midA) * r * 1.3, my = Math.sin(midA) * r * 1.3;
-        ctx.lineTo(mx, my);
-        var endA = ba + (Math.sin(t*12+i) > 0 ? -0.2 : 0.2);
-        ctx.lineTo(Math.cos(endA) * r * 1.6, Math.sin(endA) * r * 1.6);
-        ctx.stroke();
-        // Branch
-        ctx.beginPath(); ctx.moveTo(mx, my);
-        ctx.lineTo(Math.cos(ba+0.5) * r * 1.4, Math.sin(ba+0.5) * r * 1.4);
+        let px = Math.cos(startA) * r * 0.2;
+        let py = Math.sin(startA) * r * 0.2;
+        ctx.moveTo(px, py);
+        for (let seg = 0; seg < 4; seg++) {
+            px += (Math.random()-0.5) * r * 0.4;
+            py += (Math.random()-0.5) * r * 0.4;
+            const d = Math.sqrt(px*px+py*py);
+            if (d > r*0.8) { px *= r*0.7/d; py *= r*0.7/d; }
+            ctx.lineTo(px, py);
+        }
         ctx.stroke();
     }
     ctx.globalAlpha = 1;
-    // Center lightning symbol
-    ctx.fillStyle = '#ffee44'; ctx.globalAlpha = 0.7;
-    ctx.beginPath();
-    ctx.moveTo(-r*0.1, -r*0.4);
-    ctx.lineTo(r*0.1, -r*0.05);
-    ctx.lineTo(-r*0.02, -r*0.05);
-    ctx.lineTo(r*0.1, r*0.4);
-    ctx.lineTo(-r*0.1, r*0.05);
-    ctx.lineTo(r*0.02, r*0.05);
-    ctx.closePath(); ctx.fill();
+    // OUTER LIGHTNING BOLTS (realistic jagged, not just circles)
+    ctx.strokeStyle = '#ffee44'; ctx.lineWidth = 2; ctx.lineCap = 'round';
+    ctx.globalAlpha = 0.7 + Math.sin(t*10)*0.2;
+    for (let bolt = 0; bolt < 4; bolt++) {
+        const boltAngle = t * 3 + bolt * Math.PI / 2 + Math.sin(t*5+bolt)*0.3;
+        const startX = Math.cos(boltAngle) * r * 0.85;
+        const startY = Math.sin(boltAngle) * r * 0.85;
+        const endDist = r * (1.3 + Math.sin(t*4+bolt*1.3)*0.3);
+        const endX = Math.cos(boltAngle) * endDist;
+        const endY = Math.sin(boltAngle) * endDist;
+        // Jagged zigzag path
+        ctx.beginPath(); ctx.moveTo(startX, startY);
+        const segs = 4;
+        for (let s = 1; s <= segs; s++) {
+            const frac = s / segs;
+            const mx = startX + (endX-startX)*frac;
+            const my = startY + (endY-startY)*frac;
+            const perpX = -(endY-startY) / endDist;
+            const perpY = (endX-startX) / endDist;
+            const jitter = (Math.sin(t*15 + bolt*3 + s*2.7) * 0.5) * r * 0.2;
+            ctx.lineTo(mx + perpX*jitter, my + perpY*jitter);
+        }
+        ctx.stroke();
+        // Bright tip flash
+        ctx.fillStyle = '#ffffff'; ctx.globalAlpha = 0.6;
+        ctx.beginPath(); ctx.arc(endX, endY, 2, 0, TWO_PI_NEW); ctx.fill();
+    }
     ctx.globalAlpha = 1;
-    // Highlight
-    ctx.fillStyle = 'rgba(255,255,255,0.5)';
-    ctx.beginPath(); ctx.arc(-r*0.2, -r*0.25, r*0.08, 0, TWO_PI_NEW); ctx.fill();
+    // Central glow
+    ctx.fillStyle = 'rgba(255,238,68,0.3)';
+    ctx.beginPath(); ctx.arc(0, 0, r*0.3, 0, TWO_PI_NEW); ctx.fill();
     ctx.restore();
 };;
 SkinRenderer.prototype._proj_thunder = function(ctx, x, y, r, angle) {
@@ -580,49 +607,63 @@ SkinRenderer.prototype._proj_thunder = function(ctx, x, y, r, angle) {
 };
 
 SkinRenderer.prototype._body_glacier = function(ctx, x, y, r, angle) {
-    var t = this._time;
+    const t = this._time;
     this._shadow(ctx, x, y, r);
-    this._glow(ctx, x, y, r, '#88ddff', 0.15);
     ctx.save(); ctx.translate(x, y);
-    // Ice blue sphere
-    var ig = ctx.createRadialGradient(-r*0.2, -r*0.2, 0, 0, 0, r);
-    ig.addColorStop(0, '#ffffff'); ig.addColorStop(0.2, '#ddf4ff');
-    ig.addColorStop(0.5, '#77ccee'); ig.addColorStop(0.8, '#3388aa');
-    ig.addColorStop(1, '#114455');
-    ctx.fillStyle = ig;
+    // Ice sphere with crystalline facets
+    const iceG = ctx.createRadialGradient(-r*0.2, -r*0.2, 0, 0, 0, r);
+    iceG.addColorStop(0, '#ffffff'); iceG.addColorStop(0.2, '#ccf0ff');
+    iceG.addColorStop(0.5, '#66bbdd'); iceG.addColorStop(0.8, '#3388aa');
+    iceG.addColorStop(1, '#224466');
+    ctx.fillStyle = iceG;
     ctx.beginPath(); ctx.arc(0, 0, r, 0, TWO_PI_NEW); ctx.fill();
-    // Ice cracks across surface
-    ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 1; ctx.lineCap = 'round';
-    for (var i = 0; i < 4; i++) {
-        var ca = i * 1.5 + 0.3;
+    // Crystalline facet lines (hexagonal ice pattern)
+    ctx.strokeStyle = 'rgba(200,240,255,0.4)'; ctx.lineWidth = 0.8;
+    for (let i = 0; i < 6; i++) {
+        const a = (i/6)*TWO_PI_NEW + t*0.1;
         ctx.beginPath(); ctx.moveTo(0, 0);
-        var cx = Math.cos(ca) * r * 0.7, cy = Math.sin(ca) * r * 0.7;
-        ctx.lineTo(cx, cy); ctx.stroke();
-        // Branch crack
-        ctx.beginPath(); ctx.moveTo(cx * 0.5, cy * 0.5);
-        ctx.lineTo(cx * 0.5 + Math.cos(ca + 1) * r * 0.3, cy * 0.5 + Math.sin(ca + 1) * r * 0.3);
+        ctx.lineTo(Math.cos(a)*r*0.9, Math.sin(a)*r*0.9); ctx.stroke();
+        // Cross-connecting lines
+        const a2 = ((i+1)/6)*TWO_PI_NEW + t*0.1;
+        ctx.beginPath();
+        ctx.moveTo(Math.cos(a)*r*0.5, Math.sin(a)*r*0.5);
+        ctx.lineTo(Math.cos(a2)*r*0.5, Math.sin(a2)*r*0.5);
         ctx.stroke();
     }
-    // Ice crystals at edges - 6 pointed star shapes
-    if (this.quality.detailLevel >= 1) {
-        ctx.strokeStyle = '#ccffff'; ctx.lineWidth = 1.5; ctx.globalAlpha = 0.5;
-        for (var j = 0; j < 6; j++) {
-            var ea = j * TWO_PI_NEW / 6 + t * 0.1;
-            var ex = Math.cos(ea) * r * 1.15, ey = Math.sin(ea) * r * 1.15;
-            // Each crystal is a small 6-spoke
-            for (var k = 0; k < 3; k++) {
-                var ka = k * Math.PI / 3;
-                ctx.beginPath();
-                ctx.moveTo(ex + Math.cos(ka) * r * 0.12, ey + Math.sin(ka) * r * 0.12);
-                ctx.lineTo(ex - Math.cos(ka) * r * 0.12, ey - Math.sin(ka) * r * 0.12);
-                ctx.stroke();
-            }
-        }
-        ctx.globalAlpha = 1;
+    // Ice crystal spikes protruding outward
+    ctx.fillStyle = '#aaeeff'; ctx.globalAlpha = 0.6;
+    for (let i = 0; i < 6; i++) {
+        const sa = (i/6)*TWO_PI_NEW + t*0.15 + Math.sin(t+i)*0.1;
+        const sLen = r * (0.3 + Math.sin(t*2+i*1.1)*0.1);
+        ctx.save(); ctx.rotate(sa);
+        ctx.beginPath();
+        ctx.moveTo(r*0.8, -r*0.06); ctx.lineTo(r*0.8 + sLen, 0);
+        ctx.lineTo(r*0.8, r*0.06); ctx.closePath(); ctx.fill();
+        ctx.restore();
     }
-    // Highlight
+    ctx.globalAlpha = 1;
+    // Inner frozen cracks
+    ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1; ctx.globalAlpha = 0.3;
+    for (let i = 0; i < 4; i++) {
+        const ca = i * 1.57 + 0.3;
+        ctx.beginPath(); ctx.moveTo(Math.cos(ca)*r*0.15, Math.sin(ca)*r*0.15);
+        ctx.lineTo(Math.cos(ca)*r*0.5 + Math.sin(t+i)*r*0.05, Math.sin(ca)*r*0.5);
+        ctx.lineTo(Math.cos(ca+0.3)*r*0.7, Math.sin(ca+0.3)*r*0.65);
+        ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+    // Frost particles orbiting
+    ctx.fillStyle = '#ffffff';
+    for (let i = 0; i < 6; i++) {
+        const fa = t*1.5 + i*1.05;
+        const fd = r*1.1 + Math.sin(t*2+i)*r*0.1;
+        ctx.globalAlpha = 0.3 + Math.sin(t*3+i)*0.2;
+        ctx.beginPath(); ctx.arc(Math.cos(fa)*fd, Math.sin(fa)*fd, 1.5, 0, TWO_PI_NEW); ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    // Specular highlight
     ctx.fillStyle = 'rgba(255,255,255,0.5)';
-    ctx.beginPath(); ctx.arc(-r*0.22, -r*0.25, r*0.1, 0, TWO_PI_NEW); ctx.fill();
+    ctx.beginPath(); ctx.arc(-r*0.25, -r*0.3, r*0.15, 0, TWO_PI_NEW); ctx.fill();
     ctx.restore();
 };;;
 SkinRenderer.prototype._proj_glacier = function(ctx, x, y, r, angle) {
@@ -634,321 +675,84 @@ SkinRenderer.prototype._proj_glacier = function(ctx, x, y, r, angle) {
 };
 
 SkinRenderer.prototype._body_shadow = function(ctx, x, y, r, angle) {
-    var t = this._time;
+    const t = this._time;
     this._shadow(ctx, x, y, r);
-    this._glow(ctx, x, y, r, '#ff6600', 0.2);
     ctx.save(); ctx.translate(x, y);
-    // Fire sphere
-    var fg = ctx.createRadialGradient(-r*0.1, -r*0.15, 0, 0, 0, r);
-    fg.addColorStop(0, '#ffffff'); fg.addColorStop(0.15, '#ffee88');
-    fg.addColorStop(0.35, '#ffaa00'); fg.addColorStop(0.6, '#ff5500');
-    fg.addColorStop(0.85, '#cc2200'); fg.addColorStop(1, '#551100');
-    ctx.fillStyle = fg;
+    // Swirling wind sphere (cyan/green/gray wind energy)
+    const windG = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
+    windG.addColorStop(0, '#ccffee'); windG.addColorStop(0.3, '#66ddaa');
+    windG.addColorStop(0.6, '#338866'); windG.addColorStop(1, '#1a4433');
+    ctx.fillStyle = windG;
     ctx.beginPath(); ctx.arc(0, 0, r, 0, TWO_PI_NEW); ctx.fill();
-    // Flame wisps rising from the sphere
-    var flameCount = 6;
-    for (var i = 0; i < flameCount; i++) {
-        var fa = i * TWO_PI_NEW / flameCount + t * 1.5;
-        var fh = r * (0.5 + Math.sin(t * 4 + i * 2) * 0.2);
-        var fx = Math.cos(fa) * r * 0.7;
-        var fy = Math.sin(fa) * r * 0.7;
-        // Teardrop flame shape
-        var flameG = ctx.createRadialGradient(fx, fy - fh * 0.3, 0, fx, fy, fh * 0.6);
-        flameG.addColorStop(0, '#ffee44'); flameG.addColorStop(0.4, '#ff8800');
-        flameG.addColorStop(1, 'transparent');
-        ctx.fillStyle = flameG; ctx.globalAlpha = 0.5;
+    // Wind vortex lines (swirling streaks)
+    ctx.strokeStyle = '#aaffdd'; ctx.lineWidth = 1.5; ctx.lineCap = 'round';
+    ctx.globalAlpha = 0.5;
+    for (let i = 0; i < 5; i++) {
+        const sa = t * 4 + i * TWO_PI_NEW / 5;
+        const spiralR = r * (0.3 + i * 0.12);
         ctx.beginPath();
-        ctx.moveTo(fx - r * 0.08, fy);
-        ctx.quadraticCurveTo(fx, fy - fh, fx + r * 0.08, fy);
-        ctx.closePath(); ctx.fill();
+        ctx.arc(0, 0, spiralR, sa, sa + Math.PI * 0.8);
+        ctx.stroke();
+    }
+    // Outer tornado ring (fast spinning debris)
+    ctx.globalAlpha = 0.3; ctx.strokeStyle = '#88ffcc'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(0, 0, r * 0.95, t*6, t*6 + Math.PI * 1.4); ctx.stroke();
+    ctx.beginPath(); ctx.arc(0, 0, r * 0.95, t*6 + Math.PI, t*6 + Math.PI * 2.2); ctx.stroke();
+    ctx.globalAlpha = 1;
+    // Floating debris particles
+    ctx.fillStyle = '#77bb99';
+    for (let i = 0; i < 8; i++) {
+        const pa = t * 5 + i * 0.79;
+        const pd = r * (0.4 + Math.sin(t*2 + i) * 0.3);
+        ctx.globalAlpha = 0.4 + Math.sin(t*3+i)*0.3;
+        ctx.beginPath(); ctx.arc(Math.cos(pa)*pd, Math.sin(pa)*pd, 1.5 + Math.sin(t+i)*0.5, 0, TWO_PI_NEW); ctx.fill();
     }
     ctx.globalAlpha = 1;
-    // Magma cracks
-    if (this.quality.detailLevel >= 1) {
-        ctx.strokeStyle = '#ffcc00'; ctx.lineWidth = 1.5; ctx.globalAlpha = 0.4;
-        for (var j = 0; j < 4; j++) {
-            var ma = j * 1.5 + 0.5;
-            ctx.beginPath();
-            ctx.moveTo(Math.cos(ma) * r * 0.2, Math.sin(ma) * r * 0.2);
-            ctx.lineTo(Math.cos(ma) * r * 0.7, Math.sin(ma) * r * 0.7);
-            ctx.stroke();
-        }
-        ctx.globalAlpha = 1;
-    }
-    // Highlight
-    ctx.fillStyle = 'rgba(255,255,255,0.4)';
-    ctx.beginPath(); ctx.arc(-r*0.2, -r*0.25, r*0.08, 0, TWO_PI_NEW); ctx.fill();
+    // Central eye of the storm (calm bright center)
+    const eyeG = ctx.createRadialGradient(0, 0, 0, 0, 0, r*0.25);
+    eyeG.addColorStop(0, '#ffffff'); eyeG.addColorStop(0.5, '#aaffdd'); eyeG.addColorStop(1, 'transparent');
+    ctx.fillStyle = eyeG;
+    ctx.beginPath(); ctx.arc(0, 0, r*0.25, 0, TWO_PI_NEW); ctx.fill();
     ctx.restore();
 };;
 SkinRenderer.prototype._proj_shadow = function(ctx, x, y, r, angle) {
-    ctx.save(); ctx.translate(x,y); ctx.rotate(angle);
-    ctx.fillStyle='#6600aa'; ctx.globalAlpha=0.8; ctx.beginPath(); ctx.moveTo(r,0); ctx.lineTo(-r*0.5,-r*0.6); ctx.lineTo(-r*0.2,0); ctx.lineTo(-r*0.5,r*0.6); ctx.closePath(); ctx.fill();
-    ctx.fillStyle='#ff00ff'; ctx.globalAlpha=0.4; ctx.beginPath(); ctx.arc(0,0,r*0.2,0,TWO_PI_NEW); ctx.fill();
-    ctx.restore(); if(this.quality.glowEnabled) this._glow(ctx,x,y,r*0.4,'#aa00ff',0.3);
+    const t = this._time;
+    ctx.save(); ctx.translate(x, y);
+    // Wind projectile: spinning vortex with debris
+    const vortG = ctx.createRadialGradient(0, 0, 0, 0, 0, r*0.8);
+    vortG.addColorStop(0, '#ffffff'); vortG.addColorStop(0.3, '#aaffdd');
+    vortG.addColorStop(0.7, '#66ddaa'); vortG.addColorStop(1, '#338866');
+    ctx.fillStyle = vortG; ctx.globalAlpha = 0.7;
+    ctx.beginPath(); ctx.arc(0, 0, r*0.8, 0, TWO_PI_NEW); ctx.fill();
+    ctx.globalAlpha = 1;
+    // Spiral wind lines
+    ctx.strokeStyle = '#aaffdd'; ctx.lineWidth = 1.5; ctx.globalAlpha = 0.6;
+    for (let i = 0; i < 3; i++) {
+        ctx.beginPath(); ctx.arc(0, 0, r*(0.3+i*0.2), t*10+i*2.1, t*10+i*2.1+Math.PI*0.8); ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+    // Debris particles
+    ctx.fillStyle = '#66ddaa';
+    for (let i = 0; i < 4; i++) {
+        const pa = t*8 + i*1.57;
+        const pd = r*(0.3 + Math.sin(t*4+i)*0.15);
+        ctx.beginPath(); ctx.arc(Math.cos(pa)*pd, Math.sin(pa)*pd, 1.5, 0, TWO_PI_NEW); ctx.fill();
+    }
+    ctx.restore();
+    if (this.quality.glowEnabled) this._glow(ctx, x, y, r*0.6, '#66ddaa', 0.2);
 };
 
 // ============================================
 // 涓滄柟绁炶瘽绯诲垪 - SkinRenderer 韬綋+寮逛綋
 // ============================================
-SkinRenderer.prototype._body_kitsune = function(ctx, x, y, r, angle) {
-    var t = this._time;
-    this._shadow(ctx, x, y, r);
-    this._glow(ctx, x, y, r, '#ff8844', 0.1);
-    ctx.save(); ctx.translate(x, y);
-    // Multiple tails behind (most prominent feature)
-    var tailCount = 5;
-    ctx.globalAlpha = 0.7;
-    for (var i = 0; i < tailCount; i++) {
-        var ta = Math.PI + (i - 2) * 0.35 + Math.sin(t * 2 + i * 0.7) * 0.15;
-        var tLen = r * (1.3 + Math.sin(t * 1.5 + i) * 0.2);
-        ctx.strokeStyle = (i % 2 === 0) ? '#ffaa33' : '#ff7711';
-        ctx.lineWidth = r * 0.18; ctx.lineCap = 'round';
-        ctx.beginPath(); ctx.moveTo(Math.cos(ta) * r * 0.4, Math.sin(ta) * r * 0.4);
-        ctx.quadraticCurveTo(Math.cos(ta) * tLen * 0.7 + Math.sin(t*3+i)*r*0.2,
-            Math.sin(ta) * tLen * 0.7,
-            Math.cos(ta) * tLen, Math.sin(ta) * tLen);
-        ctx.stroke();
-        // White tail tip
-        ctx.fillStyle = '#fff8ee';
-        ctx.beginPath(); ctx.arc(Math.cos(ta) * tLen, Math.sin(ta) * tLen, r * 0.1, 0, TWO_PI_NEW); ctx.fill();
-    }
-    ctx.globalAlpha = 1;
-    // Orange fox body
-    var kg = ctx.createRadialGradient(-r*0.15, -r*0.1, 0, 0, 0, r);
-    kg.addColorStop(0, '#ffbb55'); kg.addColorStop(0.5, '#ee8822');
-    kg.addColorStop(0.85, '#cc5500'); kg.addColorStop(1, '#773300');
-    ctx.fillStyle = kg;
-    ctx.beginPath(); ctx.arc(0, 0, r, 0, TWO_PI_NEW); ctx.fill();
-    // White muzzle
-    ctx.fillStyle = '#fff5ee';
-    ctx.beginPath(); ctx.ellipse(0, r*0.25, r*0.5, r*0.4, 0, 0, Math.PI); ctx.fill();
-    // Big pointy fox ears
-    ctx.fillStyle = '#ee8822';
-    for (var s = -1; s <= 1; s += 2) {
-        ctx.beginPath();
-        ctx.moveTo(s*r*0.35, -r*0.65);
-        ctx.lineTo(s*r*0.6, -r*1.4);
-        ctx.lineTo(s*r*0.85, -r*0.55);
-        ctx.closePath(); ctx.fill();
-        ctx.fillStyle = '#ffaaaa';
-        ctx.beginPath();
-        ctx.moveTo(s*r*0.42, -r*0.7);
-        ctx.lineTo(s*r*0.6, -r*1.2);
-        ctx.lineTo(s*r*0.75, -r*0.6);
-        ctx.closePath(); ctx.fill();
-        ctx.fillStyle = '#ee8822';
-    }
-    // Eyes - narrow fox eyes
-    ctx.fillStyle = '#ffee44';
-    ctx.beginPath(); ctx.ellipse(-r*0.22, -r*0.05, r*0.1, r*0.06, -0.1, 0, TWO_PI_NEW); ctx.fill();
-    ctx.beginPath(); ctx.ellipse(r*0.22, -r*0.05, r*0.1, r*0.06, 0.1, 0, TWO_PI_NEW); ctx.fill();
-    ctx.fillStyle = '#111';
-    ctx.beginPath(); ctx.arc(-r*0.22, -r*0.05, r*0.04, 0, TWO_PI_NEW); ctx.fill();
-    ctx.beginPath(); ctx.arc(r*0.22, -r*0.05, r*0.04, 0, TWO_PI_NEW); ctx.fill();
-    // Nose
-    ctx.fillStyle = '#222';
-    ctx.beginPath(); ctx.arc(0, r*0.1, r*0.05, 0, TWO_PI_NEW); ctx.fill();
-    ctx.restore();
-};;
-SkinRenderer.prototype._proj_kitsune = function(ctx, x, y, r, angle) {
-    const t = this._time;
-    ctx.save(); ctx.translate(x, y);
-    for (let i = 0; i < 9; i++) {
-        const ta = t * 8 + i * TWO_PI_NEW / 9;
-        const tLen = r * (0.6 + Math.sin(t * 3 + i * 0.7) * 0.2);
-        ctx.save(); ctx.globalAlpha = 0.4;
-        const tg = ctx.createLinearGradient(0, 0, Math.cos(ta) * tLen, Math.sin(ta) * tLen);
-        tg.addColorStop(0, '#88ddff'); tg.addColorStop(0.6, '#44aaff'); tg.addColorStop(1, 'transparent');
-        ctx.strokeStyle = tg; ctx.lineWidth = 2.5; ctx.lineCap = 'round';
-        ctx.beginPath(); ctx.moveTo(0, 0);
-        ctx.quadraticCurveTo(Math.cos(ta + 0.3) * tLen * 0.6, Math.sin(ta + 0.3) * tLen * 0.6, Math.cos(ta) * tLen, Math.sin(ta) * tLen);
-        ctx.stroke(); ctx.restore();
-    }
-    ctx.globalAlpha = 0.3 + Math.sin(t * 5) * 0.15;
-    ctx.strokeStyle = '#88ccff'; ctx.lineWidth = r * 0.04;
-    ctx.beginPath(); ctx.arc(0, 0, r * 1.0, 0, TWO_PI_NEW); ctx.stroke();
-    ctx.globalAlpha = 1;
-    const cg = ctx.createRadialGradient(0, 0, 0, 0, 0, r * 0.45);
-    cg.addColorStop(0, '#fff'); cg.addColorStop(0.2, '#aaddff'); cg.addColorStop(0.5, '#44aaff'); cg.addColorStop(0.8, '#2266aa'); cg.addColorStop(1, 'transparent');
-    ctx.fillStyle = cg;
-    ctx.beginPath(); ctx.arc(0, 0, r * 0.45, 0, TWO_PI_NEW); ctx.fill();
-    ctx.fillStyle = '#88ccff'; ctx.globalAlpha = 0.5;
-    for (let i = 0; i < 7; i++) {
-        const pa = t * 10 + i * 0.9;
-        const pd = r * (0.4 + Math.sin(t * 4 + i * 1.5) * 0.4);
-        ctx.beginPath(); ctx.arc(Math.cos(pa) * pd, Math.sin(pa) * pd, 2, 0, TWO_PI_NEW); ctx.fill();
-    }
-    ctx.restore();
-    if (this.quality.glowEnabled) this._glow(ctx, x, y, r * 0.7, '#44aaff', 0.35);
-};
+;;
+;
 
-SkinRenderer.prototype._body_dragonking = function(ctx, x, y, r, angle) {
-    var t = this._time;
-    this._shadow(ctx, x, y, r);
-    this._glow(ctx, x, y, r, '#22aaff', 0.1);
-    ctx.save(); ctx.translate(x, y);
-    // Dragon body - blue-green scales
-    var dg = ctx.createRadialGradient(-r*0.15, -r*0.15, 0, 0, 0, r);
-    dg.addColorStop(0, '#66ccee'); dg.addColorStop(0.4, '#3399aa');
-    dg.addColorStop(0.7, '#226677'); dg.addColorStop(1, '#113344');
-    ctx.fillStyle = dg;
-    ctx.beginPath(); ctx.arc(0, 0, r, 0, TWO_PI_NEW); ctx.fill();
-    // Scale pattern (simple overlapping arcs)
-    if (this.quality.detailLevel >= 1) {
-        ctx.strokeStyle = 'rgba(100,220,255,0.25)'; ctx.lineWidth = 0.8;
-        for (var row = -2; row <= 2; row++) {
-            for (var col = -2; col <= 2; col++) {
-                var sx = col * r * 0.35 + (row%2) * r * 0.17;
-                var sy = row * r * 0.3;
-                if (sx*sx + sy*sy > r*r*0.7) continue;
-                ctx.beginPath(); ctx.arc(sx, sy, r*0.15, 0.8*Math.PI, 2.2*Math.PI); ctx.stroke();
-            }
-        }
-    }
-    // Big curved horns
-    ctx.fillStyle = '#ffcc44';
-    for (var s = -1; s <= 1; s += 2) {
-        ctx.beginPath();
-        ctx.moveTo(s*r*0.25, -r*0.75);
-        ctx.quadraticCurveTo(s*r*0.6, -r*1.4, s*r*0.4, -r*1.35);
-        ctx.quadraticCurveTo(s*r*0.15, -r*1.1, s*r*0.15, -r*0.7);
-        ctx.closePath(); ctx.fill();
-    }
-    // Dragon whiskers (4 flowing lines)
-    ctx.strokeStyle = '#88eeff'; ctx.lineWidth = 1.5; ctx.lineCap = 'round';
-    ctx.globalAlpha = 0.6;
-    for (var s2 = -1; s2 <= 1; s2 += 2) {
-        ctx.beginPath(); ctx.moveTo(s2*r*0.4, r*0.15);
-        ctx.quadraticCurveTo(s2*r*0.9, r*0.0 + Math.sin(t*3)*r*0.1, s2*r*1.2, r*0.2);
-        ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(s2*r*0.35, r*0.3);
-        ctx.quadraticCurveTo(s2*r*0.8, r*0.35 + Math.sin(t*2.5)*r*0.1, s2*r*1.1, r*0.45);
-        ctx.stroke();
-    }
-    ctx.globalAlpha = 1;
-    // Dragon eyes - gold with slit pupil
-    for (var s3 = -1; s3 <= 1; s3 += 2) {
-        ctx.fillStyle = '#ffee44';
-        ctx.beginPath(); ctx.arc(s3*r*0.28, -r*0.1, r*0.12, 0, TWO_PI_NEW); ctx.fill();
-        ctx.fillStyle = '#111';
-        ctx.beginPath(); ctx.ellipse(s3*r*0.28, -r*0.1, r*0.03, r*0.1, 0, 0, TWO_PI_NEW); ctx.fill();
-    }
-    ctx.restore();
-};;
-SkinRenderer.prototype._proj_dragonking = function(ctx, x, y, r, angle) {
-    const t = this._time;
-    ctx.save(); ctx.translate(x, y);
-    for (let i = 0; i < 5; i++) {
-        const spiralBase = t * 9 + i * TWO_PI_NEW / 5;
-        ctx.save(); ctx.globalAlpha = 0.4;
-        ctx.beginPath();
-        for (let s = 0; s <= 10; s++) {
-            const frac = s / 10;
-            const sa = spiralBase + frac * Math.PI * 2;
-            const sr = frac * r * 1.2;
-            const sx = Math.cos(sa) * sr;
-            const sy = Math.sin(sa) * sr;
-            s === 0 ? ctx.moveTo(sx, sy) : ctx.lineTo(sx, sy);
-        }
-        ctx.strokeStyle = i % 2 ? '#88ddff' : '#4488ff'; ctx.lineWidth = r * 0.08;
-        ctx.lineCap = 'round'; ctx.stroke(); ctx.restore();
-    }
-    ctx.globalAlpha = 0.3 + Math.sin(t * 4) * 0.1;
-    ctx.strokeStyle = '#aaddff'; ctx.lineWidth = r * 0.04;
-    ctx.beginPath(); ctx.arc(0, 0, r * 1.1 + Math.sin(t * 5) * r * 0.1, 0, TWO_PI_NEW); ctx.stroke();
-    ctx.globalAlpha = 1;
-    const cg = ctx.createRadialGradient(0, 0, 0, 0, 0, r * 0.5);
-    cg.addColorStop(0, '#fff'); cg.addColorStop(0.2, '#ffee88'); cg.addColorStop(0.5, '#4488ff'); cg.addColorStop(0.8, '#2244aa'); cg.addColorStop(1, 'transparent');
-    ctx.fillStyle = cg;
-    ctx.beginPath(); ctx.arc(0, 0, r * 0.5, 0, TWO_PI_NEW); ctx.fill();
-    ctx.strokeStyle = '#aaddff'; ctx.lineWidth = 1; ctx.globalAlpha = 0.4;
-    for (let i = 0; i < 8; i++) {
-        const pa = t * 7 + i * 0.78;
-        const pd = r * (0.5 + Math.sin(t * 3 + i * 1.4) * 0.5);
-        const ps = 2 + Math.sin(t * 4 + i) * 1;
-        ctx.beginPath(); ctx.arc(Math.cos(pa) * pd, Math.sin(pa) * pd, ps, 0, TWO_PI_NEW); ctx.stroke();
-    }
-    ctx.restore();
-    if (this.quality.glowEnabled) this._glow(ctx, x, y, r * 0.7, '#4488ff', 0.35);
-};
+;;
+;
 
-SkinRenderer.prototype._body_wukong = function(ctx, x, y, r, angle) {
-    var t = this._time;
-    this._shadow(ctx, x, y, r);
-    this._glow(ctx, x, y, r, '#ffaa00', 0.1);
-    ctx.save(); ctx.translate(x, y);
-    // Golden monkey body
-    var mg = ctx.createRadialGradient(-r*0.15, -r*0.15, 0, 0, 0, r);
-    mg.addColorStop(0, '#ffcc66'); mg.addColorStop(0.4, '#eebb44');
-    mg.addColorStop(0.7, '#cc8822'); mg.addColorStop(1, '#885511');
-    ctx.fillStyle = mg;
-    ctx.beginPath(); ctx.arc(0, 0, r, 0, TWO_PI_NEW); ctx.fill();
-    // Peach colored face area
-    ctx.fillStyle = '#ffddbb';
-    ctx.beginPath(); ctx.ellipse(0, r*0.1, r*0.5, r*0.45, 0, 0, TWO_PI_NEW); ctx.fill();
-    // Gold band / circlet (most iconic feature)
-    ctx.strokeStyle = '#ffcc00'; ctx.lineWidth = r * 0.12;
-    ctx.beginPath(); ctx.arc(0, -r*0.15, r*0.75, -Math.PI*0.85, -Math.PI*0.15); ctx.stroke();
-    // Red gem on circlet
-    ctx.fillStyle = '#ff2222';
-    ctx.beginPath(); ctx.arc(0, -r*0.7, r*0.08, 0, TWO_PI_NEW); ctx.fill();
-    // Monkey ears (round)
-    for (var s = -1; s <= 1; s += 2) {
-        ctx.fillStyle = '#cc8822';
-        ctx.beginPath(); ctx.arc(s*r*0.8, -r*0.15, r*0.22, 0, TWO_PI_NEW); ctx.fill();
-        ctx.fillStyle = '#ffaaaa';
-        ctx.beginPath(); ctx.arc(s*r*0.8, -r*0.15, r*0.12, 0, TWO_PI_NEW); ctx.fill();
-    }
-    // Eyes - golden fire eyes
-    for (var s2 = -1; s2 <= 1; s2 += 2) {
-        ctx.fillStyle = '#ffaa00';
-        ctx.beginPath(); ctx.arc(s2*r*0.22, 0, r*0.1, 0, TWO_PI_NEW); ctx.fill();
-        ctx.fillStyle = '#111';
-        ctx.beginPath(); ctx.arc(s2*r*0.22, 0, r*0.04, 0, TWO_PI_NEW); ctx.fill();
-    }
-    // Nose
-    ctx.fillStyle = '#aa6622';
-    ctx.beginPath(); ctx.ellipse(0, r*0.2, r*0.08, r*0.05, 0, 0, TWO_PI_NEW); ctx.fill();
-    // Mouth - grin
-    ctx.strokeStyle = '#553311'; ctx.lineWidth = 1.2; ctx.lineCap = 'round';
-    ctx.beginPath(); ctx.arc(0, r*0.25, r*0.15, 0.2, Math.PI-0.2); ctx.stroke();
-    ctx.restore();
-};;
-SkinRenderer.prototype._proj_wukong = function(ctx, x, y, r, angle) {
-    const t = this._time;
-    ctx.save(); ctx.translate(x, y);
-    for (let i = 0; i < 4; i++) {
-        ctx.save(); ctx.rotate(t * 15 + i * TWO_PI_NEW / 4);
-        ctx.globalAlpha = 0.5 - i * 0.1;
-        const g = ctx.createLinearGradient(-r * 1.3, 0, r * 1.3, 0);
-        g.addColorStop(0, '#ffcc44'); g.addColorStop(0.5, '#ffee88'); g.addColorStop(1, '#ffcc44');
-        ctx.strokeStyle = g; ctx.lineWidth = 3 - i * 0.5; ctx.lineCap = 'round';
-        ctx.beginPath(); ctx.moveTo(-r * 1.3, 0); ctx.lineTo(r * 1.3, 0); ctx.stroke();
-        ctx.fillStyle = '#cc8800';
-        ctx.fillRect(-r * 1.3 - 2, -2.5, 4, 5);
-        ctx.fillRect(r * 1.3 - 2, -2.5, 4, 5);
-        ctx.restore();
-    }
-    ctx.globalAlpha = 0.25; ctx.fillStyle = '#fff';
-    for (let i = 0; i < 6; i++) {
-        const ca = t * 6 + i * TWO_PI_NEW / 6;
-        const cd = r * 0.85;
-        ctx.beginPath(); ctx.arc(Math.cos(ca) * cd, Math.sin(ca) * cd, r * 0.2, 0, TWO_PI_NEW); ctx.fill();
-    }
-    ctx.globalAlpha = 1;
-    const cg = ctx.createRadialGradient(0, 0, 0, 0, 0, r * 0.4);
-    cg.addColorStop(0, '#fff'); cg.addColorStop(0.2, '#ffee88'); cg.addColorStop(0.5, '#ffaa00'); cg.addColorStop(1, 'transparent');
-    ctx.fillStyle = cg;
-    ctx.beginPath(); ctx.arc(0, 0, r * 0.4, 0, TWO_PI_NEW); ctx.fill();
-    ctx.fillStyle = '#ff6600'; ctx.globalAlpha = 0.5;
-    for (let i = 0; i < 8; i++) {
-        const pa = t * 11 + i * 0.78;
-        const pd = r * (0.4 + Math.sin(t * 5 + i * 1.5) * 0.5);
-        ctx.beginPath(); ctx.arc(Math.cos(pa) * pd, Math.sin(pa) * pd, 1.5, 0, TWO_PI_NEW); ctx.fill();
-    }
-    ctx.restore();
-    if (this.quality.glowEnabled) this._glow(ctx, x, y, r * 0.7, '#ffaa00', 0.35);
-};
+;;
+;
 
 // ============================================
 // 娣辨笂绯诲垪 - SkinRenderer 韬綋+寮逛綋
@@ -1859,186 +1663,11 @@ SkinRenderer.prototype._weapon_shadow = function(ctx, weaponType, attacking) {
     }
 };
 
-// 九尾 — 妖狐火扇
-SkinRenderer.prototype._weapon_kitsune = function(ctx, weaponType, attacking) {
-    const t = this._time;
-    if (weaponType === 'sword' || weaponType === 'dagger' || weaponType === 'hammer') {
-        // 扇形武器
-        const glow = attacking ? 0.5 : 0.2;
-        ctx.globalAlpha = glow; ctx.fillStyle = '#ff8844';
-        ctx.beginPath(); ctx.arc(10, 0, 18, -0.5, 0.5); ctx.lineTo(10, 0); ctx.fill();
-        ctx.globalAlpha = 1;
-        ctx.fillStyle = '#cc4422';
-        ctx.beginPath(); ctx.arc(10, 0, 15, -0.4, 0.4); ctx.lineTo(10, 0); ctx.fill();
-        // 扇骨
-        ctx.strokeStyle = '#ffcc88'; ctx.lineWidth = 1;
-        for (let i = -2; i <= 2; i++) {
-            const a = i * 0.15;
-            ctx.beginPath(); ctx.moveTo(10, 0); ctx.lineTo(10 + Math.cos(a) * 14, Math.sin(a) * 14); ctx.stroke();
-        }
-        ctx.fillStyle = '#553322'; ctx.fillRect(-4, -2, 6, 4);
-    } else if (weaponType === 'fireball') {
-        // 妖狐法杖 — 狐火法杖
-        ctx.fillStyle = '#553322'; ctx.fillRect(-6, -1.5, 22, 3);
-        // 杖头狐火
-        const fireG = ctx.createRadialGradient(18, 0, 0, 18, 0, 7);
-        fireG.addColorStop(0, '#ffffff'); fireG.addColorStop(0.3, '#ffcc44');
-        fireG.addColorStop(0.7, '#ff6600'); fireG.addColorStop(1, 'transparent');
-        ctx.fillStyle = fireG; ctx.globalAlpha = 0.7 + Math.sin(t * 5) * 0.2;
-        ctx.beginPath(); ctx.arc(18, 0, 7, 0, TWO_PI_NEW); ctx.fill();
-        // 火焰飘动
-        ctx.fillStyle = '#ff8844'; ctx.globalAlpha = 0.5;
-        ctx.beginPath(); ctx.arc(18, -5 - Math.sin(t * 6) * 2, 3, 0, TWO_PI_NEW); ctx.fill();
-        ctx.globalAlpha = 1;
-    } else if (weaponType === 'bow') {
-        // 妖狐弓 — 火焰弯弓
-        ctx.strokeStyle = '#cc4422'; ctx.lineWidth = 2.5;
-        ctx.beginPath(); ctx.arc(8, 0, 12, -0.8, 0.8); ctx.stroke();
-        // 弦
-        ctx.strokeStyle = '#ffcc88'; ctx.lineWidth = 0.8;
-        ctx.beginPath(); ctx.moveTo(8 + Math.cos(-0.8) * 12, Math.sin(-0.8) * 12);
-        ctx.lineTo(8 + Math.cos(0.8) * 12, Math.sin(0.8) * 12); ctx.stroke();
-        // 火焰箭
-        if (attacking) {
-            ctx.fillStyle = '#ff6600'; ctx.globalAlpha = 0.8;
-            ctx.fillRect(8, -1, 16, 2);
-            ctx.fillStyle = '#ffcc44';
-            ctx.beginPath(); ctx.moveTo(24, -2); ctx.lineTo(28, 0); ctx.lineTo(24, 2); ctx.closePath(); ctx.fill();
-            ctx.globalAlpha = 1;
-        }
-    } else {
-        // 亡灵法器 — 狐灵骷髅
-        ctx.fillStyle = '#553322'; ctx.fillRect(-6, -1.5, 22, 3);
-        ctx.fillStyle = '#ff8844'; ctx.globalAlpha = 0.4;
-        ctx.beginPath(); ctx.arc(18, 0, 6, 0, TWO_PI_NEW); ctx.fill();
-        ctx.globalAlpha = 1; ctx.fillStyle = '#ffddaa';
-        ctx.beginPath(); ctx.arc(18, 0, 3, 0, TWO_PI_NEW); ctx.fill();
-        ctx.fillStyle = '#ff4400';
-        ctx.beginPath(); ctx.arc(16, -1, 1.5, 0, TWO_PI_NEW); ctx.fill();
-        ctx.beginPath(); ctx.arc(20, -1, 1.5, 0, TWO_PI_NEW); ctx.fill();
-    }
-};
+// 九尾 — 妖狐火扇;
 
-// 龙王 — 金龙鳞剑
-SkinRenderer.prototype._weapon_dragonking = function(ctx, weaponType, attacking) {
-    const t = this._time;
-    if (weaponType === 'sword' || weaponType === 'dagger' || weaponType === 'hammer') {
-        const glow = attacking ? 0.6 : 0.25;
-        ctx.globalAlpha = glow; ctx.fillStyle = '#ffcc44';
-        ctx.fillRect(-2, -4, 30, 8); ctx.globalAlpha = 1;
-        // 金色龙鳞刃
-        ctx.fillStyle = '#ddaa22';
-        ctx.beginPath(); ctx.moveTo(28, 0); ctx.lineTo(22, -4); ctx.lineTo(4, -2.5); ctx.lineTo(4, 2.5); ctx.lineTo(22, 4); ctx.closePath(); ctx.fill();
-        // 鳞片纹理
-        ctx.fillStyle = '#ffee88'; ctx.globalAlpha = 0.6;
-        for (let i = 0; i < 5; i++) {
-            ctx.beginPath(); ctx.arc(8 + i * 4, (i % 2 === 0 ? -1 : 1), 2.5, 0, Math.PI); ctx.fill();
-        }
-        ctx.globalAlpha = 1; ctx.fillStyle = '#886600'; ctx.fillRect(-6, -2.5, 7, 5);
-        ctx.fillStyle = '#ffee44'; ctx.fillRect(-1, -5, 3, 10);
-    } else if (weaponType === 'fireball') {
-        // 龙息法杖 — 金色龙珠杖
-        ctx.fillStyle = '#886600'; ctx.fillRect(-6, -2, 22, 4);
-        // 龙珠
-        const pearlG = ctx.createRadialGradient(18, 0, 0, 18, 0, 7);
-        pearlG.addColorStop(0, '#ffffff'); pearlG.addColorStop(0.3, '#ffee88');
-        pearlG.addColorStop(0.6, '#ffcc00'); pearlG.addColorStop(1, '#aa8800');
-        ctx.fillStyle = pearlG;
-        ctx.beginPath(); ctx.arc(18, 0, 7, 0, TWO_PI_NEW); ctx.fill();
-        // 龙爪托珠
-        ctx.strokeStyle = '#ddaa22'; ctx.lineWidth = 1.5;
-        ctx.beginPath(); ctx.arc(18, 0, 9, -0.5, 0.5); ctx.stroke();
-        ctx.beginPath(); ctx.arc(18, 0, 9, Math.PI - 0.5, Math.PI + 0.5); ctx.stroke();
-    } else if (weaponType === 'bow') {
-        // 龙骨弓
-        ctx.strokeStyle = '#ddaa22'; ctx.lineWidth = 3;
-        ctx.beginPath(); ctx.arc(8, 0, 12, -0.8, 0.8); ctx.stroke();
-        // 龙牙装饰
-        ctx.fillStyle = '#ffee88';
-        ctx.beginPath(); ctx.moveTo(8 + Math.cos(-0.8) * 12, Math.sin(-0.8) * 12);
-        ctx.lineTo(8 + Math.cos(-0.8) * 14, Math.sin(-0.8) * 14); ctx.lineTo(8 + Math.cos(-0.6) * 12, Math.sin(-0.6) * 12); ctx.fill();
-        ctx.beginPath(); ctx.moveTo(8 + Math.cos(0.8) * 12, Math.sin(0.8) * 12);
-        ctx.lineTo(8 + Math.cos(0.8) * 14, Math.sin(0.8) * 14); ctx.lineTo(8 + Math.cos(0.6) * 12, Math.sin(0.6) * 12); ctx.fill();
-        // 弦
-        ctx.strokeStyle = '#ffcc44'; ctx.lineWidth = 1;
-        ctx.beginPath(); ctx.moveTo(8 + Math.cos(-0.8) * 12, Math.sin(-0.8) * 12);
-        ctx.lineTo(8 + Math.cos(0.8) * 12, Math.sin(0.8) * 12); ctx.stroke();
-        // 金色箭
-        if (attacking) {
-            ctx.fillStyle = '#ffcc44';
-            ctx.fillRect(8, -1, 16, 2);
-            ctx.beginPath(); ctx.moveTo(24, -2.5); ctx.lineTo(28, 0); ctx.lineTo(24, 2.5); ctx.closePath(); ctx.fill();
-        }
-    } else {
-        // 龙灵法器
-        ctx.fillStyle = '#886600'; ctx.fillRect(-6, -2, 22, 4);
-        ctx.fillStyle = '#ffcc44'; ctx.globalAlpha = attacking ? 0.7 : 0.4;
-        ctx.beginPath(); ctx.arc(18, 0, 7, 0, TWO_PI_NEW); ctx.fill();
-        ctx.globalAlpha = 1; ctx.fillStyle = '#fff';
-        ctx.beginPath(); ctx.arc(18, 0, 3, 0, TWO_PI_NEW); ctx.fill();
-        // 小龙头装饰
-        ctx.fillStyle = '#ddaa22';
-        ctx.beginPath(); ctx.moveTo(18, -7); ctx.lineTo(16, -9); ctx.lineTo(20, -9); ctx.closePath(); ctx.fill();
-    }
-};
+// 龙王 — 金龙鳞剑;
 
-// 悟空 — 如意金箍棒
-SkinRenderer.prototype._weapon_wukong = function(ctx, weaponType, attacking) {
-    const t = this._time;
-    const len = attacking ? 30 : 24;
-    if (weaponType === 'sword' || weaponType === 'dagger' || weaponType === 'hammer') {
-        // 金箍棒
-        const g = ctx.createLinearGradient(-6, 0, len, 0);
-        g.addColorStop(0, '#ffcc44'); g.addColorStop(0.5, '#ffee88'); g.addColorStop(1, '#ffcc44');
-        ctx.fillStyle = g; ctx.fillRect(-6, -2.5, len + 6, 5);
-        // 金箍
-        ctx.fillStyle = '#cc8800';
-        ctx.fillRect(-6, -3, 4, 6); ctx.fillRect(len - 4, -3, 4, 6);
-        // 红缨
-        ctx.fillStyle = '#ff3333'; ctx.globalAlpha = 0.7;
-        ctx.beginPath(); ctx.arc(-4, 0, 3, 0, TWO_PI_NEW); ctx.fill();
-        ctx.globalAlpha = 1;
-    } else if (weaponType === 'fireball') {
-        // 悟空法杖 — 缩小版金箍棒+火云
-        const g = ctx.createLinearGradient(-6, 0, 22, 0);
-        g.addColorStop(0, '#ffcc44'); g.addColorStop(0.5, '#ffee88'); g.addColorStop(1, '#ffcc44');
-        ctx.fillStyle = g; ctx.fillRect(-6, -2, 28, 4);
-        ctx.fillStyle = '#cc8800'; ctx.fillRect(-6, -2.5, 3, 5); ctx.fillRect(19, -2.5, 3, 5);
-        // 筋斗云火球
-        ctx.fillStyle = '#ff6633'; ctx.globalAlpha = 0.5 + Math.sin(t * 5) * 0.2;
-        ctx.beginPath(); ctx.arc(24, 0, 5, 0, TWO_PI_NEW); ctx.fill();
-        ctx.fillStyle = '#ffcc44'; ctx.beginPath(); ctx.arc(24, 0, 3, 0, TWO_PI_NEW); ctx.fill();
-        ctx.globalAlpha = 1;
-    } else if (weaponType === 'bow') {
-        // 悟空弓 — 金箍弓
-        const bowG = ctx.createLinearGradient(0, -12, 0, 12);
-        bowG.addColorStop(0, '#ffcc44'); bowG.addColorStop(0.5, '#ffee88'); bowG.addColorStop(1, '#ffcc44');
-        ctx.strokeStyle = bowG; ctx.lineWidth = 3;
-        ctx.beginPath(); ctx.arc(8, 0, 12, -0.8, 0.8); ctx.stroke();
-        // 金箍装饰
-        ctx.fillStyle = '#cc8800';
-        ctx.fillRect(8 + Math.cos(-0.8) * 11 - 1.5, Math.sin(-0.8) * 12 - 1.5, 3, 3);
-        ctx.fillRect(8 + Math.cos(0.8) * 11 - 1.5, Math.sin(0.8) * 12 - 1.5, 3, 3);
-        // 弦
-        ctx.strokeStyle = '#ff3333'; ctx.lineWidth = 1;
-        ctx.beginPath(); ctx.moveTo(8 + Math.cos(-0.8) * 12, Math.sin(-0.8) * 12);
-        ctx.lineTo(8 + Math.cos(0.8) * 12, Math.sin(0.8) * 12); ctx.stroke();
-        if (attacking) {
-            ctx.fillStyle = '#ffcc44'; ctx.fillRect(8, -1, 16, 2);
-            ctx.fillStyle = '#ff3333';
-            ctx.beginPath(); ctx.moveTo(24, -2); ctx.lineTo(28, 0); ctx.lineTo(24, 2); ctx.closePath(); ctx.fill();
-        }
-    } else {
-        // 亡灵法器 — 缩小金箍棒+灵魂
-        const g = ctx.createLinearGradient(-6, 0, 22, 0);
-        g.addColorStop(0, '#ffcc44'); g.addColorStop(0.5, '#ffee88'); g.addColorStop(1, '#ffcc44');
-        ctx.fillStyle = g; ctx.fillRect(-6, -2, 28, 4);
-        ctx.fillStyle = '#cc8800'; ctx.fillRect(-6, -2.5, 3, 5); ctx.fillRect(19, -2.5, 3, 5);
-        ctx.fillStyle = '#44ffaa'; ctx.globalAlpha = 0.5;
-        ctx.beginPath(); ctx.arc(24, 0, 5, 0, TWO_PI_NEW); ctx.fill();
-        ctx.globalAlpha = 1;
-    }
-};
+// 悟空 — 如意金箍棒;
 
 // 虚空行者 — 空间裂隙刃
 SkinRenderer.prototype._weapon_voidwalker = function(ctx, weaponType, attacking) {

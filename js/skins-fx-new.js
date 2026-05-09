@@ -132,109 +132,33 @@ SkinFxSystem.prototype._aura_glacier = function(ctx, x, y, r) {
 // === 元素领主: shadow ===
 SkinFxSystem.prototype._hit_shadow = function(x, y) {
     const m = this.quality.particleMult;
-    this.particles.emit(x, y, Math.floor(12*m), { colors:['#6600aa','#ff00ff','#aa44ff','#cc00ff'], speedMin:3, speedMax:8, sizeMin:3, sizeMax:6, lifeMin:0.3, lifeMax:0.7, shape:'circle', glow:true, glowSize:10 });
-    this.particles.emit(x, y, Math.floor(4*m), { colors:['#ff00ff'], speedMin:0, speedMax:1, sizeMin:6, sizeMax:10, lifeMin:0.15, lifeMax:0.3, shape:'ring', offsetX:8, offsetY:8 });
-    this.particles.addFlash(x, y, '#aa00ff', 28, 0.08);
-    this.particles.addShockwave(x, y, '#6600aa', 35, 0.2);
+    this.particles.emit(x, y, Math.floor(14*m), { colors:['#66ddaa','#aaffdd','#88ffcc','#ffffff'], speedMin:4, speedMax:10, sizeMin:2, sizeMax:5, lifeMin:0.2, lifeMax:0.5, shape:'circle', glow:true, glowSize:8 });
+    this.particles.emit(x, y, Math.floor(6*m), { colors:['#338866','#225544'], speedMin:6, speedMax:12, sizeMin:1, sizeMax:3, lifeMin:0.1, lifeMax:0.3, shape:'spark' });
+    this.particles.addFlash(x, y, '#66ddaa', 25, 0.08);
+    this.particles.addShockwave(x, y, '#88ffcc', 35, 0.2);
 };
 SkinFxSystem.prototype._skill_shadow = function(x, y) {
     const m = this.quality.particleMult;
-    this.particles.emit(x, y, Math.floor(30*m), { colors:['#aa44ff','#6600aa','#4400aa','#ff00ff'], speedMin:5, speedMax:12, sizeMin:3, sizeMax:7, lifeMin:0.4, lifeMax:0.9, shape:'circle', glow:true, glowSize:14 });
-    this.particles.emit(x, y, Math.floor(10*m), { colors:['#ff00ff','#ff44ff'], speedMin:0, speedMax:2, sizeMin:6, sizeMax:10, lifeMin:0.2, lifeMax:0.5, shape:'ring', offsetX:15, offsetY:15, glow:true });
-    this.particles.addShockwave(x, y, '#aa00ff', 100, 0.4);
-    this.particles.triggerScreenFlash('#6600aa', 0.15, 0.12);
+    // Tornado burst
+    this.particles.emit(x, y, Math.floor(35*m), { colors:['#66ddaa','#aaffdd','#88ffcc','#338866','#ffffff'], speedMin:6, speedMax:14, sizeMin:3, sizeMax:7, lifeMin:0.4, lifeMax:0.9, shape:'circle', glow:true, glowSize:12 });
+    this.particles.emit(x, y, Math.floor(10*m), { colors:['#aaffdd','#ffffff'], speedMin:2, speedMax:6, sizeMin:4, sizeMax:8, lifeMin:0.6, lifeMax:1.2, shape:'circle', gravity:-1.5 });
+    this.particles.addShockwave(x, y, '#66ddaa', 120, 0.45);
+    this.particles.triggerScreenFlash('#88ffcc', 0.12, 0.1);
 };
 SkinFxSystem.prototype._trail_shadow = function(x, y) {
-    this.particles.emit(x, y, Math.max(1, Math.floor(1*this.quality.particleMult)), { colors:['#6600aa','#4400aa'], speedMin:0, speedMax:0.5, sizeMin:3, sizeMax:4, lifeMin:0.3, lifeMax:0.5, shape:'circle', offsetX:5, offsetY:5 });
+    this.particles.emit(x, y, Math.max(1, Math.floor(2*this.quality.particleMult)), { colors:['#66ddaa','#aaffdd'], speedMin:0.5, speedMax:2, sizeMin:2, sizeMax:3, lifeMin:0.2, lifeMax:0.4, shape:'circle', gravity:-0.5, offsetX:4, offsetY:4 });
 };
 SkinFxSystem.prototype._aura_shadow = function(ctx, x, y, r) {
     if(!this.quality.glowEnabled) return;
     const t = this._time;
-    ctx.save(); ctx.globalAlpha=0.12; ctx.fillStyle='#4400aa';
-    ctx.beginPath(); ctx.arc(x,y,r*2+Math.sin(t*2)*4,0,TWO_PI_FX); ctx.fill();
-    ctx.globalAlpha=0.06; ctx.fillStyle='#ff00ff'; ctx.beginPath(); ctx.arc(x,y,r*2.5+Math.cos(t*1.5)*5,0,TWO_PI_FX); ctx.fill();
-    ctx.restore();
-};
-
-// === 东方神话: kitsune ===
-SkinFxSystem.prototype._hit_kitsune = function(x, y) {
-    const m = this.quality.particleMult;
-    this.particles.emit(x, y, Math.floor(12*m), { colors:['#44aaff','#88ccff','#ffffff'], speedMin:4, speedMax:9, sizeMin:2, sizeMax:5, lifeMin:0.3, lifeMax:0.7, shape:'circle', glow:true, glowSize:10 });
-    this.particles.emit(x, y, Math.floor(6*m), { colors:['#ff8844','#ffaa22','#ffcc44'], speedMin:3, speedMax:6, sizeMin:3, sizeMax:6, lifeMin:0.4, lifeMax:0.8, shape:'circle', gravity:-0.5 });
-    this.particles.addFlash(x, y, '#44aaff', 25, 0.08);
-    this.particles.addShockwave(x, y, '#ff8844', 40, 0.2);
-};
-SkinFxSystem.prototype._skill_kitsune = function(x, y) {
-    const m = this.quality.particleMult;
-    this.particles.emit(x, y, Math.floor(35*m), { colors:['#44aaff','#ff8844','#ffcc44','#ffffff'], speedMin:5, speedMax:12, sizeMin:3, sizeMax:6, lifeMin:0.5, lifeMax:1.0, shape:'circle', glow:true, glowSize:14 });
-    this.particles.emit(x, y, Math.floor(10*m), { colors:['#44aaff','#88ccff'], speedMin:1, speedMax:4, sizeMin:4, sizeMax:7, lifeMin:0.8, lifeMax:1.4, shape:'circle', gravity:-1 });
-    this.particles.addShockwave(x, y, '#44aaff', 120, 0.45);
-    this.particles.triggerScreenFlash('#44aaff', 0.12, 0.1);
-};
-SkinFxSystem.prototype._trail_kitsune = function(x, y) {
-    this.particles.emit(x, y, Math.max(1, Math.floor(1*this.quality.particleMult)), { colors:['#44aaff','#ff8844'], speedMin:0.3, speedMax:1.5, sizeMin:2, sizeMax:4, lifeMin:0.3, lifeMax:0.5, shape:'circle', gravity:-0.3, offsetX:4, offsetY:4 });
-};
-SkinFxSystem.prototype._aura_kitsune = function(ctx, x, y, r) {
-    if(!this.quality.glowEnabled) return;
-    const t = this._time;
-    ctx.save(); ctx.globalAlpha=0.12; ctx.fillStyle='#44aaff';
-    for(let i=0;i<3;i++){const a=t*1.2+(i/3)*TWO_PI_FX; const d=r*1.8;
-        ctx.beginPath(); ctx.arc(x+Math.cos(a)*d,y+Math.sin(a)*d-r*0.5,5,0,TWO_PI_FX); ctx.fill();}
-    ctx.restore();
-};
-
-// === 东方神话: dragonking ===
-SkinFxSystem.prototype._hit_dragonking = function(x, y) {
-    const m = this.quality.particleMult;
-    this.particles.emit(x, y, Math.floor(16*m), { colors:['#66bbff','#4488ff','#88ddff','#ffffff'], speedMin:4, speedMax:10, sizeMin:3, sizeMax:6, lifeMin:0.4, lifeMax:0.8, shape:'circle', glow:true, glowSize:12 });
-    this.particles.emit(x, y, Math.floor(5*m), { colors:['#aaddff','#ffffff'], speedMin:0, speedMax:1, sizeMin:6, sizeMax:12, lifeMin:0.2, lifeMax:0.4, shape:'ring', glow:true });
-    this.particles.addFlash(x, y, '#4488ff', 30, 0.1);
-    this.particles.addShockwave(x, y, '#66bbff', 45, 0.25);
-};
-SkinFxSystem.prototype._skill_dragonking = function(x, y) {
-    const m = this.quality.particleMult;
-    this.particles.emit(x, y, Math.floor(45*m), { colors:['#4488ff','#66bbff','#88ddff','#ffffff'], speedMin:6, speedMax:14, sizeMin:3, sizeMax:7, lifeMin:0.5, lifeMax:1.1, shape:'circle', glow:true, glowSize:16 });
-    this.particles.emit(x, y, Math.floor(15*m), { colors:['#88ddff','#aaddff'], speedMin:2, speedMax:6, sizeMin:4, sizeMax:7, lifeMin:0.8, lifeMax:1.5, shape:'circle', gravity:-1.5 });
-    this.particles.addShockwave(x, y, '#4488ff', 140, 0.5);
-    this.particles.triggerScreenFlash('#4488ff', 0.18, 0.12);
-};
-SkinFxSystem.prototype._trail_dragonking = function(x, y) {
-    this.particles.emit(x, y, Math.max(1, Math.floor(1*this.quality.particleMult)), { colors:['#66bbff','#88ddff'], speedMin:0.5, speedMax:2, sizeMin:2, sizeMax:4, lifeMin:0.3, lifeMax:0.6, shape:'circle', gravity:-0.5, offsetX:5, offsetY:5 });
-};
-SkinFxSystem.prototype._aura_dragonking = function(ctx, x, y, r) {
-    if(!this.quality.glowEnabled) return;
-    const t = this._time;
-    ctx.save(); ctx.globalAlpha=0.08; ctx.strokeStyle='#66bbff'; ctx.lineWidth=2;
-    for(let i=0;i<2;i++){ctx.beginPath(); for(let j=0;j<16;j++){const a=(j/16)*TWO_PI_FX; const rr=r*2+i*6+Math.sin(a*3+t*2+i)*4; if(j===0)ctx.moveTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr);else ctx.lineTo(x+Math.cos(a)*rr,y+Math.sin(a)*rr);} ctx.closePath(); ctx.stroke();}
-    ctx.restore();
-};
-
-// === 东方神话: wukong ===
-SkinFxSystem.prototype._hit_wukong = function(x, y) {
-    const m = this.quality.particleMult;
-    this.particles.emit(x, y, Math.floor(18*m), { colors:['#ffcc00','#ff6600','#ffffff','#ffee00'], speedMin:5, speedMax:12, sizeMin:3, sizeMax:6, lifeMin:0.2, lifeMax:0.5, shape:'spark', glow:true, glowSize:12 });
-    this.particles.emit(x, y, Math.floor(5*m), { colors:['#ffffff','#ffee88'], speedMin:0, speedMax:1, sizeMin:6, sizeMax:12, lifeMin:0.1, lifeMax:0.25, shape:'ring', glow:true });
-    this.particles.addFlash(x, y, '#ffcc00', 35, 0.1);
-    this.particles.addShockwave(x, y, '#ff6600', 50, 0.25);
-};
-SkinFxSystem.prototype._skill_wukong = function(x, y) {
-    const m = this.quality.particleMult;
-    this.particles.emit(x, y, Math.floor(50*m), { colors:['#ffcc00','#ff6600','#ffffff','#ffee00'], speedMin:7, speedMax:15, sizeMin:3, sizeMax:7, lifeMin:0.4, lifeMax:0.9, shape:'spark', glow:true, glowSize:16 });
-    this.particles.emit(x, y, Math.floor(12*m), { colors:['#ffffff','#ffee88'], speedMin:1, speedMax:4, sizeMin:5, sizeMax:8, lifeMin:0.8, lifeMax:1.4, shape:'circle', gravity:-1, offsetX:15, offsetY:15 });
-    this.particles.addShockwave(x, y, '#ffcc00', 150, 0.5);
-    this.particles.triggerScreenFlash('#ffcc00', 0.2, 0.12);
-};
-SkinFxSystem.prototype._trail_wukong = function(x, y) {
-    this.particles.emit(x, y, Math.max(1, Math.floor(1*this.quality.particleMult)), { colors:['#ffcc00','#ffee00'], speedMin:0.3, speedMax:1.5, sizeMin:2, sizeMax:4, lifeMin:0.3, lifeMax:0.5, shape:'circle', gravity:-0.3, offsetX:3, offsetY:3 });
-};
-SkinFxSystem.prototype._aura_wukong = function(ctx, x, y, r) {
-    if(!this.quality.glowEnabled) return;
-    const t = this._time;
-    ctx.save(); ctx.globalAlpha=0.12; ctx.strokeStyle='#ffcc00'; ctx.lineWidth=2;
-    ctx.beginPath(); ctx.arc(x,y,r*2+Math.sin(t*3)*3,0,TWO_PI_FX); ctx.stroke();
-    ctx.globalAlpha=0.06; ctx.fillStyle='#ffffff';
-    for(let i=0;i<4;i++){const a=t*0.8+(i/4)*TWO_PI_FX; const d=r*2.2;
-        ctx.beginPath(); ctx.arc(x+Math.cos(a)*d,y+Math.sin(a)*d,6,0,TWO_PI_FX); ctx.fill();}
+    ctx.save();
+    ctx.globalAlpha=0.1; ctx.strokeStyle='#66ddaa'; ctx.lineWidth=1.5;
+    for(let i=0;i<3;i++){
+        ctx.beginPath(); ctx.arc(x,y,r*1.8+i*6+Math.sin(t*3+i)*3, t*2+i, t*2+i+Math.PI*1.2); ctx.stroke();
+    }
+    ctx.globalAlpha=0.06; ctx.fillStyle='#aaffdd';
+    for(let i=0;i<4;i++){const a=t*2+(i/4)*TWO_PI_FX; const d=r*2;
+        ctx.beginPath(); ctx.arc(x+Math.cos(a)*d,y+Math.sin(a)*d,3,0,TWO_PI_FX); ctx.fill();}
     ctx.restore();
 };
 

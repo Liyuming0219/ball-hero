@@ -309,239 +309,74 @@ SkinRenderer.prototype._weapon_glacier = function(ctx, weaponType, attacking) {
 SkinRenderer.prototype._weapon_shadow = function(ctx, weaponType, attacking) {
     const t = this._time;
     if (weaponType === 'sword' || weaponType === 'dagger' || weaponType === 'hammer') {
-        const glow = attacking ? 0.5 : 0.15;
-        ctx.globalAlpha = glow; ctx.fillStyle = '#6622aa';
-        ctx.fillRect(-2, -3, 22, 6); ctx.globalAlpha = 1;
-        ctx.fillStyle = '#331166'; ctx.globalAlpha = 0.8;
-        ctx.beginPath(); ctx.moveTo(22, 0); ctx.lineTo(6, -2.5); ctx.lineTo(0, 0); ctx.lineTo(6, 2.5); ctx.closePath(); ctx.fill();
-        ctx.strokeStyle = '#aa66ff'; ctx.lineWidth = 1; ctx.globalAlpha = 0.4 + Math.sin(t * 5) * 0.2;
-        ctx.beginPath(); ctx.moveTo(4, 0);
-        for (let i = 1; i <= 8; i++) { ctx.lineTo(4 + i * 2.2, Math.sin(t * 6 + i) * 2); }
-        ctx.stroke(); ctx.globalAlpha = 1;
-        ctx.fillStyle = '#220044'; ctx.fillRect(-5, -2, 5, 4);
+        // Wind blade (swirling air currents forming a blade)
+        const glow = attacking ? 0.6 : 0.2;
+        ctx.globalAlpha = glow; ctx.fillStyle = '#88ffcc';
+        ctx.fillRect(-2, -4, 26, 8); ctx.globalAlpha = 1;
+        ctx.fillStyle = '#338866';
+        ctx.beginPath(); ctx.moveTo(24, 0); ctx.lineTo(8, -3); ctx.lineTo(2, 0); ctx.lineTo(8, 3); ctx.closePath(); ctx.fill();
+        // Swirling wind streaks on blade
+        ctx.strokeStyle = '#aaffdd'; ctx.lineWidth = 1; ctx.globalAlpha = 0.6;
+        for (let i = 0; i < 4; i++) {
+            ctx.beginPath(); ctx.arc(12, 0, 4 + i*3, t*8+i, t*8+i+Math.PI*0.6); ctx.stroke();
+        }
+        ctx.globalAlpha = 1; ctx.fillStyle = '#224433'; ctx.fillRect(-5, -2, 5, 4);
     } else if (weaponType === 'fireball') {
-        // 暗影法球杖
-        ctx.fillStyle = '#220044'; ctx.fillRect(-6, -1.5, 20, 3);
-        // 暗影球
-        ctx.fillStyle = '#6622aa'; ctx.globalAlpha = 0.6 + Math.sin(t * 4) * 0.2;
-        ctx.beginPath(); ctx.arc(18, 0, 6, 0, TWO_PI_NEW); ctx.fill();
-        // 暗影漩涡
-        ctx.strokeStyle = '#aa66ff'; ctx.lineWidth = 0.8; ctx.globalAlpha = 0.5;
-        ctx.beginPath(); ctx.arc(18, 0, 4, t * 3, t * 3 + Math.PI * 1.2); ctx.stroke();
-        ctx.beginPath(); ctx.arc(18, 0, 3, t * 3 + Math.PI, t * 3 + Math.PI * 2.2); ctx.stroke();
+        // Wind staff (tornado at top)
+        ctx.fillStyle = '#224433'; ctx.fillRect(-6, -1.5, 22, 3);
+        // Tornado vortex
+        ctx.strokeStyle = '#66ddaa'; ctx.lineWidth = 1.5;
+        ctx.globalAlpha = 0.5 + Math.sin(t*5)*0.2;
+        for (let i = 0; i < 3; i++) {
+            ctx.beginPath(); ctx.arc(18, 0, 3+i*2, t*6+i, t*6+i+Math.PI); ctx.stroke();
+        }
         ctx.globalAlpha = 1;
+        ctx.fillStyle = '#aaffdd'; ctx.beginPath(); ctx.arc(18, 0, 2, 0, TWO_PI_NEW); ctx.fill();
     } else if (weaponType === 'bow') {
-        // 暗影弓（影刃弓）
-        ctx.fillStyle = '#331166';
-        // 弓臂（弯曲暗影）
-        ctx.beginPath(); ctx.moveTo(8, 0);
-        ctx.quadraticCurveTo(4, -6, 2, -9); ctx.lineTo(3, -8);
-        ctx.quadraticCurveTo(5, -5, 9, 0); ctx.closePath(); ctx.fill();
-        ctx.beginPath(); ctx.moveTo(8, 0);
-        ctx.quadraticCurveTo(4, 6, 2, 9); ctx.lineTo(3, 8);
-        ctx.quadraticCurveTo(5, 5, 9, 0); ctx.closePath(); ctx.fill();
-        // 暗影弦
-        ctx.strokeStyle = '#aa66ff'; ctx.lineWidth = 1; ctx.globalAlpha = 0.6;
-        ctx.beginPath(); ctx.moveTo(2, -9); ctx.lineTo(12, 0); ctx.lineTo(2, 9); ctx.stroke();
+        // Wind bow (air current curves)
+        ctx.strokeStyle = '#66ddaa'; ctx.lineWidth = 2.5;
+        ctx.beginPath(); ctx.arc(8, 0, 12, -0.8, 0.8); ctx.stroke();
+        // Wind gusts along bow
+        ctx.strokeStyle = '#aaffdd'; ctx.lineWidth = 1; ctx.globalAlpha = 0.5;
+        ctx.beginPath(); ctx.arc(8, 0, 10, -0.6+Math.sin(t*4)*0.2, 0.6+Math.sin(t*4)*0.2); ctx.stroke();
         ctx.globalAlpha = 1;
-        // 暗影箭
-        ctx.fillStyle = '#6622aa'; ctx.globalAlpha = 0.7;
-        ctx.fillRect(10, -0.8, 14, 1.6);
-        ctx.fillStyle = '#aa66ff';
-        ctx.beginPath(); ctx.moveTo(24, -2); ctx.lineTo(27, 0); ctx.lineTo(24, 2); ctx.closePath(); ctx.fill();
-        ctx.globalAlpha = 1;
+        // String
+        ctx.strokeStyle = '#88ffcc'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(8+Math.cos(-0.8)*12, Math.sin(-0.8)*12);
+        ctx.lineTo(8+Math.cos(0.8)*12, Math.sin(0.8)*12); ctx.stroke();
+        if (attacking) {
+            ctx.fillStyle = '#66ddaa'; ctx.globalAlpha = 0.7;
+            ctx.fillRect(8, -1, 16, 2);
+            ctx.fillStyle = '#aaffdd';
+            ctx.beginPath(); ctx.moveTo(24, -2); ctx.lineTo(28, 0); ctx.lineTo(24, 2); ctx.closePath(); ctx.fill();
+            ctx.globalAlpha = 1;
+        }
     } else {
-        // necro: 暗影召唤之书
-        ctx.fillStyle = '#220044'; ctx.fillRect(-4, -4, 18, 8);
-        ctx.fillStyle = '#331166'; ctx.fillRect(-3, -3.5, 16, 7);
-        // 符文
-        ctx.strokeStyle = '#aa66ff'; ctx.lineWidth = 0.8; ctx.globalAlpha = 0.5 + Math.sin(t * 2) * 0.2;
-        ctx.beginPath(); ctx.arc(6, 0, 3, 0, TWO_PI_NEW); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(4, -2); ctx.lineTo(8, 0); ctx.lineTo(4, 2); ctx.stroke();
+        // Necro: Wind spirit lantern
+        ctx.fillStyle = '#224433'; ctx.fillRect(-6, -1.5, 18, 3);
+        ctx.strokeStyle = '#66ddaa'; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(16, 0, 6, 0, TWO_PI_NEW); ctx.stroke();
+        ctx.fillStyle = '#aaffdd'; ctx.globalAlpha = 0.4 + Math.sin(t*3)*0.2;
+        ctx.beginPath(); ctx.arc(16, 0, 4, 0, TWO_PI_NEW); ctx.fill();
+        ctx.globalAlpha = 1;
+        // Swirling spirits
+        for (let i = 0; i < 3; i++) {
+            const sa = t*3 + i*TWO_PI_NEW/3;
+            ctx.fillStyle = '#88ffcc'; ctx.globalAlpha = 0.4;
+            ctx.beginPath(); ctx.arc(16+Math.cos(sa)*4, Math.sin(sa)*4, 1.5, 0, TWO_PI_NEW); ctx.fill();
+        }
         ctx.globalAlpha = 1;
     }
 };
 
 // 九尾 — 妖狐火扇
-SkinRenderer.prototype._weapon_kitsune = function(ctx, weaponType, attacking) {
-    const t = this._time;
-    if (weaponType === 'sword' || weaponType === 'dagger' || weaponType === 'hammer') {
-        // 扇形武器
-        const glow = attacking ? 0.5 : 0.2;
-        ctx.globalAlpha = glow; ctx.fillStyle = '#ff8844';
-        ctx.beginPath(); ctx.arc(10, 0, 18, -0.5, 0.5); ctx.lineTo(10, 0); ctx.fill();
-        ctx.globalAlpha = 1;
-        ctx.fillStyle = '#cc4422';
-        ctx.beginPath(); ctx.arc(10, 0, 15, -0.4, 0.4); ctx.lineTo(10, 0); ctx.fill();
-        // 扇骨
-        ctx.strokeStyle = '#ffcc88'; ctx.lineWidth = 1;
-        for (let i = -2; i <= 2; i++) {
-            const a = i * 0.15;
-            ctx.beginPath(); ctx.moveTo(10, 0); ctx.lineTo(10 + Math.cos(a) * 14, Math.sin(a) * 14); ctx.stroke();
-        }
-        ctx.fillStyle = '#553322'; ctx.fillRect(-4, -2, 6, 4);
-    } else if (weaponType === 'fireball') {
-        // 妖狐法杖 — 狐火法杖
-        ctx.fillStyle = '#553322'; ctx.fillRect(-6, -1.5, 22, 3);
-        // 杖头狐火
-        const fireG = ctx.createRadialGradient(18, 0, 0, 18, 0, 7);
-        fireG.addColorStop(0, '#ffffff'); fireG.addColorStop(0.3, '#ffcc44');
-        fireG.addColorStop(0.7, '#ff6600'); fireG.addColorStop(1, 'transparent');
-        ctx.fillStyle = fireG; ctx.globalAlpha = 0.7 + Math.sin(t * 5) * 0.2;
-        ctx.beginPath(); ctx.arc(18, 0, 7, 0, TWO_PI_NEW); ctx.fill();
-        // 火焰飘动
-        ctx.fillStyle = '#ff8844'; ctx.globalAlpha = 0.5;
-        ctx.beginPath(); ctx.arc(18, -5 - Math.sin(t * 6) * 2, 3, 0, TWO_PI_NEW); ctx.fill();
-        ctx.globalAlpha = 1;
-    } else if (weaponType === 'bow') {
-        // 妖狐弓 — 火焰弯弓
-        ctx.strokeStyle = '#cc4422'; ctx.lineWidth = 2.5;
-        ctx.beginPath(); ctx.arc(8, 0, 12, -0.8, 0.8); ctx.stroke();
-        // 弦
-        ctx.strokeStyle = '#ffcc88'; ctx.lineWidth = 0.8;
-        ctx.beginPath(); ctx.moveTo(8 + Math.cos(-0.8) * 12, Math.sin(-0.8) * 12);
-        ctx.lineTo(8 + Math.cos(0.8) * 12, Math.sin(0.8) * 12); ctx.stroke();
-        // 火焰箭
-        if (attacking) {
-            ctx.fillStyle = '#ff6600'; ctx.globalAlpha = 0.8;
-            ctx.fillRect(8, -1, 16, 2);
-            ctx.fillStyle = '#ffcc44';
-            ctx.beginPath(); ctx.moveTo(24, -2); ctx.lineTo(28, 0); ctx.lineTo(24, 2); ctx.closePath(); ctx.fill();
-            ctx.globalAlpha = 1;
-        }
-    } else {
-        // 亡灵法器 — 狐灵骷髅
-        ctx.fillStyle = '#553322'; ctx.fillRect(-6, -1.5, 22, 3);
-        ctx.fillStyle = '#ff8844'; ctx.globalAlpha = 0.4;
-        ctx.beginPath(); ctx.arc(18, 0, 6, 0, TWO_PI_NEW); ctx.fill();
-        ctx.globalAlpha = 1; ctx.fillStyle = '#ffddaa';
-        ctx.beginPath(); ctx.arc(18, 0, 3, 0, TWO_PI_NEW); ctx.fill();
-        ctx.fillStyle = '#ff4400';
-        ctx.beginPath(); ctx.arc(16, -1, 1.5, 0, TWO_PI_NEW); ctx.fill();
-        ctx.beginPath(); ctx.arc(20, -1, 1.5, 0, TWO_PI_NEW); ctx.fill();
-    }
-};
+;
 
 // 龙王 — 金龙鳞剑
-SkinRenderer.prototype._weapon_dragonking = function(ctx, weaponType, attacking) {
-    const t = this._time;
-    if (weaponType === 'sword' || weaponType === 'dagger' || weaponType === 'hammer') {
-        const glow = attacking ? 0.6 : 0.25;
-        ctx.globalAlpha = glow; ctx.fillStyle = '#ffcc44';
-        ctx.fillRect(-2, -4, 30, 8); ctx.globalAlpha = 1;
-        // 金色龙鳞刃
-        ctx.fillStyle = '#ddaa22';
-        ctx.beginPath(); ctx.moveTo(28, 0); ctx.lineTo(22, -4); ctx.lineTo(4, -2.5); ctx.lineTo(4, 2.5); ctx.lineTo(22, 4); ctx.closePath(); ctx.fill();
-        // 鳞片纹理
-        ctx.fillStyle = '#ffee88'; ctx.globalAlpha = 0.6;
-        for (let i = 0; i < 5; i++) {
-            ctx.beginPath(); ctx.arc(8 + i * 4, (i % 2 === 0 ? -1 : 1), 2.5, 0, Math.PI); ctx.fill();
-        }
-        ctx.globalAlpha = 1; ctx.fillStyle = '#886600'; ctx.fillRect(-6, -2.5, 7, 5);
-        ctx.fillStyle = '#ffee44'; ctx.fillRect(-1, -5, 3, 10);
-    } else if (weaponType === 'fireball') {
-        // 龙息法杖 — 金色龙珠杖
-        ctx.fillStyle = '#886600'; ctx.fillRect(-6, -2, 22, 4);
-        // 龙珠
-        const pearlG = ctx.createRadialGradient(18, 0, 0, 18, 0, 7);
-        pearlG.addColorStop(0, '#ffffff'); pearlG.addColorStop(0.3, '#ffee88');
-        pearlG.addColorStop(0.6, '#ffcc00'); pearlG.addColorStop(1, '#aa8800');
-        ctx.fillStyle = pearlG;
-        ctx.beginPath(); ctx.arc(18, 0, 7, 0, TWO_PI_NEW); ctx.fill();
-        // 龙爪托珠
-        ctx.strokeStyle = '#ddaa22'; ctx.lineWidth = 1.5;
-        ctx.beginPath(); ctx.arc(18, 0, 9, -0.5, 0.5); ctx.stroke();
-        ctx.beginPath(); ctx.arc(18, 0, 9, Math.PI - 0.5, Math.PI + 0.5); ctx.stroke();
-    } else if (weaponType === 'bow') {
-        // 龙骨弓
-        ctx.strokeStyle = '#ddaa22'; ctx.lineWidth = 3;
-        ctx.beginPath(); ctx.arc(8, 0, 12, -0.8, 0.8); ctx.stroke();
-        // 龙牙装饰
-        ctx.fillStyle = '#ffee88';
-        ctx.beginPath(); ctx.moveTo(8 + Math.cos(-0.8) * 12, Math.sin(-0.8) * 12);
-        ctx.lineTo(8 + Math.cos(-0.8) * 14, Math.sin(-0.8) * 14); ctx.lineTo(8 + Math.cos(-0.6) * 12, Math.sin(-0.6) * 12); ctx.fill();
-        ctx.beginPath(); ctx.moveTo(8 + Math.cos(0.8) * 12, Math.sin(0.8) * 12);
-        ctx.lineTo(8 + Math.cos(0.8) * 14, Math.sin(0.8) * 14); ctx.lineTo(8 + Math.cos(0.6) * 12, Math.sin(0.6) * 12); ctx.fill();
-        // 弦
-        ctx.strokeStyle = '#ffcc44'; ctx.lineWidth = 1;
-        ctx.beginPath(); ctx.moveTo(8 + Math.cos(-0.8) * 12, Math.sin(-0.8) * 12);
-        ctx.lineTo(8 + Math.cos(0.8) * 12, Math.sin(0.8) * 12); ctx.stroke();
-        // 金色箭
-        if (attacking) {
-            ctx.fillStyle = '#ffcc44';
-            ctx.fillRect(8, -1, 16, 2);
-            ctx.beginPath(); ctx.moveTo(24, -2.5); ctx.lineTo(28, 0); ctx.lineTo(24, 2.5); ctx.closePath(); ctx.fill();
-        }
-    } else {
-        // 龙灵法器
-        ctx.fillStyle = '#886600'; ctx.fillRect(-6, -2, 22, 4);
-        ctx.fillStyle = '#ffcc44'; ctx.globalAlpha = attacking ? 0.7 : 0.4;
-        ctx.beginPath(); ctx.arc(18, 0, 7, 0, TWO_PI_NEW); ctx.fill();
-        ctx.globalAlpha = 1; ctx.fillStyle = '#fff';
-        ctx.beginPath(); ctx.arc(18, 0, 3, 0, TWO_PI_NEW); ctx.fill();
-        // 小龙头装饰
-        ctx.fillStyle = '#ddaa22';
-        ctx.beginPath(); ctx.moveTo(18, -7); ctx.lineTo(16, -9); ctx.lineTo(20, -9); ctx.closePath(); ctx.fill();
-    }
-};
+;
 
 // 悟空 — 如意金箍棒
-SkinRenderer.prototype._weapon_wukong = function(ctx, weaponType, attacking) {
-    const t = this._time;
-    const len = attacking ? 30 : 24;
-    if (weaponType === 'sword' || weaponType === 'dagger' || weaponType === 'hammer') {
-        // 金箍棒
-        const g = ctx.createLinearGradient(-6, 0, len, 0);
-        g.addColorStop(0, '#ffcc44'); g.addColorStop(0.5, '#ffee88'); g.addColorStop(1, '#ffcc44');
-        ctx.fillStyle = g; ctx.fillRect(-6, -2.5, len + 6, 5);
-        // 金箍
-        ctx.fillStyle = '#cc8800';
-        ctx.fillRect(-6, -3, 4, 6); ctx.fillRect(len - 4, -3, 4, 6);
-        // 红缨
-        ctx.fillStyle = '#ff3333'; ctx.globalAlpha = 0.7;
-        ctx.beginPath(); ctx.arc(-4, 0, 3, 0, TWO_PI_NEW); ctx.fill();
-        ctx.globalAlpha = 1;
-    } else if (weaponType === 'fireball') {
-        // 悟空法杖 — 缩小版金箍棒+火云
-        const g = ctx.createLinearGradient(-6, 0, 22, 0);
-        g.addColorStop(0, '#ffcc44'); g.addColorStop(0.5, '#ffee88'); g.addColorStop(1, '#ffcc44');
-        ctx.fillStyle = g; ctx.fillRect(-6, -2, 28, 4);
-        ctx.fillStyle = '#cc8800'; ctx.fillRect(-6, -2.5, 3, 5); ctx.fillRect(19, -2.5, 3, 5);
-        // 筋斗云火球
-        ctx.fillStyle = '#ff6633'; ctx.globalAlpha = 0.5 + Math.sin(t * 5) * 0.2;
-        ctx.beginPath(); ctx.arc(24, 0, 5, 0, TWO_PI_NEW); ctx.fill();
-        ctx.fillStyle = '#ffcc44'; ctx.beginPath(); ctx.arc(24, 0, 3, 0, TWO_PI_NEW); ctx.fill();
-        ctx.globalAlpha = 1;
-    } else if (weaponType === 'bow') {
-        // 悟空弓 — 金箍弓
-        const bowG = ctx.createLinearGradient(0, -12, 0, 12);
-        bowG.addColorStop(0, '#ffcc44'); bowG.addColorStop(0.5, '#ffee88'); bowG.addColorStop(1, '#ffcc44');
-        ctx.strokeStyle = bowG; ctx.lineWidth = 3;
-        ctx.beginPath(); ctx.arc(8, 0, 12, -0.8, 0.8); ctx.stroke();
-        // 金箍装饰
-        ctx.fillStyle = '#cc8800';
-        ctx.fillRect(8 + Math.cos(-0.8) * 11 - 1.5, Math.sin(-0.8) * 12 - 1.5, 3, 3);
-        ctx.fillRect(8 + Math.cos(0.8) * 11 - 1.5, Math.sin(0.8) * 12 - 1.5, 3, 3);
-        // 弦
-        ctx.strokeStyle = '#ff3333'; ctx.lineWidth = 1;
-        ctx.beginPath(); ctx.moveTo(8 + Math.cos(-0.8) * 12, Math.sin(-0.8) * 12);
-        ctx.lineTo(8 + Math.cos(0.8) * 12, Math.sin(0.8) * 12); ctx.stroke();
-        if (attacking) {
-            ctx.fillStyle = '#ffcc44'; ctx.fillRect(8, -1, 16, 2);
-            ctx.fillStyle = '#ff3333';
-            ctx.beginPath(); ctx.moveTo(24, -2); ctx.lineTo(28, 0); ctx.lineTo(24, 2); ctx.closePath(); ctx.fill();
-        }
-    } else {
-        // 亡灵法器 — 缩小金箍棒+灵魂
-        const g = ctx.createLinearGradient(-6, 0, 22, 0);
-        g.addColorStop(0, '#ffcc44'); g.addColorStop(0.5, '#ffee88'); g.addColorStop(1, '#ffcc44');
-        ctx.fillStyle = g; ctx.fillRect(-6, -2, 28, 4);
-        ctx.fillStyle = '#cc8800'; ctx.fillRect(-6, -2.5, 3, 5); ctx.fillRect(19, -2.5, 3, 5);
-        ctx.fillStyle = '#44ffaa'; ctx.globalAlpha = 0.5;
-        ctx.beginPath(); ctx.arc(24, 0, 5, 0, TWO_PI_NEW); ctx.fill();
-        ctx.globalAlpha = 1;
-    }
-};
+;
 
 // 虚空行者 — 空间裂隙刃
 SkinRenderer.prototype._weapon_voidwalker = function(ctx, weaponType, attacking) {

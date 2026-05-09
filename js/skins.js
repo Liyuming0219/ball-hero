@@ -64,7 +64,7 @@ const SkinSeries = {
         skins: {
             nebula: { id: 'nebula', name: '星云之子', series: 'cosmic', tier: 4, icon: '🌌', price: 5000, desc: '宇宙深处的星云生命体，恒星能量倾泻' },
             blackhole: { id: 'blackhole', name: '黑洞吞噬者', series: 'cosmic', tier: 4, icon: '🕳️', price: 8000, desc: '连光都无法逃脱的终极存在' },
-            phoenix: { id: 'phoenix', name: '不死凤凰', series: 'cosmic', tier: 4, icon: '🔥', price: 6000, desc: '浴火重生神鸟，烈焰羽翼划破苍穹' },
+            phoenix: { id: 'phoenix', name: '赤炎烈阳', series: 'cosmic', tier: 4, icon: '☀️', price: 6000, desc: '炽热恒星化身，日冕烈焰与太阳风灼烧一切' },
         },
     },
     mech: {
@@ -80,15 +80,7 @@ const SkinSeries = {
         skins: {
             thunder: { id: 'thunder', name: '雷霆之神', series: 'element', tier: 4, icon: '⚡', price: 5000, desc: '掌控雷霆的远古神灵，每一击引来天罚' },
             glacier: { id: 'glacier', name: '寒冰领主', series: 'element', tier: 4, icon: '❄️', price: 5000, desc: '绝对零度的冰霜化身，冻结万物的呼吸' },
-            shadow: { id: 'shadow', name: '暗影主宰', series: 'element', tier: 4, icon: '🌑', price: 5500, desc: '黑暗深渊的统治者，影子是最锋利的刀刃' },
-        },
-    },
-    myth: {
-        name: '东方神话', icon: '🐉', tier: 5,
-        skins: {
-            kitsune: { id: 'kitsune', name: '九尾天狐', series: 'myth', tier: 5, icon: '🦊', price: 8000, desc: '千年修炼的九尾天狐，幻术与狐火并济' },
-            dragonking: { id: 'dragonking', name: '东海龙王', series: 'myth', tier: 5, icon: '🐉', price: 10000, desc: '四海之主，翻江倒海、呼风唤雨' },
-            wukong: { id: 'wukong', name: '齐天大圣', series: 'myth', tier: 5, icon: '🐵', price: 12000, desc: '大闹天宫的美猴王，金箍棒横扫三界' },
+            shadow: { id: 'shadow', name: '暴风领主', series: 'element', tier: 4, icon: '🌪️', price: 5500, desc: '狂风暴雨的化身，龙卷之力撕裂苍穹' },
         },
     },
     abyss: {
@@ -227,20 +219,42 @@ class SkinRenderer {
         const t = this._time;
         this._shadow(ctx, x, y, r);
         ctx.save(); ctx.translate(x, y);
-        const g = ctx.createRadialGradient(-r*0.3, -r*0.3, 0, 0, 0, r);
-        g.addColorStop(0, '#5fd47a'); g.addColorStop(0.5, '#3aad52');
-        g.addColorStop(0.8, '#1e7a35'); g.addColorStop(1, '#0d4d1f');
+        // Deep green sphere
+        const g = ctx.createRadialGradient(-r*0.25, -r*0.25, 0, 0, 0, r);
+        g.addColorStop(0, '#4cba6a'); g.addColorStop(0.4, '#2d8c45');
+        g.addColorStop(0.7, '#1a6b30'); g.addColorStop(1, '#0d4520');
         ctx.fillStyle = g;
         ctx.beginPath(); ctx.arc(0, 0, r, 0, TWO_PI_SK); ctx.fill();
-        ctx.strokeStyle = '#0a3013'; ctx.lineWidth = r * 0.14;
-        ctx.lineCap = 'round'; ctx.globalAlpha = 0.6;
-        for (let i = 0; i < 5; i++) {
-            const a = i * TWO_PI_SK / 5 + angle * 0.1;
-            ctx.beginPath(); ctx.arc(0, 0, r * 0.7, a - 0.5, a + 0.5); ctx.stroke();
+        // SIGNATURE: Bold dark stripes from pole to pole
+        ctx.strokeStyle = '#0a3015'; ctx.lineWidth = r * 0.22;
+        ctx.lineCap = 'round'; ctx.globalAlpha = 0.7;
+        for (let i = 0; i < 6; i++) {
+            const a = i * TWO_PI_SK / 6 + angle * 0.05;
+            ctx.beginPath();
+            ctx.moveTo(Math.cos(a) * r * 0.1, Math.sin(a) * r * 0.1);
+            ctx.quadraticCurveTo(
+                Math.cos(a + 0.15) * r * 0.55, Math.sin(a + 0.15) * r * 0.55,
+                Math.cos(a) * r * 0.92, Math.sin(a) * r * 0.92
+            );
+            ctx.stroke();
         }
         ctx.globalAlpha = 1;
-        ctx.fillStyle = 'rgba(255,255,255,0.4)';
-        ctx.beginPath(); ctx.arc(-r*0.3, -r*0.3, r*0.15, 0, TWO_PI_SK); ctx.fill();
+        // Lighter stripe contrast between dark stripes
+        ctx.globalAlpha = 0.3; ctx.strokeStyle = '#7de69a'; ctx.lineWidth = r * 0.1;
+        for (let i = 0; i < 6; i++) {
+            const a = i * TWO_PI_SK / 6 + TWO_PI_SK / 12 + angle * 0.05;
+            ctx.beginPath();
+            ctx.moveTo(Math.cos(a) * r * 0.15, Math.sin(a) * r * 0.15);
+            ctx.lineTo(Math.cos(a) * r * 0.88, Math.sin(a) * r * 0.88);
+            ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+        // Stem nub at top
+        ctx.fillStyle = '#5a3a1a';
+        ctx.beginPath(); ctx.arc(0, -r * 0.88, r * 0.08, 0, TWO_PI_SK); ctx.fill();
+        // Specular highlight
+        ctx.fillStyle = 'rgba(255,255,255,0.45)';
+        ctx.beginPath(); ctx.arc(-r*0.28, -r*0.32, r*0.13, 0, TWO_PI_SK); ctx.fill();
         ctx.restore();
     }
 
@@ -303,26 +317,47 @@ class SkinRenderer {
         const t = this._time;
         this._shadow(ctx, x, y, r);
         ctx.save(); ctx.translate(x, y);
-        const g = ctx.createRadialGradient(-r*0.2, -r*0.2, 0, 0, r*0.1, r);
-        g.addColorStop(0, '#ff6b7a'); g.addColorStop(0.4, '#e63350');
-        g.addColorStop(0.75, '#bf1e3d'); g.addColorStop(1, '#8b0a2a');
-        ctx.fillStyle = g;
-        ctx.beginPath(); ctx.arc(0, 0, r, 0, TWO_PI_SK); ctx.fill();
-        ctx.fillStyle = '#ffe44d';
-        var seeds = [[0.3,0.1],[-0.35,0.15],[0.1,0.45],[-0.15,-0.3],[0.35,-0.2],[-0.4,-0.1],[0.05,-0.55],[0.25,0.5],[-0.25,0.45]];
-        for (var i = 0; i < seeds.length; i++) {
-            var sx = seeds[i][0], sy = seeds[i][1];
-            if (sx*sx+sy*sy > 0.7) continue;
-            ctx.beginPath(); ctx.arc(sx*r, sy*r, r*0.06, 0, TWO_PI_SK); ctx.fill();
+        // Heart/teardrop shape (wider at top, pointed bottom)
+        ctx.beginPath();
+        ctx.moveTo(0, r * 0.95);
+        ctx.bezierCurveTo(-r*0.5, r*0.4, -r*0.85, -r*0.1, -r*0.7, -r*0.5);
+        ctx.quadraticCurveTo(-r*0.4, -r*0.9, 0, -r*0.85);
+        ctx.quadraticCurveTo(r*0.4, -r*0.9, r*0.7, -r*0.5);
+        ctx.bezierCurveTo(r*0.85, -r*0.1, r*0.5, r*0.4, 0, r*0.95);
+        ctx.closePath();
+        const g = ctx.createRadialGradient(-r*0.15, -r*0.2, 0, 0, r*0.1, r*1.1);
+        g.addColorStop(0, '#ff7088'); g.addColorStop(0.35, '#e8334f');
+        g.addColorStop(0.7, '#c41835'); g.addColorStop(1, '#8a0a22');
+        ctx.fillStyle = g; ctx.fill();
+        // Seeds in natural diagonal rows
+        ctx.fillStyle = '#ffe84d';
+        const seedRows = [
+            {y: -0.45, seeds: [-0.25, 0.0, 0.25]},
+            {y: -0.15, seeds: [-0.35, -0.1, 0.15, 0.35]},
+            {y: 0.15, seeds: [-0.3, -0.05, 0.2, 0.38]},
+            {y: 0.4, seeds: [-0.2, 0.05, 0.25]},
+            {y: 0.6, seeds: [-0.1, 0.12]},
+        ];
+        for (const row of seedRows) {
+            for (const sx of row.seeds) {
+                ctx.save(); ctx.translate(sx*r, row.y*r);
+                ctx.rotate(Math.atan2(row.y, sx) + 0.3);
+                ctx.beginPath(); ctx.ellipse(0, 0, r*0.04, r*0.025, 0, 0, TWO_PI_SK); ctx.fill();
+                ctx.restore();
+            }
         }
-        ctx.fillStyle = '#2cb84b';
-        for (var j = -1; j <= 1; j++) {
-            ctx.beginPath();
-            ctx.ellipse(j*r*0.2, -r*0.85, r*0.2, r*0.08, j*0.3, 0, TWO_PI_SK);
-            ctx.fill();
+        // Green leaf crown
+        ctx.fillStyle = '#28a745';
+        for (let j = -2; j <= 2; j++) {
+            ctx.save(); ctx.rotate(j * 0.35);
+            ctx.beginPath(); ctx.ellipse(0, -r*0.82, r*0.22, r*0.07, j*0.3*0.3, 0, TWO_PI_SK); ctx.fill();
+            ctx.restore();
         }
+        ctx.fillStyle = '#1e7a35';
+        ctx.beginPath(); ctx.arc(0, -r*0.78, r*0.06, 0, TWO_PI_SK); ctx.fill();
+        // Specular
         ctx.fillStyle = 'rgba(255,255,255,0.35)';
-        ctx.beginPath(); ctx.arc(-r*0.25, -r*0.3, r*0.12, 0, TWO_PI_SK); ctx.fill();
+        ctx.beginPath(); ctx.arc(-r*0.2, -r*0.35, r*0.1, 0, TWO_PI_SK); ctx.fill();
         ctx.restore();
     }
 
@@ -449,53 +484,82 @@ class SkinRenderer {
         const t = this._time;
         this._shadow(ctx, x, y, r);
         ctx.save(); ctx.translate(x, y);
-        var g = ctx.createRadialGradient(-r*0.15, -r*0.1, 0, 0, 0, r);
-        g.addColorStop(0, '#ffaa55'); g.addColorStop(0.5, '#ee7722');
-        g.addColorStop(0.85, '#cc5500'); g.addColorStop(1, '#883300');
-        ctx.fillStyle = g;
-        ctx.beginPath(); ctx.arc(0, 0, r, 0, TWO_PI_SK); ctx.fill();
-        // White belly
-        ctx.fillStyle = '#fff5ee';
-        ctx.beginPath(); ctx.ellipse(0, r*0.3, r*0.55, r*0.45, 0, 0, Math.PI); ctx.fill();
-        // Big pointy ears
-        ctx.fillStyle = '#ee7722';
-        for (var s = -1; s <= 1; s += 2) {
+        // Fox head - pointed snout, angular cheeks, tall ears
+        const foxPath = () => {
             ctx.beginPath();
-            ctx.moveTo(s*r*0.4, -r*0.6);
-            ctx.lineTo(s*r*0.7, -r*1.4);
-            ctx.lineTo(s*r*0.9, -r*0.5);
-            ctx.closePath(); ctx.fill();
-            ctx.fillStyle = '#ffaaaa';
+            ctx.moveTo(-r*0.35, -r*0.7);
+            ctx.lineTo(-r*0.5, -r*1.25); ctx.lineTo(-r*0.15, -r*0.75);
+            ctx.quadraticCurveTo(0, -r*0.8, r*0.15, -r*0.75);
+            ctx.lineTo(r*0.5, -r*1.25); ctx.lineTo(r*0.35, -r*0.7);
+            ctx.quadraticCurveTo(r*0.7, -r*0.4, r*0.65, -r*0.1);
+            ctx.quadraticCurveTo(r*0.6, r*0.2, r*0.4, r*0.4);
+            ctx.quadraticCurveTo(r*0.2, r*0.6, 0, r*0.65);
+            ctx.quadraticCurveTo(-r*0.2, r*0.6, -r*0.4, r*0.4);
+            ctx.quadraticCurveTo(-r*0.6, r*0.2, -r*0.65, -r*0.1);
+            ctx.quadraticCurveTo(-r*0.7, -r*0.4, -r*0.35, -r*0.7);
+            ctx.closePath();
+        };
+        // Fur base
+        ctx.save(); foxPath(); ctx.clip();
+        const furG = ctx.createLinearGradient(0, -r, 0, r*0.7);
+        furG.addColorStop(0, '#e88530'); furG.addColorStop(0.3, '#d06820');
+        furG.addColorStop(0.6, '#b85518'); furG.addColorStop(1, '#8a3a0f');
+        ctx.fillStyle = furG; ctx.fillRect(-r, -r*1.3, r*2, r*2.3);
+        ctx.restore();
+        // Outline
+        ctx.strokeStyle = '#6b3010'; ctx.lineWidth = 1.2; ctx.globalAlpha = 0.4;
+        foxPath(); ctx.stroke(); ctx.globalAlpha = 1;
+        // White muzzle
+        ctx.fillStyle = '#fff8f0';
+        ctx.beginPath();
+        ctx.moveTo(-r*0.25, r*0.1);
+        ctx.quadraticCurveTo(-r*0.15, r*0.5, 0, r*0.55);
+        ctx.quadraticCurveTo(r*0.15, r*0.5, r*0.25, r*0.1);
+        ctx.quadraticCurveTo(0, r*0.2, -r*0.25, r*0.1);
+        ctx.closePath(); ctx.fill();
+        // Ear inner pink
+        for (let s = -1; s <= 1; s += 2) {
+            ctx.fillStyle = '#cc7755'; ctx.globalAlpha = 0.5;
             ctx.beginPath();
-            ctx.moveTo(s*r*0.48, -r*0.65);
-            ctx.lineTo(s*r*0.68, -r*1.2);
-            ctx.lineTo(s*r*0.8, -r*0.58);
+            ctx.moveTo(s*r*0.38, -r*0.75); ctx.lineTo(s*r*0.47, -r*1.1); ctx.lineTo(s*r*0.22, -r*0.78);
             ctx.closePath(); ctx.fill();
-            ctx.fillStyle = '#ee7722';
         }
-        // Eyes
-        ctx.fillStyle = '#111';
-        ctx.beginPath(); ctx.arc(-r*0.25, -r*0.1, r*0.1, 0, TWO_PI_SK); ctx.fill();
-        ctx.beginPath(); ctx.arc(r*0.25, -r*0.1, r*0.1, 0, TWO_PI_SK); ctx.fill();
-        ctx.fillStyle = '#fff';
-        ctx.beginPath(); ctx.arc(-r*0.22, -r*0.13, r*0.04, 0, TWO_PI_SK); ctx.fill();
-        ctx.beginPath(); ctx.arc(r*0.28, -r*0.13, r*0.04, 0, TWO_PI_SK); ctx.fill();
+        ctx.globalAlpha = 1;
+        // Almond eyes with vertical slit pupils
+        for (let s = -1; s <= 1; s += 2) {
+            const ex = s*r*0.22, ey = -r*0.2;
+            ctx.fillStyle = '#ffb833';
+            ctx.beginPath();
+            ctx.moveTo(ex - r*0.1, ey);
+            ctx.quadraticCurveTo(ex, ey - r*0.06, ex + r*0.1, ey - r*0.02);
+            ctx.quadraticCurveTo(ex, ey + r*0.04, ex - r*0.1, ey);
+            ctx.closePath(); ctx.fill();
+            ctx.fillStyle = '#111';
+            ctx.beginPath(); ctx.ellipse(ex, ey, r*0.02, r*0.045, 0, 0, TWO_PI_SK); ctx.fill();
+            ctx.fillStyle = '#fff';
+            ctx.beginPath(); ctx.arc(ex + r*0.02, ey - r*0.015, r*0.015, 0, TWO_PI_SK); ctx.fill();
+        }
+        // Dark tear lines (fox signature)
+        ctx.strokeStyle = '#4a2510'; ctx.lineWidth = 1.5; ctx.lineCap = 'round'; ctx.globalAlpha = 0.5;
+        for (let s = -1; s <= 1; s += 2) {
+            ctx.beginPath(); ctx.moveTo(s*r*0.12, -r*0.15); ctx.lineTo(s*r*0.08, r*0.15); ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
         // Nose
-        ctx.fillStyle = '#222';
-        ctx.beginPath(); ctx.arc(0, r*0.05, r*0.06, 0, TWO_PI_SK); ctx.fill();
+        ctx.fillStyle = '#1a1a1a';
+        ctx.beginPath(); ctx.ellipse(0, r*0.25, r*0.06, r*0.04, 0, 0, TWO_PI_SK); ctx.fill();
         // Bushy tail
         if (this.quality.detailLevel >= 1) {
-            ctx.fillStyle = '#ee7722'; ctx.globalAlpha = 0.8;
-            var ta = Math.PI * 0.7 + Math.sin(t*2) * 0.2;
+            ctx.globalAlpha = 0.7;
+            const ta = Math.PI*0.75 + Math.sin(t*2)*0.15;
+            ctx.fillStyle = '#d06820';
             ctx.beginPath();
-            ctx.moveTo(Math.cos(ta)*r*0.5, Math.sin(ta)*r*0.5);
-            ctx.quadraticCurveTo(Math.cos(ta)*r*1.5, Math.sin(ta)*r*1.2,
-                Math.cos(ta+0.5)*r*1.3, Math.sin(ta+0.5)*r*1.0);
-            ctx.quadraticCurveTo(Math.cos(ta+0.3)*r*0.8, Math.sin(ta+0.3)*r*0.8,
-                Math.cos(ta)*r*0.5, Math.sin(ta)*r*0.5);
+            ctx.moveTo(Math.cos(ta)*r*0.4, Math.sin(ta)*r*0.4);
+            ctx.quadraticCurveTo(Math.cos(ta)*r*1.3, Math.sin(ta)*r*1.1, Math.cos(ta+0.4)*r*1.1, Math.sin(ta+0.4)*r*0.9);
+            ctx.quadraticCurveTo(Math.cos(ta+0.2)*r*0.7, Math.sin(ta+0.2)*r*0.6, Math.cos(ta)*r*0.4, Math.sin(ta)*r*0.4);
             ctx.fill();
-            ctx.fillStyle = '#fff5ee';
-            ctx.beginPath(); ctx.arc(Math.cos(ta+0.4)*r*1.2, Math.sin(ta+0.4)*r*0.9, r*0.15, 0, TWO_PI_SK); ctx.fill();
+            ctx.fillStyle = '#fff8f0';
+            ctx.beginPath(); ctx.arc(Math.cos(ta+0.35)*r*1.0, Math.sin(ta+0.35)*r*0.85, r*0.12, 0, TWO_PI_SK); ctx.fill();
             ctx.globalAlpha = 1;
         }
         ctx.restore();
@@ -558,44 +622,90 @@ class SkinRenderer {
         const t = this._time;
         this._shadow(ctx, x, y, r);
         ctx.save(); ctx.translate(x, y);
-        var g = ctx.createRadialGradient(-r*0.2, -r*0.2, 0, 0, 0, r);
-        g.addColorStop(0, '#c495f0'); g.addColorStop(0.4, '#9955dd');
-        g.addColorStop(0.75, '#6633aa'); g.addColorStop(1, '#331166');
-        ctx.fillStyle = g;
-        ctx.beginPath(); ctx.arc(0, 0, r, 0, TWO_PI_SK); ctx.fill();
-        // Pale belly
-        ctx.fillStyle = '#eeddff'; ctx.globalAlpha = 0.4;
-        ctx.beginPath(); ctx.ellipse(0, r*0.2, r*0.4, r*0.35, 0, 0, TWO_PI_SK); ctx.fill();
+        // Dragon head - angular, horned, scaled
+        const dragonPath = () => {
+            ctx.beginPath();
+            ctx.moveTo(-r*0.25, -r*0.65); ctx.lineTo(-r*0.4, -r*1.3); ctx.lineTo(-r*0.15, -r*0.7);
+            ctx.lineTo(-r*0.05, -r*0.85); ctx.lineTo(r*0.05, -r*0.85); ctx.lineTo(r*0.15, -r*0.7);
+            ctx.lineTo(r*0.4, -r*1.3); ctx.lineTo(r*0.25, -r*0.65);
+            ctx.lineTo(r*0.55, -r*0.4); ctx.lineTo(r*0.7, -r*0.1); ctx.lineTo(r*0.6, r*0.2);
+            ctx.lineTo(r*0.45, r*0.5); ctx.lineTo(r*0.3, r*0.7);
+            ctx.quadraticCurveTo(r*0.15, r*0.8, 0, r*0.75);
+            ctx.quadraticCurveTo(-r*0.15, r*0.8, -r*0.3, r*0.7);
+            ctx.lineTo(-r*0.45, r*0.5); ctx.lineTo(-r*0.6, r*0.2);
+            ctx.lineTo(-r*0.7, -r*0.1); ctx.lineTo(-r*0.55, -r*0.4);
+            ctx.closePath();
+        };
+        // Scale base
+        ctx.save(); dragonPath(); ctx.clip();
+        const scaleG = ctx.createLinearGradient(-r, -r, r*0.5, r);
+        scaleG.addColorStop(0, '#7b45c9'); scaleG.addColorStop(0.3, '#5a2d99');
+        scaleG.addColorStop(0.6, '#3d1a70'); scaleG.addColorStop(1, '#220e45');
+        ctx.fillStyle = scaleG; ctx.fillRect(-r, -r*1.4, r*2, r*2.8);
+        // Scale pattern
+        if (this.quality.detailLevel >= 1) {
+            ctx.strokeStyle = 'rgba(200,160,255,0.2)'; ctx.lineWidth = 0.7;
+            for (let row = -3; row <= 3; row++) {
+                for (let col = -3; col <= 3; col++) {
+                    const sx = col*r*0.22 + (row%2)*r*0.11;
+                    const sy = row*r*0.2;
+                    ctx.beginPath(); ctx.arc(sx, sy, r*0.1, 0.9, Math.PI+0.1); ctx.stroke();
+                }
+            }
+        }
+        ctx.restore();
+        // Golden horns
+        ctx.fillStyle = '#e6b422';
+        for (let s = -1; s <= 1; s += 2) {
+            ctx.beginPath();
+            ctx.moveTo(s*r*0.22, -r*0.65); ctx.lineTo(s*r*0.35, -r*1.25);
+            ctx.lineTo(s*r*0.28, -r*1.3); ctx.lineTo(s*r*0.18, -r*0.7);
+            ctx.closePath(); ctx.fill();
+        }
+        // Crown spikes
+        ctx.fillStyle = '#8855cc';
+        for (let i = -1; i <= 1; i++) {
+            ctx.beginPath();
+            ctx.moveTo(i*r*0.08 - r*0.03, -r*0.72); ctx.lineTo(i*r*0.08, -r*0.95);
+            ctx.lineTo(i*r*0.08 + r*0.03, -r*0.72); ctx.closePath(); ctx.fill();
+        }
+        // Fierce glowing eyes
+        for (let s = -1; s <= 1; s += 2) {
+            const ex = s*r*0.28, ey = -r*0.2;
+            ctx.globalAlpha = 0.3;
+            const eyeGlow = ctx.createRadialGradient(ex, ey, 0, ex, ey, r*0.12);
+            eyeGlow.addColorStop(0, '#ffee00'); eyeGlow.addColorStop(1, 'transparent');
+            ctx.fillStyle = eyeGlow;
+            ctx.beginPath(); ctx.arc(ex, ey, r*0.12, 0, TWO_PI_SK); ctx.fill();
+            ctx.globalAlpha = 1;
+            ctx.fillStyle = '#ffcc00';
+            ctx.beginPath(); ctx.ellipse(ex, ey, r*0.08, r*0.06, s*0.2, 0, TWO_PI_SK); ctx.fill();
+            ctx.fillStyle = '#000';
+            ctx.beginPath(); ctx.ellipse(ex, ey, r*0.02, r*0.055, 0, 0, TWO_PI_SK); ctx.fill();
+        }
+        // Nostrils with smoke
+        for (let s = -1; s <= 1; s += 2) {
+            ctx.fillStyle = '#1a0a30';
+            ctx.beginPath(); ctx.arc(s*r*0.12, r*0.45, r*0.04, 0, TWO_PI_SK); ctx.fill();
+        }
+        if (this.quality.detailLevel >= 1) {
+            ctx.globalAlpha = 0.2;
+            for (let s = -1; s <= 1; s += 2) {
+                const sy = r*0.45 - ((t*30)%50)/50 * r*0.2;
+                ctx.fillStyle = '#aaaacc';
+                ctx.beginPath(); ctx.arc(s*r*0.12 + Math.sin(t*3)*r*0.04, sy - r*0.1, r*0.04, 0, TWO_PI_SK); ctx.fill();
+            }
+            ctx.globalAlpha = 1;
+        }
+        // Small wings
+        ctx.fillStyle = '#6633aa'; ctx.globalAlpha = 0.6;
+        for (let s = -1; s <= 1; s += 2) {
+            ctx.beginPath();
+            ctx.moveTo(s*r*0.55, -r*0.15); ctx.lineTo(s*r*1.1, -r*0.5);
+            ctx.lineTo(s*r*1.0, -r*0.1); ctx.lineTo(s*r*0.8, r*0.1);
+            ctx.closePath(); ctx.fill();
+        }
         ctx.globalAlpha = 1;
-        // Wings
-        ctx.fillStyle = '#aa55ee';
-        for (var s = -1; s <= 1; s += 2) {
-            ctx.beginPath();
-            ctx.moveTo(s*r*0.7, -r*0.2);
-            ctx.lineTo(s*r*1.5, -r*0.7);
-            ctx.lineTo(s*r*1.4, r*0.1);
-            ctx.lineTo(s*r*0.8, r*0.2);
-            ctx.closePath(); ctx.fill();
-            ctx.strokeStyle = '#7733bb'; ctx.lineWidth = 1;
-            ctx.beginPath(); ctx.moveTo(s*r*0.8, -r*0.1);
-            ctx.lineTo(s*r*1.3, -r*0.5); ctx.stroke();
-        }
-        // Horns
-        ctx.fillStyle = '#ffcc44';
-        for (var s2 = -1; s2 <= 1; s2 += 2) {
-            ctx.beginPath();
-            ctx.moveTo(s2*r*0.2, -r*0.8);
-            ctx.lineTo(s2*r*0.35, -r*1.3);
-            ctx.lineTo(s2*r*0.45, -r*0.7);
-            ctx.closePath(); ctx.fill();
-        }
-        // Eyes
-        ctx.fillStyle = '#ffee44';
-        ctx.beginPath(); ctx.arc(-r*0.25, -r*0.1, r*0.1, 0, TWO_PI_SK); ctx.fill();
-        ctx.beginPath(); ctx.arc(r*0.25, -r*0.1, r*0.1, 0, TWO_PI_SK); ctx.fill();
-        ctx.fillStyle = '#111';
-        ctx.beginPath(); ctx.arc(-r*0.25, -r*0.1, r*0.05, 0, TWO_PI_SK); ctx.fill();
-        ctx.beginPath(); ctx.arc(r*0.25, -r*0.1, r*0.05, 0, TWO_PI_SK); ctx.fill();
         ctx.restore();
     }
 
@@ -757,43 +867,77 @@ class SkinRenderer {
     _body_diamond(ctx, x, y, r, angle) {
         const t = this._time;
         this._shadow(ctx, x, y, r);
-        this._glow(ctx, x, y, r, '#88ccff', 0.1);
+        this._glow(ctx, x, y, r, '#88ccff', 0.2 + Math.sin(t*3)*0.05);
         ctx.save(); ctx.translate(x, y);
-        var sides = 8;
-        var diamondPath = function() {
+        // Brilliant-cut diamond (octagonal crown facets)
+        const crownPath = () => {
             ctx.beginPath();
-            for (var i = 0; i < sides; i++) {
-                var a = (i/sides) * TWO_PI_SK - Math.PI/2;
-                var pr = r * (i%2 === 0 ? 1.0 : 0.88);
-                var px = Math.cos(a)*pr, py = Math.sin(a)*pr;
-                i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+            for (let i = 0; i < 8; i++) {
+                const a = (i/8)*TWO_PI_SK - Math.PI/8;
+                const pr = r * (i%2 === 0 ? 1.0 : 0.92);
+                ctx.lineTo(Math.cos(a)*pr, Math.sin(a)*pr);
             }
             ctx.closePath();
         };
-        var dg = ctx.createLinearGradient(-r, -r, r, r);
-        dg.addColorStop(0, '#e8f4ff'); dg.addColorStop(0.3, '#aaddff');
-        dg.addColorStop(0.5, '#ffffff'); dg.addColorStop(0.7, '#88ccee');
-        dg.addColorStop(1, '#446688');
-        ctx.fillStyle = dg; diamondPath(); ctx.fill();
-        ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 1;
-        for (var i = 0; i < sides; i++) {
-            var a2 = (i/sides) * TWO_PI_SK - Math.PI/2;
+        ctx.save(); crownPath(); ctx.clip();
+        // Icy blue-white base
+        const baseG = ctx.createLinearGradient(-r, -r, r, r);
+        baseG.addColorStop(0, '#f0f8ff'); baseG.addColorStop(0.25, '#ddeeff');
+        baseG.addColorStop(0.5, '#ffffff'); baseG.addColorStop(0.75, '#cce5ff');
+        baseG.addColorStop(1, '#88aacc');
+        ctx.fillStyle = baseG; ctx.fillRect(-r, -r, r*2, r*2);
+        // Star facet lines from center
+        ctx.strokeStyle = 'rgba(180,210,255,0.6)'; ctx.lineWidth = 0.8;
+        for (let i = 0; i < 8; i++) {
+            const a = (i/8)*TWO_PI_SK;
             ctx.beginPath(); ctx.moveTo(0, 0);
-            ctx.lineTo(Math.cos(a2)*r*0.85, Math.sin(a2)*r*0.85); ctx.stroke();
+            ctx.lineTo(Math.cos(a)*r*0.95, Math.sin(a)*r*0.95); ctx.stroke();
         }
-        if (this.quality.detailLevel >= 1) {
-            var colors = ['#ff4444','#44ff44','#4444ff','#ffff44','#ff44ff'];
-            ctx.globalAlpha = 0.25;
-            for (var j = 0; j < colors.length; j++) {
-                var ra = t*1.5 + j*TWO_PI_SK/colors.length;
-                ctx.fillStyle = colors[j];
-                ctx.beginPath(); ctx.arc(Math.cos(ra)*r*0.35, Math.sin(ra)*r*0.35, r*0.12, 0, TWO_PI_SK); ctx.fill();
-            }
+        // Kite facets (alternating shimmer)
+        for (let i = 0; i < 8; i++) {
+            const a1 = (i/8)*TWO_PI_SK;
+            const a2 = ((i+1)/8)*TWO_PI_SK;
+            const shimmer = (Math.sin(t*4 + i*1.2) + 1) / 2;
+            ctx.fillStyle = shimmer > 0.5 ? 'rgba(255,255,255,0.25)' : 'rgba(100,180,255,0.12)';
+            ctx.beginPath(); ctx.moveTo(0, 0);
+            ctx.lineTo(Math.cos(a1)*r*0.6, Math.sin(a1)*r*0.6);
+            ctx.lineTo(Math.cos((a1+a2)/2)*r*0.95, Math.sin((a1+a2)/2)*r*0.95);
+            ctx.lineTo(Math.cos(a2)*r*0.6, Math.sin(a2)*r*0.6);
+            ctx.closePath(); ctx.fill();
+        }
+        ctx.restore();
+        // Outer octagonal edge
+        ctx.strokeStyle = 'rgba(200,230,255,0.7)'; ctx.lineWidth = 1.5;
+        crownPath(); ctx.stroke();
+        // Sparkle flashes (rotating)
+        ctx.globalAlpha = 0.7;
+        for (let i = 0; i < 4; i++) {
+            const sa = t*2 + i*Math.PI/2;
+            const sd = r * (0.4 + Math.sin(t*5+i)*0.2);
+            const sparkX = Math.cos(sa)*sd, sparkY = Math.sin(sa)*sd;
+            // 4-pointed star sparkle
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.moveTo(sparkX, sparkY - 3); ctx.lineTo(sparkX + 1, sparkY);
+            ctx.lineTo(sparkX, sparkY + 3); ctx.lineTo(sparkX - 1, sparkY);
+            ctx.closePath(); ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+        // Rainbow refraction flash
+        if (this.quality.detailLevel >= 2) {
+            const rAngle = t * 1.5;
+            const rLen = r * 0.6;
+            ctx.globalAlpha = 0.15;
+            const rainbow = ctx.createLinearGradient(
+                Math.cos(rAngle)*rLen, Math.sin(rAngle)*rLen,
+                -Math.cos(rAngle)*rLen, -Math.sin(rAngle)*rLen
+            );
+            rainbow.addColorStop(0, '#ff0000'); rainbow.addColorStop(0.2, '#ff8800');
+            rainbow.addColorStop(0.4, '#ffff00'); rainbow.addColorStop(0.6, '#00ff00');
+            rainbow.addColorStop(0.8, '#0088ff'); rainbow.addColorStop(1, '#8800ff');
+            ctx.fillStyle = rainbow; crownPath(); ctx.fill();
             ctx.globalAlpha = 1;
         }
-        ctx.strokeStyle = '#aaddff'; ctx.lineWidth = 1.5; diamondPath(); ctx.stroke();
-        ctx.fillStyle = 'rgba(255,255,255,0.6)';
-        ctx.beginPath(); ctx.arc(-r*0.2, -r*0.3, r*0.1, 0, TWO_PI_SK); ctx.fill();
         ctx.restore();
     }
 
@@ -1004,33 +1148,50 @@ class SkinRenderer {
     _body_nebula(ctx, x, y, r, angle) {
         const t = this._time;
         this._shadow(ctx, x, y, r);
-        this._glow(ctx, x, y, r, '#8844ff', 0.15);
+        this._glow(ctx, x, y, r*1.2, '#6644aa', 0.15);
         ctx.save(); ctx.translate(x, y);
-        var ng = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
-        ng.addColorStop(0, '#4422aa'); ng.addColorStop(0.4, '#220066');
-        ng.addColorStop(0.8, '#110033'); ng.addColorStop(1, '#000011');
-        ctx.fillStyle = ng;
+        // Deep space background
+        const spaceG = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
+        spaceG.addColorStop(0, '#1a0a3d'); spaceG.addColorStop(0.4, '#0d0520');
+        spaceG.addColorStop(0.8, '#050210'); spaceG.addColorStop(1, '#000005');
+        ctx.fillStyle = spaceG;
         ctx.beginPath(); ctx.arc(0, 0, r, 0, TWO_PI_SK); ctx.fill();
-        if (this.quality.detailLevel >= 1) {
-            var nColors = ['#ff44aa', '#4488ff', '#aa44ff'];
-            for (var i = 0; i < 3; i++) {
-                var a = t * 0.3 + i * TWO_PI_SK / 3;
-                var cx2 = Math.cos(a) * r * 0.3, cy2 = Math.sin(a) * r * 0.3;
-                var sg = ctx.createRadialGradient(cx2, cy2, 0, cx2, cy2, r * 0.5);
-                sg.addColorStop(0, nColors[i]); sg.addColorStop(1, 'transparent');
-                ctx.globalAlpha = 0.3; ctx.fillStyle = sg;
-                ctx.beginPath(); ctx.arc(cx2, cy2, r * 0.5, 0, TWO_PI_SK); ctx.fill();
-            }
-            ctx.globalAlpha = 1;
+        // Nebula gas clouds (swirling colored layers)
+        ctx.globalCompositeOperation = 'screen';
+        const clouds = [
+            {color: '#8844cc', a: t*0.3, size: 0.7, ox: 0.2, oy: -0.1},
+            {color: '#cc4488', a: t*0.5+1, size: 0.5, ox: -0.2, oy: 0.15},
+            {color: '#4488ff', a: t*0.4+2, size: 0.55, ox: 0.1, oy: 0.2},
+            {color: '#ff6644', a: t*0.35+3, size: 0.4, ox: -0.15, oy: -0.2},
+        ];
+        for (const c of clouds) {
+            const cx = Math.cos(c.a)*r*c.ox*1.5 + c.ox*r*0.3;
+            const cy = Math.sin(c.a)*r*c.oy*1.5 + c.oy*r*0.3;
+            ctx.globalAlpha = 0.35 + Math.sin(t*2 + c.a)*0.1;
+            const cg = ctx.createRadialGradient(cx, cy, 0, cx, cy, r*c.size);
+            cg.addColorStop(0, c.color); cg.addColorStop(0.6, c.color + '66');
+            cg.addColorStop(1, 'transparent');
+            ctx.fillStyle = cg;
+            ctx.beginPath(); ctx.arc(cx, cy, r*c.size, 0, TWO_PI_SK); ctx.fill();
         }
-        ctx.fillStyle = '#fff';
-        for (var j = 0; j < 8; j++) {
-            var sa = j * 1.7 + t * 0.5;
-            var sd = r * (0.3 + (j % 3) * 0.2);
-            ctx.globalAlpha = 0.5 + Math.sin(t * 3 + j) * 0.3;
-            ctx.beginPath(); ctx.arc(Math.cos(sa) * sd, Math.sin(sa) * sd, 1, 0, TWO_PI_SK); ctx.fill();
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.globalAlpha = 1;
+        // Stars (tiny white dots)
+        ctx.fillStyle = '#ffffff';
+        for (let i = 0; i < 12; i++) {
+            const sa = i*2.41 + t*0.1; // golden angle offset
+            const sd = r*(0.2 + (i%5)*0.15);
+            const sx = Math.cos(sa)*sd, sy = Math.sin(sa)*sd;
+            ctx.globalAlpha = 0.4 + Math.sin(t*3+i)*0.4;
+            ctx.beginPath(); ctx.arc(sx, sy, 0.8 + (i%3)*0.4, 0, TWO_PI_SK); ctx.fill();
         }
         ctx.globalAlpha = 1;
+        // Bright central star
+        const starG = ctx.createRadialGradient(0, 0, 0, 0, 0, r*0.2);
+        starG.addColorStop(0, '#ffffff'); starG.addColorStop(0.3, '#aaccff');
+        starG.addColorStop(1, 'transparent');
+        ctx.fillStyle = starG;
+        ctx.beginPath(); ctx.arc(0, 0, r*0.2, 0, TWO_PI_SK); ctx.fill();
         ctx.restore();
     }
 
@@ -1096,43 +1257,63 @@ class SkinRenderer {
         const t = this._time;
         this._shadow(ctx, x, y, r);
         ctx.save(); ctx.translate(x, y);
-        // Accretion disk glow
-        if (this.quality.glowEnabled) {
-            var glowR = r * 1.8;
-            var gg = ctx.createRadialGradient(0, 0, r * 0.9, 0, 0, glowR);
-            gg.addColorStop(0, '#ff8800'); gg.addColorStop(0.3, '#ff4400');
-            gg.addColorStop(0.6, '#aa2200'); gg.addColorStop(1, 'transparent');
-            ctx.fillStyle = gg; ctx.globalAlpha = 0.4;
-            ctx.beginPath(); ctx.arc(0, 0, glowR, 0, TWO_PI_SK); ctx.fill();
+        // Accretion disk - spectacular glowing ring
+        ctx.save(); ctx.rotate(t * 0.5);
+        // Outer fiery ring (very bright, dramatic)
+        for (let layer = 3; layer >= 0; layer--) {
+            const ringR = r * (0.9 + layer * 0.12);
+            const ringW = r * (0.12 + layer * 0.04);
+            ctx.globalAlpha = 0.5 - layer * 0.08;
+            const ringG = ctx.createLinearGradient(-ringR, 0, ringR, 0);
+            const colors = ['#ff4400', '#ffaa00', '#ffff44', '#ffaa00', '#ff4400'];
+            if (layer === 0) {
+                ringG.addColorStop(0, '#ff2200'); ringG.addColorStop(0.3, '#ffcc00');
+                ringG.addColorStop(0.5, '#ffffff'); ringG.addColorStop(0.7, '#ffcc00');
+                ringG.addColorStop(1, '#ff2200');
+            } else {
+                ringG.addColorStop(0, '#ff440044'); ringG.addColorStop(0.5, '#ffaa0066');
+                ringG.addColorStop(1, '#ff440044');
+            }
+            ctx.strokeStyle = ringG; ctx.lineWidth = ringW;
+            ctx.beginPath(); ctx.arc(0, 0, ringR, 0, TWO_PI_SK); ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+        // Plasma jets (vertical beams shooting up/down)
+        if (this.quality.detailLevel >= 2) {
+            ctx.globalAlpha = 0.3;
+            const jetG1 = ctx.createLinearGradient(0, -r*1.5, 0, -r*0.4);
+            jetG1.addColorStop(0, 'transparent'); jetG1.addColorStop(0.5, '#8844ff');
+            jetG1.addColorStop(1, '#ffffff');
+            ctx.fillStyle = jetG1;
+            ctx.beginPath(); ctx.moveTo(-r*0.08, -r*0.4); ctx.lineTo(0, -r*1.5);
+            ctx.lineTo(r*0.08, -r*0.4); ctx.closePath(); ctx.fill();
+            const jetG2 = ctx.createLinearGradient(0, r*0.4, 0, r*1.5);
+            jetG2.addColorStop(0, '#ffffff'); jetG2.addColorStop(0.5, '#8844ff');
+            jetG2.addColorStop(1, 'transparent');
+            ctx.fillStyle = jetG2;
+            ctx.beginPath(); ctx.moveTo(-r*0.08, r*0.4); ctx.lineTo(0, r*1.5);
+            ctx.lineTo(r*0.08, r*0.4); ctx.closePath(); ctx.fill();
             ctx.globalAlpha = 1;
         }
-        // Accretion disk ring - elliptical perspective
-        ctx.save();
-        ctx.rotate(t * 0.3);
-        ctx.scale(1, 0.4);
-        for (var i = 0; i < 3; i++) {
-            var diskR = r * (1.2 + i * 0.15);
-            ctx.globalAlpha = 0.7 - i * 0.2;
-            ctx.strokeStyle = i === 0 ? '#ffcc44' : (i === 1 ? '#ff8800' : '#ff4400');
-            ctx.lineWidth = r * 0.15 - i * 2;
-            ctx.beginPath(); ctx.arc(0, 0, diskR, 0, TWO_PI_SK); ctx.stroke();
-        }
-        ctx.globalAlpha = 0.8; ctx.fillStyle = '#ffffff';
-        for (var j = 0; j < 4; j++) {
-            var pa = t * 2 + j * TWO_PI_SK / 4;
-            ctx.beginPath(); ctx.arc(Math.cos(pa) * r * 1.2, Math.sin(pa) * r * 1.2, 1.5, 0, TWO_PI_SK); ctx.fill();
-        }
         ctx.restore();
-        // Pure black core
+        // Event horizon (black core with distortion edge)
+        const coreG = ctx.createRadialGradient(0, 0, r*0.1, 0, 0, r*0.5);
+        coreG.addColorStop(0, '#000000'); coreG.addColorStop(0.7, '#000000');
+        coreG.addColorStop(0.85, '#110022'); coreG.addColorStop(1, '#220044');
+        ctx.fillStyle = coreG;
+        ctx.beginPath(); ctx.arc(0, 0, r*0.5, 0, TWO_PI_SK); ctx.fill();
+        // Gravitational lensing ring (bright white-blue edge)
+        ctx.strokeStyle = '#aaccff'; ctx.lineWidth = 1.5; ctx.globalAlpha = 0.4 + Math.sin(t*4)*0.2;
+        ctx.beginPath(); ctx.arc(0, 0, r*0.52, 0, TWO_PI_SK); ctx.stroke();
         ctx.globalAlpha = 1;
-        var bg = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
-        bg.addColorStop(0, '#000000'); bg.addColorStop(0.7, '#000000');
-        bg.addColorStop(0.85, '#110000'); bg.addColorStop(1, '#220000');
-        ctx.fillStyle = bg;
-        ctx.beginPath(); ctx.arc(0, 0, r, 0, TWO_PI_SK); ctx.fill();
-        // Event horizon edge glow
-        ctx.strokeStyle = '#ff6600'; ctx.lineWidth = 1.5; ctx.globalAlpha = 0.6;
-        ctx.beginPath(); ctx.arc(0, 0, r, 0, TWO_PI_SK); ctx.stroke();
+        // Infalling matter sparks
+        ctx.fillStyle = '#ffcc44';
+        for (let i = 0; i < 6; i++) {
+            const sa = t*3 + i*1.05;
+            const sd = r*(0.55 + Math.sin(t*2+i)*0.15);
+            ctx.globalAlpha = 0.5 + Math.sin(t*5+i)*0.3;
+            ctx.beginPath(); ctx.arc(Math.cos(sa)*sd, Math.sin(sa)*sd, 1.5, 0, TWO_PI_SK); ctx.fill();
+        }
         ctx.globalAlpha = 1;
         ctx.restore();
     }
@@ -1185,87 +1366,91 @@ class SkinRenderer {
     _body_phoenix(ctx, x, y, r, angle) {
         const t = this._time;
         this._shadow(ctx, x, y, r);
-        // Corona rays
-        if (this.quality.detailLevel >= 1) {
-            ctx.save(); ctx.translate(x, y);
-            var rayCount = 12;
-            ctx.globalAlpha = 0.35;
-            for (var i = 0; i < rayCount; i++) {
-                var ra = i * TWO_PI_SK / rayCount + t * 0.5;
-                var rayLen = r * (0.4 + Math.sin(t * 3 + i * 2) * 0.15);
-                ctx.strokeStyle = '#ffcc00'; ctx.lineWidth = r * 0.12;
-                ctx.lineCap = 'round';
-                ctx.beginPath();
-                ctx.moveTo(Math.cos(ra) * r * 0.9, Math.sin(ra) * r * 0.9);
-                ctx.lineTo(Math.cos(ra) * (r + rayLen), Math.sin(ra) * (r + rayLen));
-                ctx.stroke();
-            }
-            ctx.globalAlpha = 1; ctx.restore();
-        }
-        this._glow(ctx, x, y, r, '#ff8800', 0.25);
+        this._glow(ctx, x, y, r * 1.5, '#ff6600', 0.2 + Math.sin(t*2)*0.05);
         ctx.save(); ctx.translate(x, y);
-        // Sun body
-        var sg = ctx.createRadialGradient(-r * 0.15, -r * 0.15, 0, 0, 0, r);
-        sg.addColorStop(0, '#ffffff'); sg.addColorStop(0.15, '#ffee66');
-        sg.addColorStop(0.4, '#ffaa00'); sg.addColorStop(0.7, '#ff6600');
-        sg.addColorStop(1, '#cc3300');
-        ctx.fillStyle = sg;
+        // Solar corona (outer flares)
+        ctx.globalAlpha = 0.3;
+        for (let i = 0; i < 12; i++) {
+            const fa = i * TWO_PI_SK / 12 + t * 0.8 + Math.sin(t + i) * 0.2;
+            const fLen = r * (0.6 + Math.sin(t*3 + i*1.7) * 0.25);
+            const fg = ctx.createLinearGradient(
+                Math.cos(fa)*r*0.8, Math.sin(fa)*r*0.8,
+                Math.cos(fa)*(r+fLen), Math.sin(fa)*(r+fLen)
+            );
+            fg.addColorStop(0, '#ffaa00'); fg.addColorStop(0.5, '#ff4400'); fg.addColorStop(1, 'transparent');
+            ctx.fillStyle = fg;
+            ctx.beginPath();
+            ctx.moveTo(Math.cos(fa-0.12)*r*0.85, Math.sin(fa-0.12)*r*0.85);
+            ctx.lineTo(Math.cos(fa)*(r+fLen), Math.sin(fa)*(r+fLen));
+            ctx.lineTo(Math.cos(fa+0.12)*r*0.85, Math.sin(fa+0.12)*r*0.85);
+            ctx.closePath(); ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+        // Sun body (hot plasma surface)
+        const sunG = ctx.createRadialGradient(-r*0.2, -r*0.2, 0, 0, 0, r);
+        sunG.addColorStop(0, '#ffffee'); sunG.addColorStop(0.2, '#ffee44');
+        sunG.addColorStop(0.5, '#ff8800'); sunG.addColorStop(0.8, '#cc4400');
+        sunG.addColorStop(1, '#882200');
+        ctx.fillStyle = sunG;
         ctx.beginPath(); ctx.arc(0, 0, r, 0, TWO_PI_SK); ctx.fill();
-        // Sunspots
+        // Solar granulation (surface convection cells)
         if (this.quality.detailLevel >= 1) {
-            ctx.fillStyle = '#cc4400'; ctx.globalAlpha = 0.3;
-            ctx.beginPath(); ctx.arc(r * 0.2, r * 0.1, r * 0.12, 0, TWO_PI_SK); ctx.fill();
-            ctx.beginPath(); ctx.arc(-r * 0.3, r * 0.25, r * 0.08, 0, TWO_PI_SK); ctx.fill();
+            ctx.globalAlpha = 0.15;
+            for (let i = 0; i < 8; i++) {
+                const ga = i * 0.79 + t * 0.2;
+                const gd = r * (0.2 + (i%4)*0.15);
+                const gx = Math.cos(ga)*gd, gy = Math.sin(ga)*gd;
+                ctx.fillStyle = i%2 === 0 ? '#ffcc44' : '#cc5500';
+                ctx.beginPath(); ctx.arc(gx, gy, r*0.12 + Math.sin(t+i)*r*0.03, 0, TWO_PI_SK); ctx.fill();
+            }
             ctx.globalAlpha = 1;
         }
-        // Highlight
-        ctx.globalAlpha = 0.6; ctx.fillStyle = '#fff';
-        ctx.beginPath(); ctx.arc(-r * 0.25, -r * 0.3, r * 0.1, 0, TWO_PI_SK); ctx.fill();
+        // Sunspots
+        ctx.fillStyle = '#993300'; ctx.globalAlpha = 0.4;
+        ctx.beginPath(); ctx.arc(r*0.2, r*0.1, r*0.1, 0, TWO_PI_SK); ctx.fill();
+        ctx.beginPath(); ctx.arc(-r*0.3, -r*0.15, r*0.07, 0, TWO_PI_SK); ctx.fill();
         ctx.globalAlpha = 1;
+        // Bright center
+        ctx.fillStyle = 'rgba(255,255,240,0.4)';
+        ctx.beginPath(); ctx.arc(-r*0.2, -r*0.2, r*0.25, 0, TWO_PI_SK); ctx.fill();
         ctx.restore();
     }
 
     _proj_phoenix(ctx, x, y, r, angle) {
-        // 涅槃之焰 — 火凤旋翼+金色羽翼散射+烈焰尾迹
+        // 赤炎烈阳: 微型太阳投射物 — 日冕+太阳风
         const t = this._time;
         ctx.save(); ctx.translate(x, y);
-        // 外层火焰旋翼(3对翼)
+        // Solar corona flares (small)
+        ctx.globalAlpha = 0.4;
         for (let i = 0; i < 6; i++) {
-            const wa = t * 8 + i * TWO_PI_SK / 6;
-            const wd = r * (0.5 + Math.sin(t * 3 + i * 1.1) * 0.15);
-            ctx.save(); ctx.translate(Math.cos(wa) * wd, Math.sin(wa) * wd); ctx.rotate(wa + t * 4 + Math.PI / 2);
-            ctx.globalAlpha = 0.5;
-            const wg = ctx.createLinearGradient(0, -r * 0.7, 0, r * 0.2);
-            wg.addColorStop(0, 'transparent'); wg.addColorStop(0.2, '#ffee88'); wg.addColorStop(0.5, '#ffaa00'); wg.addColorStop(0.8, '#ff4400'); wg.addColorStop(1, 'transparent');
-            ctx.fillStyle = wg;
+            const fa = t * 10 + i * TWO_PI_SK / 6;
+            const fLen = r * (0.3 + Math.sin(t*5+i*1.3)*0.15);
+            ctx.fillStyle = '#ff6600';
             ctx.beginPath();
-            ctx.moveTo(0, -r * 0.7); ctx.quadraticCurveTo(-r * 0.12, -r * 0.3, 0, r * 0.2);
-            ctx.quadraticCurveTo(r * 0.12, -r * 0.3, 0, -r * 0.7); ctx.fill();
-            ctx.restore();
+            ctx.moveTo(Math.cos(fa-0.15)*r*0.6, Math.sin(fa-0.15)*r*0.6);
+            ctx.lineTo(Math.cos(fa)*(r*0.6+fLen), Math.sin(fa)*(r*0.6+fLen));
+            ctx.lineTo(Math.cos(fa+0.15)*r*0.6, Math.sin(fa+0.15)*r*0.6);
+            ctx.closePath(); ctx.fill();
         }
-        // 金色能量环
-        ctx.globalAlpha = 0.4 + Math.sin(t * 6) * 0.2;
-        ctx.strokeStyle = '#ffcc00'; ctx.lineWidth = r * 0.05;
-        ctx.beginPath(); ctx.arc(0, 0, r * 1.1, 0, TWO_PI_SK); ctx.stroke();
-        ctx.strokeStyle = '#ff6600'; ctx.lineWidth = r * 0.03;
-        ctx.beginPath(); ctx.arc(0, 0, r * 1.3, t * 9, t * 9 + Math.PI * 0.8); ctx.stroke();
-        // 核心烈焰球
         ctx.globalAlpha = 1;
-        const cg = ctx.createRadialGradient(0, 0, 0, 0, 0, r * 0.55);
-        cg.addColorStop(0, '#fff'); cg.addColorStop(0.15, '#ffee88'); cg.addColorStop(0.4, '#ffaa00'); cg.addColorStop(0.7, '#ff4400'); cg.addColorStop(1, '#cc1100');
-        ctx.fillStyle = cg;
-        ctx.beginPath(); ctx.arc(0, 0, r * 0.55, 0, TWO_PI_SK); ctx.fill();
-        // 散射羽翼粒子
-        ctx.globalAlpha = 0.55;
-        for (let i = 0; i < 10; i++) {
-            const pa = t * 7 + i * 0.63;
-            const pd = r * (0.6 + Math.sin(t * 4 + i * 1.4) * 0.5);
-            const hue = 30 + (i * 8) % 30;
-            ctx.fillStyle = `hsl(${hue}, 100%, ${60 + Math.sin(t * 3 + i) * 15}%)`;
-            ctx.beginPath(); ctx.arc(Math.cos(pa) * pd, Math.sin(pa) * pd, 2, 0, TWO_PI_SK); ctx.fill();
+        // Sun body
+        const sg = ctx.createRadialGradient(-r*0.1, -r*0.1, 0, 0, 0, r*0.6);
+        sg.addColorStop(0, '#ffffee'); sg.addColorStop(0.3, '#ffcc00');
+        sg.addColorStop(0.6, '#ff8800'); sg.addColorStop(1, '#cc3300');
+        ctx.fillStyle = sg;
+        ctx.beginPath(); ctx.arc(0, 0, r*0.6, 0, TWO_PI_SK); ctx.fill();
+        // Bright center
+        ctx.fillStyle = 'rgba(255,255,240,0.5)';
+        ctx.beginPath(); ctx.arc(-r*0.1, -r*0.1, r*0.15, 0, TWO_PI_SK); ctx.fill();
+        // Orbiting embers
+        ctx.fillStyle = '#ffaa00'; ctx.globalAlpha = 0.6;
+        for (let i = 0; i < 5; i++) {
+            const oa = t*6 + i*1.26;
+            const od = r*(0.7 + Math.sin(t*3+i)*0.2);
+            ctx.beginPath(); ctx.arc(Math.cos(oa)*od, Math.sin(oa)*od, 1.5, 0, TWO_PI_SK); ctx.fill();
         }
         ctx.restore();
-        if (this.quality.glowEnabled) this._glow(ctx, x, y, r * 1.0, '#ff6600', 0.35);
+        if (this.quality.glowEnabled) this._glow(ctx, x, y, r*0.8, '#ff6600', 0.3);
     }
 
     // ============================================
