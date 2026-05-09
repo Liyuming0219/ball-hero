@@ -344,20 +344,20 @@ this.expToNext = 80;
         while (this.exp >= this.expToNext) {
             this.exp -= this.expToNext;
             this.level++;
-            // 经验曲线：参考VS节奏，8-10分钟到Lv36
-            // Lv2=80, Lv5=141, Lv10=266, Lv15=415, Lv20=585, Lv30=986
-            this.expToNext = Math.floor(80 + (this.level - 1) * 18 + Math.pow(this.level - 1, 1.8));
+            // 经验曲线：7-8分钟成型节奏，平滑递增
+            // Lv2=100, Lv5=195, Lv10=400, Lv15=660, Lv20=985, Lv30=1790
+            this.expToNext = Math.floor(100 + (this.level - 1) * 25 + Math.pow(this.level - 1, 1.95));
 
-            // === 每级自动成长（削弱版）===
-            // 攻击力：每级 +2.5%（10级时累积约 1.25x，20级约 1.55x）
-            this.bonuses.attackMult += 0.025;
-            // 攻速：每级 +1.5%（10级时累积约 +0.15，20级约 +0.30）
-            this.bonuses.attackSpeedMult += 0.015;
-            // 最大生命：每级 +6（10级时+60，20级时+120）
-            this.bonuses.maxHpBonus += 6;
-            this.stats.hp = Math.min(this.stats.hp + 6, this.getMaxHp());
-            // 回血：每级 +0.15/秒（10级时+1.5/秒，20级时+3/秒）
-            this.bonuses.hpRegenBonus += 0.15;
+            // === 每级自动成长（平衡版）===
+            // 攻击力：每级 +2.0%（10级时累积约 1.20x，20级约 1.45x）
+            this.bonuses.attackMult += 0.020;
+            // 攻速：每级 +1.2%（10级时累积约 +0.12，20级约 +0.24）
+            this.bonuses.attackSpeedMult += 0.012;
+            // 最大生命：每级 +5（10级时+50，20级时+100）
+            this.bonuses.maxHpBonus += 5;
+            this.stats.hp = Math.min(this.stats.hp + 5, this.getMaxHp());
+            // 回血：每级 +0.12/秒（10级时+1.2/秒，20级时+2.4/秒）
+            this.bonuses.hpRegenBonus += 0.12;
             // 护甲：每3级 +1（10级时+3，20级时+6）
             if (this.level % 3 === 0) {
                 this.bonuses.armorBonus += 1;

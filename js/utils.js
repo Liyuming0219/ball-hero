@@ -305,6 +305,7 @@ const MetaProgress = {
                 armor: 0,       // 每级+1护甲
                 hpRegen: 0,     // 每级+0.5生命恢复
                 cooldown: 0,    // 每级+3%攻速
+                goldGain: 0,    // 每级+8%金币获取
             }
         };
     },
@@ -372,13 +373,14 @@ const MetaProgress = {
         player.bonuses.armorBonus += p.armor * 1;
         player.bonuses.hpRegenBonus += p.hpRegen * 0.5;
         player.bonuses.attackSpeedMult += p.cooldown * 0.03;
+        player.bonuses.goldBonus += (p.goldGain || 0) * 0.08;
     },
 
     // 购买永久升级
     buyUpgrade(type) {
         const d = this.data;
-        const costs = { maxHp: 50, attack: 80, moveSpeed: 60, pickupRange: 40, expGain: 70, critRate: 90, armor: 60, hpRegen: 50, cooldown: 100 };
-        const maxLevels = { maxHp: 10, attack: 10, moveSpeed: 8, pickupRange: 8, expGain: 8, critRate: 6, armor: 8, hpRegen: 8, cooldown: 5 };
+        const costs = { maxHp: 50, attack: 80, moveSpeed: 60, pickupRange: 40, expGain: 70, critRate: 90, armor: 60, hpRegen: 50, cooldown: 100, goldGain: 60 };
+        const maxLevels = { maxHp: 10, attack: 10, moveSpeed: 8, pickupRange: 8, expGain: 8, critRate: 6, armor: 8, hpRegen: 8, cooldown: 5, goldGain: 8 };
         const cost = (costs[type] || 100) * (1 + d.permUpgrades[type]);
         if (d.gold >= cost && d.permUpgrades[type] < (maxLevels[type] || 10)) {
             d.gold -= cost;

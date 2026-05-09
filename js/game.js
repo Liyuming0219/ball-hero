@@ -1,7 +1,16 @@
 ﻿// ============================================
 // 游戏版本号
 // ============================================
-var GAME_VERSION = 'v2.3.0';
+var GAME_VERSION = 'v2.4.0';
+
+// ============================================
+// 更新公告（滚动播放，可手动关闭）
+// ============================================
+var GAME_ANNOUNCEMENTS = [
+    'v2.4.0 - 平衡调整：英雄成型节奏延长至7-8分钟，怪物强度曲线同步优化',
+    'v2.4.0 - 修复暗影森林地图偶发颜色闪烁问题',
+    'v2.4.0 - 新增更新公告滚动提示功能',
+];
 
 // 性能常量（避免每帧重复创建）
 const RECYCLE_DIST_SQ = 1500 * 1500; // 超出此距离回收敌人
@@ -106,6 +115,14 @@ class Game {
         this.achievementPopup = null;
         this.achievementTimer = 0;
         this.deathAnimEnemies = []; // 正在播放死亡动画的敌人
+
+        // === 更新公告系统 ===
+        this._announcementVisible = GAME_ANNOUNCEMENTS.length > 0;
+        this._announcementDismissed = false;
+        this._announcementScroll = 0;
+        // 拼接所有公告为一条滚动文本，用分隔符隔开
+        this._announcementText = GAME_ANNOUNCEMENTS.join('    ★    ');
+        this._announcementWidth = 0; // 将在首次渲染时测量
 
         // === 皮肤系统 ===
         if (typeof SkinRenderer !== 'undefined') {
@@ -340,6 +357,16 @@ svgSpriteLoader.loadAll();
         this.ctx.fillStyle = '#1a1048';
         this.ctx.fillRect(0, 0, this.logicWidth, this.logicHeight);
 
+        // 公告关闭按钮点击检测（优先于其他UI，避免被其他状态消费掉click）
+        if (this._announcementVisible && !this._announcementDismissed && this.ui.clicked && this.ui.mouseY < 28) {
+            const _abtnSize = 20, _abtnX = this.logicWidth - _abtnSize - 6, _abtnY = (28 - _abtnSize) / 2;
+            if (this.ui.mouseX >= _abtnX && this.ui.mouseX <= _abtnX + _abtnSize &&
+                this.ui.mouseY >= _abtnY && this.ui.mouseY <= _abtnY + _abtnSize) {
+                this._announcementDismissed = true;
+                this.ui.clicked = false;
+            }
+        }
+
         // 冻帧处理：仍然渲染但不更新逻辑
         if (this.freezeTimer > 0) {
             this.freezeTimer -= rawDt;
@@ -378,6 +405,9 @@ svgSpriteLoader.loadAll();
                 break;
         }
 
+        // 更新公告滚动横幅（所有状态下显示，直到用户关闭）
+        this._renderAnnouncement(dt);
+
         // FPS显示（根据设置决定是否显示）
         if (this.ui.settings.showFps) {
             this.ctx.font = "12px 'Consolas', 'Monaco', 'Courier New', monospace";
@@ -387,6 +417,71 @@ svgSpriteLoader.loadAll();
         }
 
         requestAnimationFrame((t) => this.loop(t));
+    }
+
+    // === 更新公告滚动横幅 ===
+    _renderAnnouncement(dt) {
+        if (!this._announcementVisible || this._announcementDismissed) return;
+
+        const ctx = this.ctx;
+        const W = this.logicWidth;
+        const barH = 28;
+        const fontSize = 13;
+        const scrollSpeed = 60; // 像素/秒
+
+        const btnSize = 20;
+        const btnX = W - btnSize - 6;
+        const btnY = (barH - btnSize) / 2;
+
+        ctx.save();
+
+        // 半透明背景条
+        ctx.globalAlpha = 0.88;
+        ctx.fillStyle = '#1a1a2e';
+        ctx.fillRect(0, 0, W, barH);
+        // 底部分割线
+        ctx.globalAlpha = 0.6;
+        ctx.fillStyle = '#44aaff';
+        ctx.fillRect(0, barH - 1, W, 1);
+
+        // 公告文字
+        ctx.globalAlpha = 1;
+        ctx.font = `${fontSize}px 'Microsoft YaHei','PingFang SC',Arial,sans-serif`;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#eef';
+
+        // 首次测量文本宽度
+        if (this._announcementWidth === 0) {
+            this._announcementWidth = ctx.measureText(this._announcementText).width;
+        }
+
+        // 更新滚动位置
+        this._announcementScroll += scrollSpeed * dt;
+        const totalWidth = this._announcementWidth + W;
+        if (this._announcementScroll > totalWidth) {
+            this._announcementScroll -= totalWidth;
+        }
+
+        // 绘制滚动文本（从右侧入场向左滚动）
+        const textX = W - this._announcementScroll;
+        ctx.fillText(this._announcementText, textX, barH / 2);
+        // 循环：当文本左端即将消失时，在右侧再画一次实现无缝循环
+        if (textX + this._announcementWidth < W) {
+            ctx.fillText(this._announcementText, textX + this._announcementWidth + W * 0.3, barH / 2);
+        }
+
+        // 关闭按钮（右侧 × 号）
+        ctx.globalAlpha = 0.7;
+        ctx.fillStyle = '#334';
+        ctx.fillRect(btnX, btnY, btnSize, btnSize);
+        ctx.globalAlpha = 1;
+        ctx.font = `bold ${fontSize}px Arial,sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#aaa';
+        ctx.fillText('✕', btnX + btnSize / 2, barH / 2 + 1);
+
+        ctx.restore();
     }
 
     // === 标题界面 ===
@@ -408,7 +503,13 @@ svgSpriteLoader.loadAll();
     _updateSettings(dt) {
         const result = this.ui.renderSettingsScreen(dt);
         if (result === 'back') {
-            this.state = 'title';
+            // 如果是从暂停界面进入设置，返回暂停；否则返回标题
+            if (this._settingsReturnState) {
+                this.state = this._settingsReturnState;
+                this._settingsReturnState = null;
+            } else {
+                this.state = 'title';
+            }
         }
     }
 
@@ -2366,6 +2467,9 @@ svgSpriteLoader.loadAll();
             this.showStatsPanel = false;
             this._victoryRecorded = false;
             this._victoryGold = 0;
+        } else if (result === 'settings') {
+            this._settingsReturnState = 'paused';
+            this.state = 'settings';
         } else if (result === 'quit') {
             this.state = 'menu';
             this.showStatsPanel = false;

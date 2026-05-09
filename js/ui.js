@@ -954,7 +954,7 @@ class UISystem {
             { id: 'armor', name: '铁壁', icon: '🛡️', desc: '+1 护甲/级', color: '#8899bb', baseCost: 60, maxLv: 8 },
             { id: 'hpRegen', name: '再生', icon: '💚', desc: '+0.5 回复/秒/级', color: '#44ff88', baseCost: 50, maxLv: 8 },
             { id: 'cooldown', name: '疾风', icon: '⚡', desc: '+3% 攻速/级', color: '#ffdd44', baseCost: 100, maxLv: 5 },
-            { id: 'startBuff', name: '天赋觉醒', icon: '🌟', desc: '每级解锁起始技能', color: '#ff8800', baseCost: 200, maxLv: 5 },
+            { id: 'goldGain', name: '聚财', icon: '💰', desc: '+8% 金币获取/级', color: '#ffcc00', baseCost: 60, maxLv: 8 },
         ];
 
         // 卡片布局（2行5列）
@@ -1039,7 +1039,7 @@ class UISystem {
                 moveSpeed: `+${currentLv * 2}%移速`, pickupRange: `+${currentLv * 10}范围`,
                 expGain: `+${currentLv * 5}%经验`, critRate: `+${currentLv * 2}%暴击`,
                 armor: `+${currentLv}护甲`, hpRegen: `+${(currentLv * 0.5).toFixed(1)}/秒`,
-                cooldown: `+${currentLv * 3}%攻速`, startBuff: `${currentLv}个起始技能`,
+                cooldown: `+${currentLv * 3}%攻速`, goldGain: `+${currentLv * 8}%金币`,
             };
             ctx.fillText(effectMap[upg.id] || '', cx + cardW / 2, cy + 136 * S);
 
@@ -2808,6 +2808,7 @@ class UISystem {
         const buttons = [
             { label: '继续', action: 'resume', color: '#44aa44', hoverColor: '#55cc55', glow: '#44ff44' },
             { label: showStats ? '关闭属性' : '查看属性', action: 'stats', color: '#4466aa', hoverColor: '#5588cc', glow: '#4488ff' },
+            { label: '设置', action: 'settings', color: '#556688', hoverColor: '#6688aa', glow: '#88aacc' },
             { label: '结束战斗', action: 'endBattle', color: '#aa8822', hoverColor: '#ccaa33', glow: '#ffcc44' },
             { label: '退出', action: 'quit', color: '#884444', hoverColor: '#aa5555', glow: '#ff4444' },
         ];
