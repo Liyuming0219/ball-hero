@@ -332,6 +332,9 @@ class Game {
         }
 
         this.ctx.clearRect(0, 0, this.logicWidth, this.logicHeight);
+        // 防止任何情况下出现黑屏：先铺底色
+        this.ctx.fillStyle = '#1a1048';
+        this.ctx.fillRect(0, 0, this.logicWidth, this.logicHeight);
 
         // 冻帧处理：仍然渲染但不更新逻辑
         if (this.freezeTimer > 0) {
@@ -1991,15 +1994,12 @@ class Game {
     }
 
     _getMapTheme(t) {
-        // 优先使用玩家选择的地图
+        // 优先使用玩家选择的地图（锁定，不随时间变化）
         if (this.selectedMapId) {
             const map = GameMaps.find(m => m.id === this.selectedMapId);
             if (map) return map;
         }
-        // 回退：基于时间的旧逻辑
-        for (let i = MapThemes.length - 1; i >= 0; i--) {
-            if (t >= MapThemes[i].timeRange[0]) return MapThemes[i];
-        }
+        // 回退：固定使用第一张地图，避免主题突然切换导致背景闪黑
         return MapThemes[0];
     }
 

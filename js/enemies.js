@@ -859,13 +859,17 @@ class Enemy {
 
         const bob = lod < 2 ? Math.sin(this.bodyBob) * 2 : 0; // 低LOD不算bob
 
-        // === LOD 2: 简化渲染 —— 圆形身体 + 血条，无眼睛/特效 ===
+        // === LOD 2: 简化渲染 —— 圆形身体 + 描边 + 血条，无眼睛/特效 ===
         if (lod === 2) {
             ctx.fillStyle = this.damageFlash > 0 ? '#ffffff' : this.color;
             const r = this.radius;
             ctx.beginPath();
             ctx.arc(sx, sy, r, 0, TWO_PI);
             ctx.fill();
+            // 亮色描边提升可见度
+            ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
             if (this.hp < this.maxHp) {
                 const barW = r * 2.5, barH = 4;
                 const barY = sy - r - 8;
@@ -894,6 +898,10 @@ class Enemy {
             ctx.beginPath();
             ctx.arc(sx, sy + bob, r, 0, TWO_PI);
             ctx.fill();
+            // 亮色描边
+            ctx.strokeStyle = 'rgba(255,255,255,0.45)';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
             // 眼睛用 fillRect
             ctx.fillStyle = this.isBoss ? '#ffaa00' : '#ff4444';
             const es = r * 0.2;
@@ -967,6 +975,10 @@ class Enemy {
             ctx.beginPath();
             ctx.arc(sx, sy + bob, this.radius, 0, TWO_PI);
             ctx.fill();
+            // 亮色描边提升可见度
+            ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+            ctx.lineWidth = 2;
+            ctx.stroke();
             // 受伤闪白
             if (this.damageFlash > 0) {
                 ctx.globalAlpha = 0.4;
