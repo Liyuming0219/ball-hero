@@ -2031,33 +2031,7 @@ class Game {
 
         // （已移除漂浮球球和星尘粒子）
 
-        // ── 网格线（主题颜色 增强）—— 移动端使用更大间隔 ──
-        const gridStep = mobile ? gridSize * 2 : gridSize;
-        ctx.strokeStyle = theme.gridColor;
-        ctx.lineWidth = mobile ? 1.5 : 2;
-        ctx.beginPath();
-        for (let x = startX; x <= endX; x += gridStep) {
-            const sx = x - camera.x;
-            ctx.moveTo(sx, 0);
-            ctx.lineTo(sx, H);
-        }
-        for (let y = startY; y <= endY; y += gridStep) {
-            const sy = y - camera.y;
-            ctx.moveTo(0, sy);
-            ctx.lineTo(W, sy);
-        }
-        ctx.stroke();
-
-        // 交叉点发光小点（增大）
-        ctx.fillStyle = theme.dotColor;
-        const dotR = mobile ? 1.5 : 2.5;
-        for (let x = startX; x <= endX; x += gridSize) {
-            for (let y = startY; y <= endY; y += gridSize) {
-                const px = x - camera.x;
-                const py = y - camera.y;
-                ctx.fillRect(px - dotR, py - dotR, dotR * 2, dotR * 2);
-            }
-        }
+        // （已移除网格线和交叉点）
 
         // ── 环境装饰物（固定在世界坐标）—— 大幅增加数量 ──
         const decorCount = mobile ? 40 : 200;
