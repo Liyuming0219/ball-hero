@@ -192,7 +192,7 @@ class Player {
         this.stats = { ...charDef.baseStats };
         this.level = 1;
         this.exp = 0;
-        this.expToNext = 15;
+        this.expToNext = 30;
         this.kills = 0;
 
         // 状态
@@ -344,9 +344,9 @@ class Player {
         while (this.exp >= this.expToNext) {
             this.exp -= this.expToNext;
             this.level++;
-            // 经验曲线：基础15，增长率1.25（原1.35，降低后期升级门槛）
-            // Lv2=15, Lv5=37, Lv10=93, Lv15=231, Lv20=574
-            this.expToNext = Math.floor(15 * Math.pow(1.25, this.level - 1));
+            // 经验曲线：线性+小幅指数混合，前期不会太快，后期不会太慢
+            // Lv2=30, Lv5=54, Lv10=92, Lv15=138, Lv20=192
+            this.expToNext = Math.floor(30 + (this.level - 1) * 8 + Math.pow(this.level - 1, 1.3));
 
             // === 每级自动成长（削弱版）===
             // 攻击力：每级 +2.5%（10级时累积约 1.25x，20级约 1.55x）
