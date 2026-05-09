@@ -540,62 +540,105 @@ SkinRenderer.prototype._body_thunder = function(ctx, x, y, r, angle) {
     const t = this._time;
     this._shadow(ctx, x, y, r);
     ctx.save(); ctx.translate(x, y);
-    // Electric blue core sphere
-    const coreG = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
-    coreG.addColorStop(0, '#ffffff'); coreG.addColorStop(0.2, '#aaddff');
-    coreG.addColorStop(0.5, '#4488ff'); coreG.addColorStop(0.8, '#2244aa');
+    // 外圈电弧光晕 (大范围闪电笼罩)
+    if (this.quality.glowEnabled) {
+        ctx.globalAlpha = 0.2 + Math.sin(t*6)*0.08;
+        const outerGlow = ctx.createRadialGradient(0, 0, r*0.8, 0, 0, r*2.2);
+        outerGlow.addColorStop(0, '#4488ff'); outerGlow.addColorStop(0.4, '#2244aa44');
+        outerGlow.addColorStop(1, 'transparent');
+        ctx.fillStyle = outerGlow;
+        ctx.beginPath(); ctx.arc(0, 0, r*2.2, 0, TWO_PI_NEW); ctx.fill();
+        ctx.globalAlpha = 1;
+    }
+    // 电蓝核心球体
+    const coreG = ctx.createRadialGradient(-r*0.15, -r*0.15, 0, 0, 0, r);
+    coreG.addColorStop(0, '#ffffff'); coreG.addColorStop(0.15, '#ddeeff');
+    coreG.addColorStop(0.4, '#4488ff'); coreG.addColorStop(0.7, '#2244aa');
     coreG.addColorStop(1, '#112266');
     ctx.fillStyle = coreG;
     ctx.beginPath(); ctx.arc(0, 0, r, 0, TWO_PI_NEW); ctx.fill();
-    // Inner electric arcs (contained within sphere)
-    ctx.strokeStyle = '#88ddff'; ctx.lineWidth = 1.5; ctx.globalAlpha = 0.6;
-    for (let i = 0; i < 3; i++) {
-        const startA = t * 8 + i * 2.1;
-        ctx.beginPath();
-        let px = Math.cos(startA) * r * 0.2;
-        let py = Math.sin(startA) * r * 0.2;
-        ctx.moveTo(px, py);
-        for (let seg = 0; seg < 4; seg++) {
-            px += (Math.random()-0.5) * r * 0.4;
-            py += (Math.random()-0.5) * r * 0.4;
-            const d = Math.sqrt(px*px+py*py);
-            if (d > r*0.8) { px *= r*0.7/d; py *= r*0.7/d; }
-            ctx.lineTo(px, py);
-        }
-        ctx.stroke();
+    // 内部电浆脉动 (波动的亮斑)
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.globalAlpha = 0.25;
+    for (let i = 0; i < 4; i++) {
+        const px = Math.cos(t*3+i*1.57)*r*0.35;
+        const py = Math.sin(t*3+i*1.57)*r*0.35;
+        const pg = ctx.createRadialGradient(px, py, 0, px, py, r*0.35);
+        pg.addColorStop(0, '#ffffff'); pg.addColorStop(0.5, '#88ccff');
+        pg.addColorStop(1, 'transparent');
+        ctx.fillStyle = pg;
+        ctx.beginPath(); ctx.arc(px, py, r*0.35, 0, TWO_PI_NEW); ctx.fill();
     }
+    ctx.globalCompositeOperation = 'source-over';
     ctx.globalAlpha = 1;
-    // OUTER LIGHTNING BOLTS (realistic jagged, not just circles)
-    ctx.strokeStyle = '#ffee44'; ctx.lineWidth = 2; ctx.lineCap = 'round';
-    ctx.globalAlpha = 0.7 + Math.sin(t*10)*0.2;
-    for (let bolt = 0; bolt < 4; bolt++) {
-        const boltAngle = t * 3 + bolt * Math.PI / 2 + Math.sin(t*5+bolt)*0.3;
-        const startX = Math.cos(boltAngle) * r * 0.85;
-        const startY = Math.sin(boltAngle) * r * 0.85;
-        const endDist = r * (1.3 + Math.sin(t*4+bolt*1.3)*0.3);
-        const endX = Math.cos(boltAngle) * endDist;
-        const endY = Math.sin(boltAngle) * endDist;
-        // Jagged zigzag path
-        ctx.beginPath(); ctx.moveTo(startX, startY);
-        const segs = 4;
+    // *** 外圈闪电 — 多条粗壮分叉闪电从球体射出 ***
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    for (let bolt = 0; bolt < 6; bolt++) {
+        const boltAngle = t * 2.5 + bolt * TWO_PI_NEW / 6 + Math.sin(t*4+bolt*2)*0.4;
+        const boltLen = r * (0.8 + Math.sin(t*6+bolt*1.7)*0.35);
+        // 确定性伪随机 (避免闪烁)
+        const seed = bolt * 137.5 + Math.floor(t*8)*0.1;
+        // 主干闪电路径 (粗锯齿)
+        const points = [{x: Math.cos(boltAngle)*r*0.9, y: Math.sin(boltAngle)*r*0.9}];
+        const segs = 5;
         for (let s = 1; s <= segs; s++) {
             const frac = s / segs;
-            const mx = startX + (endX-startX)*frac;
-            const my = startY + (endY-startY)*frac;
-            const perpX = -(endY-startY) / endDist;
-            const perpY = (endX-startX) / endDist;
-            const jitter = (Math.sin(t*15 + bolt*3 + s*2.7) * 0.5) * r * 0.2;
-            ctx.lineTo(mx + perpX*jitter, my + perpY*jitter);
+            const baseX = Math.cos(boltAngle) * (r*0.9 + boltLen*frac);
+            const baseY = Math.sin(boltAngle) * (r*0.9 + boltLen*frac);
+            const perpX = -Math.sin(boltAngle);
+            const perpY = Math.cos(boltAngle);
+            const jitter = Math.sin(seed + s*3.7) * r * 0.3 * (1 - frac*0.3);
+            points.push({x: baseX + perpX*jitter, y: baseY + perpY*jitter});
         }
+        // 外发光层 (宽+半透明)
+        ctx.strokeStyle = '#4488ff'; ctx.lineWidth = 4; ctx.globalAlpha = 0.35;
+        ctx.beginPath(); ctx.moveTo(points[0].x, points[0].y);
+        for (let p = 1; p < points.length; p++) ctx.lineTo(points[p].x, points[p].y);
         ctx.stroke();
-        // Bright tip flash
-        ctx.fillStyle = '#ffffff'; ctx.globalAlpha = 0.6;
-        ctx.beginPath(); ctx.arc(endX, endY, 2, 0, TWO_PI_NEW); ctx.fill();
+        // 主干亮白色
+        ctx.strokeStyle = '#ffee44'; ctx.lineWidth = 2.5; ctx.globalAlpha = 0.8;
+        ctx.beginPath(); ctx.moveTo(points[0].x, points[0].y);
+        for (let p = 1; p < points.length; p++) ctx.lineTo(points[p].x, points[p].y);
+        ctx.stroke();
+        // 内芯超亮白
+        ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.2; ctx.globalAlpha = 0.9;
+        ctx.beginPath(); ctx.moveTo(points[0].x, points[0].y);
+        for (let p = 1; p < points.length; p++) ctx.lineTo(points[p].x, points[p].y);
+        ctx.stroke();
+        // 分叉闪电 (从中间点分出小枝)
+        if (bolt % 2 === 0 && points.length > 3) {
+            const branchPt = points[2];
+            const branchAngle = boltAngle + Math.sin(seed+bolt)*0.8;
+            const branchLen = boltLen * 0.4;
+            ctx.strokeStyle = '#88ccff'; ctx.lineWidth = 1.5; ctx.globalAlpha = 0.6;
+            ctx.beginPath(); ctx.moveTo(branchPt.x, branchPt.y);
+            let bx = branchPt.x, by = branchPt.y;
+            for (let bs = 0; bs < 3; bs++) {
+                bx += Math.cos(branchAngle)*branchLen/3 + Math.sin(seed+bs*5)*r*0.12;
+                by += Math.sin(branchAngle)*branchLen/3 + Math.cos(seed+bs*5)*r*0.12;
+                ctx.lineTo(bx, by);
+            }
+            ctx.stroke();
+        }
+        // 末端爆裂闪光
+        const tip = points[points.length-1];
+        ctx.fillStyle = '#ffffff'; ctx.globalAlpha = 0.7 + Math.sin(t*12+bolt)*0.3;
+        ctx.beginPath(); ctx.arc(tip.x, tip.y, 3, 0, TWO_PI_NEW); ctx.fill();
     }
     ctx.globalAlpha = 1;
-    // Central glow
-    ctx.fillStyle = 'rgba(255,238,68,0.3)';
-    ctx.beginPath(); ctx.arc(0, 0, r*0.3, 0, TWO_PI_NEW); ctx.fill();
+    // 球面电弧环 (贴着球面的快速弧线)
+    ctx.strokeStyle = '#88ddff'; ctx.lineWidth = 1.5; ctx.globalAlpha = 0.5;
+    for (let i = 0; i < 3; i++) {
+        const arcStart = t*8 + i*2.1;
+        ctx.beginPath(); ctx.arc(0, 0, r*0.92, arcStart, arcStart + Math.PI*0.5 + Math.sin(t*3+i)*0.3);
+        ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+    // 中心白热点
+    const centerG = ctx.createRadialGradient(0, 0, 0, 0, 0, r*0.25);
+    centerG.addColorStop(0, 'rgba(255,255,255,0.7)'); centerG.addColorStop(1, 'transparent');
+    ctx.fillStyle = centerG;
+    ctx.beginPath(); ctx.arc(0, 0, r*0.25, 0, TWO_PI_NEW); ctx.fill();
     ctx.restore();
 };;
 SkinRenderer.prototype._proj_thunder = function(ctx, x, y, r, angle) {
@@ -610,60 +653,96 @@ SkinRenderer.prototype._body_glacier = function(ctx, x, y, r, angle) {
     const t = this._time;
     this._shadow(ctx, x, y, r);
     ctx.save(); ctx.translate(x, y);
-    // Ice sphere with crystalline facets
-    const iceG = ctx.createRadialGradient(-r*0.2, -r*0.2, 0, 0, 0, r);
-    iceG.addColorStop(0, '#ffffff'); iceG.addColorStop(0.2, '#ccf0ff');
-    iceG.addColorStop(0.5, '#66bbdd'); iceG.addColorStop(0.8, '#3388aa');
-    iceG.addColorStop(1, '#224466');
-    ctx.fillStyle = iceG;
-    ctx.beginPath(); ctx.arc(0, 0, r, 0, TWO_PI_NEW); ctx.fill();
-    // Crystalline facet lines (hexagonal ice pattern)
-    ctx.strokeStyle = 'rgba(200,240,255,0.4)'; ctx.lineWidth = 0.8;
-    for (let i = 0; i < 6; i++) {
-        const a = (i/6)*TWO_PI_NEW + t*0.1;
-        ctx.beginPath(); ctx.moveTo(0, 0);
-        ctx.lineTo(Math.cos(a)*r*0.9, Math.sin(a)*r*0.9); ctx.stroke();
-        // Cross-connecting lines
-        const a2 = ((i+1)/6)*TWO_PI_NEW + t*0.1;
-        ctx.beginPath();
-        ctx.moveTo(Math.cos(a)*r*0.5, Math.sin(a)*r*0.5);
-        ctx.lineTo(Math.cos(a2)*r*0.5, Math.sin(a2)*r*0.5);
-        ctx.stroke();
+    // 外圈冰霜光晕
+    if (this.quality.glowEnabled) {
+        ctx.globalAlpha = 0.15;
+        const frostGlow = ctx.createRadialGradient(0, 0, r*0.6, 0, 0, r*2.0);
+        frostGlow.addColorStop(0, '#66ccff'); frostGlow.addColorStop(0.5, '#3388aa44');
+        frostGlow.addColorStop(1, 'transparent');
+        ctx.fillStyle = frostGlow;
+        ctx.beginPath(); ctx.arc(0, 0, r*2.0, 0, TWO_PI_NEW); ctx.fill();
+        ctx.globalAlpha = 1;
     }
-    // Ice crystal spikes protruding outward
-    ctx.fillStyle = '#aaeeff'; ctx.globalAlpha = 0.6;
-    for (let i = 0; i < 6; i++) {
-        const sa = (i/6)*TWO_PI_NEW + t*0.15 + Math.sin(t+i)*0.1;
-        const sLen = r * (0.3 + Math.sin(t*2+i*1.1)*0.1);
-        ctx.save(); ctx.rotate(sa);
+    // 不规则冰晶体外形 (非圆形, 8角冰棱)
+    const icePath = () => {
         ctx.beginPath();
-        ctx.moveTo(r*0.8, -r*0.06); ctx.lineTo(r*0.8 + sLen, 0);
-        ctx.lineTo(r*0.8, r*0.06); ctx.closePath(); ctx.fill();
+        for (let i = 0; i < 8; i++) {
+            const a = (i/8)*TWO_PI_NEW - Math.PI/8;
+            const pr = r * (0.85 + Math.sin(a*3+1.5)*0.15);
+            ctx.lineTo(Math.cos(a)*pr, Math.sin(a)*pr);
+        }
+        ctx.closePath();
+    };
+    // 冰体填充
+    ctx.save(); icePath(); ctx.clip();
+    const iceG = ctx.createRadialGradient(-r*0.2, -r*0.2, 0, 0, 0, r);
+    iceG.addColorStop(0, '#ffffff'); iceG.addColorStop(0.15, '#e8f8ff');
+    iceG.addColorStop(0.4, '#88ddff'); iceG.addColorStop(0.7, '#3399cc');
+    iceG.addColorStop(1, '#1a5577');
+    ctx.fillStyle = iceG; ctx.fillRect(-r, -r, r*2, r*2);
+    // 内部冰裂纹 (分叉裂缝, 从中心放射)
+    ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 1.2; ctx.lineCap = 'round';
+    for (let i = 0; i < 5; i++) {
+        const ca = i * TWO_PI_NEW / 5 + 0.3;
+        ctx.beginPath(); ctx.moveTo(0, 0);
+        let cx = 0, cy = 0;
+        for (let seg = 0; seg < 4; seg++) {
+            cx += Math.cos(ca + Math.sin(i+seg)*0.4) * r * 0.2;
+            cy += Math.sin(ca + Math.sin(i+seg)*0.4) * r * 0.2;
+            ctx.lineTo(cx, cy);
+        }
+        ctx.stroke();
+        // 裂缝小分支
+        if (i % 2 === 0) {
+            const bx = Math.cos(ca)*r*0.35, by = Math.sin(ca)*r*0.35;
+            ctx.beginPath(); ctx.moveTo(bx, by);
+            ctx.lineTo(bx + Math.cos(ca+0.7)*r*0.2, by + Math.sin(ca+0.7)*r*0.2);
+            ctx.stroke();
+        }
+    }
+    ctx.restore();
+    // 冰晶体外轮廓描边
+    ctx.strokeStyle = '#aaeeff'; ctx.lineWidth = 2; ctx.globalAlpha = 0.8;
+    icePath(); ctx.stroke();
+    ctx.globalAlpha = 1;
+    // *** 大型冰刺突出 (粗锥形, 有体积感) ***
+    for (let i = 0; i < 6; i++) {
+        const sa = (i/6)*TWO_PI_NEW + t*0.08;
+        const sLen = r * (0.45 + Math.sin(t*1.5+i*1.2)*0.12);
+        const sWidth = r * 0.12;
+        ctx.save(); ctx.rotate(sa);
+        // 冰刺渐变
+        const spikeG = ctx.createLinearGradient(r*0.75, 0, r*0.75+sLen, 0);
+        spikeG.addColorStop(0, '#aaeeff'); spikeG.addColorStop(0.4, '#66ccee');
+        spikeG.addColorStop(0.8, '#88eeff'); spikeG.addColorStop(1, '#ffffff');
+        ctx.fillStyle = spikeG; ctx.globalAlpha = 0.75;
+        ctx.beginPath();
+        ctx.moveTo(r*0.7, -sWidth); ctx.lineTo(r*0.75+sLen, 0);
+        ctx.lineTo(r*0.7, sWidth); ctx.closePath(); ctx.fill();
+        // 冰刺高光边
+        ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 0.8; ctx.globalAlpha = 0.5;
+        ctx.beginPath(); ctx.moveTo(r*0.72, -sWidth*0.5); ctx.lineTo(r*0.75+sLen*0.8, 0); ctx.stroke();
         ctx.restore();
     }
     ctx.globalAlpha = 1;
-    // Inner frozen cracks
-    ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1; ctx.globalAlpha = 0.3;
-    for (let i = 0; i < 4; i++) {
-        const ca = i * 1.57 + 0.3;
-        ctx.beginPath(); ctx.moveTo(Math.cos(ca)*r*0.15, Math.sin(ca)*r*0.15);
-        ctx.lineTo(Math.cos(ca)*r*0.5 + Math.sin(t+i)*r*0.05, Math.sin(ca)*r*0.5);
-        ctx.lineTo(Math.cos(ca+0.3)*r*0.7, Math.sin(ca+0.3)*r*0.65);
-        ctx.stroke();
+    // 飘落冰晶粒子 (更大更亮)
+    for (let i = 0; i < 8; i++) {
+        const fa = t*1.2 + i*0.79;
+        const fd = r*(1.3 + Math.sin(t*1.5+i)*0.2);
+        ctx.globalAlpha = 0.4 + Math.sin(t*2+i)*0.25;
+        // 六角雪花形状
+        ctx.save(); ctx.translate(Math.cos(fa)*fd, Math.sin(fa)*fd); ctx.rotate(t*2+i);
+        ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 0.8;
+        for (let arm = 0; arm < 6; arm++) {
+            const aa = arm * TWO_PI_NEW / 6;
+            ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.cos(aa)*2.5, Math.sin(aa)*2.5); ctx.stroke();
+        }
+        ctx.restore();
     }
     ctx.globalAlpha = 1;
-    // Frost particles orbiting
-    ctx.fillStyle = '#ffffff';
-    for (let i = 0; i < 6; i++) {
-        const fa = t*1.5 + i*1.05;
-        const fd = r*1.1 + Math.sin(t*2+i)*r*0.1;
-        ctx.globalAlpha = 0.3 + Math.sin(t*3+i)*0.2;
-        ctx.beginPath(); ctx.arc(Math.cos(fa)*fd, Math.sin(fa)*fd, 1.5, 0, TWO_PI_NEW); ctx.fill();
-    }
-    ctx.globalAlpha = 1;
-    // Specular highlight
-    ctx.fillStyle = 'rgba(255,255,255,0.5)';
-    ctx.beginPath(); ctx.arc(-r*0.25, -r*0.3, r*0.15, 0, TWO_PI_NEW); ctx.fill();
+    // 高光
+    ctx.fillStyle = 'rgba(255,255,255,0.55)';
+    ctx.beginPath(); ctx.arc(-r*0.22, -r*0.28, r*0.14, 0, TWO_PI_NEW); ctx.fill();
     ctx.restore();
 };;;
 SkinRenderer.prototype._proj_glacier = function(ctx, x, y, r, angle) {

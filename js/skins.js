@@ -317,14 +317,14 @@ class SkinRenderer {
         const t = this._time;
         this._shadow(ctx, x, y, r);
         ctx.save(); ctx.translate(x, y);
-        // Heart/teardrop shape (wider at top, pointed bottom)
-        ctx.beginPath();
-        ctx.moveTo(0, r * 0.95);
-        ctx.bezierCurveTo(-r*0.5, r*0.4, -r*0.85, -r*0.1, -r*0.7, -r*0.5);
-        ctx.quadraticCurveTo(-r*0.4, -r*0.9, 0, -r*0.85);
-        ctx.quadraticCurveTo(r*0.4, -r*0.9, r*0.7, -r*0.5);
-        ctx.bezierCurveTo(r*0.85, -r*0.1, r*0.5, r*0.4, 0, r*0.95);
-        ctx.closePath();
+// Strawberry shape (wider at top, rounded bottom - not too pointy)
+ctx.beginPath();
+ctx.moveTo(0, r * 0.75);
+ctx.bezierCurveTo(-r*0.35, r*0.7, -r*0.7, r*0.2, -r*0.8, -r*0.15);
+ctx.bezierCurveTo(-r*0.85, -r*0.45, -r*0.55, -r*0.85, 0, -r*0.85);
+ctx.bezierCurveTo(r*0.55, -r*0.85, r*0.85, -r*0.45, r*0.8, -r*0.15);
+ctx.bezierCurveTo(r*0.7, r*0.2, r*0.35, r*0.7, 0, r*0.75);
+ctx.closePath();
         const g = ctx.createRadialGradient(-r*0.15, -r*0.2, 0, 0, r*0.1, r*1.1);
         g.addColorStop(0, '#ff7088'); g.addColorStop(0.35, '#e8334f');
         g.addColorStop(0.7, '#c41835'); g.addColorStop(1, '#8a0a22');
@@ -1262,16 +1262,16 @@ class SkinRenderer {
         const t = this._time;
         this._shadow(ctx, x, y, r);
         ctx.save(); ctx.translate(x, y);
-        // Accretion disk glow
-        if (this.quality.glowEnabled) {
-            var glowR = r * 1.8;
-            var gg = ctx.createRadialGradient(0, 0, r * 0.9, 0, 0, glowR);
-            gg.addColorStop(0, '#ff8800'); gg.addColorStop(0.3, '#ff4400');
-            gg.addColorStop(0.6, '#aa2200'); gg.addColorStop(1, 'transparent');
-            ctx.fillStyle = gg; ctx.globalAlpha = 0.4;
-            ctx.beginPath(); ctx.arc(0, 0, glowR, 0, TWO_PI_SK); ctx.fill();
-            ctx.globalAlpha = 1;
-        }
+// Accretion disk glow
+if (this.quality.glowEnabled) {
+var glowR = r * 2.5;
+var gg = ctx.createRadialGradient(0, 0, r * 0.9, 0, 0, glowR);
+gg.addColorStop(0, '#ff8800'); gg.addColorStop(0.3, '#ff4400');
+gg.addColorStop(0.6, '#aa2200'); gg.addColorStop(1, 'transparent');
+ctx.fillStyle = gg; ctx.globalAlpha = 0.4;
+ctx.beginPath(); ctx.arc(0, 0, glowR, 0, TWO_PI_SK); ctx.fill();
+ctx.globalAlpha = 1;
+}
         // Accretion disk ring - elliptical perspective
         ctx.save();
         ctx.rotate(t * 0.3);
