@@ -2067,9 +2067,9 @@ class Game {
             this._parallaxLayers = [];
             // 生成3层视差粒子（远→近速度递增）
             const layerConfigs = [
-                { count: mobile ? 8 : 25, speed: 0.2, sizeMin: 2, sizeMax: 5, alpha: 0.06 },
-                { count: mobile ? 12 : 35, speed: 0.4, sizeMin: 3, sizeMax: 8, alpha: 0.09 },
-                { count: mobile ? 6 : 20, speed: 0.65, sizeMin: 5, sizeMax: 14, alpha: 0.12 },
+                { count: mobile ? 10 : 30, speed: 0.2, sizeMin: 3, sizeMax: 7, alpha: 0.12 },
+                { count: mobile ? 15 : 40, speed: 0.4, sizeMin: 4, sizeMax: 10, alpha: 0.16 },
+                { count: mobile ? 8 : 25, speed: 0.65, sizeMin: 6, sizeMax: 16, alpha: 0.20 },
             ];
             for (const cfg of layerConfigs) {
                 const layer = { ...cfg, items: [] };
@@ -2119,7 +2119,7 @@ class Game {
         ctx.globalAlpha = 1;
 
         // ── 星尘粒子（全面增强：更多+更大+十字星形+发光晕）—— 移动端减少数量 ──
-        const starCount = mobile ? 30 : 180;
+        const starCount = mobile ? 45 : 220;
         if (!this._bgStars || this._bgStars._count !== starCount) {
             this._bgStars = [];
             this._bgStars._count = starCount;
@@ -2127,12 +2127,12 @@ class Game {
                 this._bgStars.push({
                     wx: Math.random() * 6000 - 1000,
                     wy: Math.random() * 6000 - 1000,
-                    r: 0.6 + Math.random() * 1.8,
-                    a: 0.12 + Math.random() * 0.25,
+                    r: 0.8 + Math.random() * 2.2,
+                    a: 0.25 + Math.random() * 0.35,
                     twinkleSpeed: 0.8 + Math.random() * 2.5,
                     twinklePhase: Math.random() * TWO_PI,
-                    isBright: Math.random() < 0.15, // 15%的星星特别亮
-                    rotSpeed: (Math.random() - 0.5) * 0.002, // 缓慢旋转
+                    isBright: Math.random() < 0.2, // 20%的星星特别亮
+                    rotSpeed: (Math.random() - 0.5) * 0.002,
                 });
             }
         }
@@ -2208,7 +2208,7 @@ class Game {
         // ── 网格线（主题颜色）—— 移动端使用更大间隔 ──
         const gridStep = mobile ? gridSize * 2 : gridSize;
         ctx.strokeStyle = theme.gridColor;
-        ctx.lineWidth = 1;
+        ctx.lineWidth = mobile ? 1 : 1.5;
         ctx.beginPath();
         for (let x = startX; x <= endX; x += gridStep) {
             const sx = x - camera.x;
