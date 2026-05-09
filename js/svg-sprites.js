@@ -283,110 +283,271 @@ SVG_SPRITES.boss = function(s) {
 // ─── 英雄精灵 ───
 SVG_SPRITES.hero_swordsman = function(s) {
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${s} ${s}"><defs>
-<radialGradient id="hs" cx="35%" cy="30%" r="65%"><stop offset="0%" stop-color="#88ddff"/><stop offset="40%" stop-color="#44aaff"/><stop offset="80%" stop-color="#2288dd"/><stop offset="100%" stop-color="#1166aa"/></radialGradient>
+<radialGradient id="hs_body" cx="40%" cy="35%" r="60%"><stop offset="0%" stop-color="#7ec8e3"/><stop offset="50%" stop-color="#3a8fd4"/><stop offset="100%" stop-color="#1a5276"/></radialGradient>
+<linearGradient id="hs_blade" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f0f8ff"/><stop offset="50%" stop-color="#c0d8e8"/><stop offset="100%" stop-color="#a0c0d8"/></linearGradient>
+<linearGradient id="hs_armor" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#5cacee"/><stop offset="100%" stop-color="#2a6496"/></linearGradient>
+<filter id="hs_glow"><feGaussianBlur stdDeviation="1.5" result="g"/><feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
 </defs>
-<ellipse cx="${s*.5}" cy="${s*.88}" rx="${s*.28}" ry="${s*.05}" fill="rgba(68,170,255,0.2)"/>
-<circle cx="${s*.5}" cy="${s*.5}" r="${s*.36}" fill="url(#hs)"/>
-<ellipse cx="${s*.38}" cy="${s*.35}" rx="${s*.1}" ry="${s*.07}" fill="rgba(255,255,255,0.4)"/>
-<circle cx="${s*.43}" cy="${s*.45}" r="${s*.055}" fill="#fff"/>
-<circle cx="${s*.57}" cy="${s*.45}" r="${s*.055}" fill="#fff"/>
-<circle cx="${s*.44}" cy="${s*.46}" r="${s*.025}" fill="#112"/>
-<circle cx="${s*.58}" cy="${s*.46}" r="${s*.025}" fill="#112"/>
-<path d="M ${s*.44},${s*.6} Q ${s*.5},${s*.64} ${s*.56},${s*.6}" stroke="#1166aa" stroke-width="${s*.015}" fill="none" stroke-linecap="round"/>
-<rect x="${s*.72}" y="${s*.2}" width="${s*.03}" height="${s*.4}" fill="#ccc" rx="2" transform="rotate(15,${s*.74},${s*.4})"/>
-<rect x="${s*.7}" y="${s*.55}" width="${s*.07}" height="${s*.025}" fill="#aa8833" rx="1" transform="rotate(15,${s*.74},${s*.56})"/>
-<circle cx="${s*.5}" cy="${s*.5}" r="${s*.38}" stroke="rgba(68,170,255,0.3)" stroke-width="${s*.015}" fill="none"/>
+<!-- 阴影 -->
+<ellipse cx="${s*.5}" cy="${s*.92}" rx="${s*.3}" ry="${s*.045}" fill="rgba(20,60,100,0.25)"/>
+<!-- 身体 -->
+<circle cx="${s*.5}" cy="${s*.52}" r="${s*.34}" fill="url(#hs_body)"/>
+<!-- 铠甲胸板 -->
+<path d="M ${s*.35},${s*.45} Q ${s*.5},${s*.38} ${s*.65},${s*.45} L ${s*.62},${s*.7} Q ${s*.5},${s*.75} ${s*.38},${s*.7} Z" fill="url(#hs_armor)" opacity="0.7"/>
+<!-- 铠甲肩甲 -->
+<ellipse cx="${s*.33}" cy="${s*.42}" rx="${s*.08}" ry="${s*.055}" fill="#4a90d9" stroke="#2a6496" stroke-width="${s*.008}"/>
+<ellipse cx="${s*.67}" cy="${s*.42}" rx="${s*.08}" ry="${s*.055}" fill="#4a90d9" stroke="#2a6496" stroke-width="${s*.008}"/>
+<!-- 头盔轮廓 -->
+<path d="M ${s*.35},${s*.35} Q ${s*.35},${s*.2} ${s*.5},${s*.18} Q ${s*.65},${s*.2} ${s*.65},${s*.35}" fill="none" stroke="#2a6496" stroke-width="${s*.02}" stroke-linecap="round"/>
+<!-- 头盔面罩缝 -->
+<line x1="${s*.5}" y1="${s*.2}" x2="${s*.5}" y2="${s*.35}" stroke="#2a6496" stroke-width="${s*.008}"/>
+<!-- 眼睛 -->
+<ellipse cx="${s*.43}" cy="${s*.42}" rx="${s*.04}" ry="${s*.035}" fill="#fff"/>
+<ellipse cx="${s*.57}" cy="${s*.42}" rx="${s*.04}" ry="${s*.035}" fill="#fff"/>
+<circle cx="${s*.44}" cy="${s*.425}" r="${s*.02}" fill="#1a3a5c"/>
+<circle cx="${s*.58}" cy="${s*.425}" r="${s*.02}" fill="#1a3a5c"/>
+<circle cx="${s*.45}" cy="${s*.42}" r="${s*.007}" fill="#fff"/>
+<circle cx="${s*.59}" cy="${s*.42}" r="${s*.007}" fill="#fff"/>
+<!-- 嘴 -->
+<path d="M ${s*.45},${s*.52} Q ${s*.5},${s*.55} ${s*.55},${s*.52}" stroke="#1a5276" stroke-width="${s*.012}" fill="none" stroke-linecap="round"/>
+<!-- 武士刀 -->
+<rect x="${s*.71}" y="${s*.12}" width="${s*.025}" height="${s*.5}" fill="url(#hs_blade)" rx="${s*.012}" transform="rotate(12,${s*.72},${s*.37})"/>
+<rect x="${s*.695}" y="${s*.59}" width="${s*.055}" height="${s*.025}" fill="#8B6914" rx="${s*.005}" transform="rotate(12,${s*.72},${s*.6})"/>
+<rect x="${s*.71}" y="${s*.6}" width="${s*.025}" height="${s*.12}" fill="#5c3d11" rx="${s*.005}" transform="rotate(12,${s*.72},${s*.66})"/>
+<!-- 刀刃光效 -->
+<line x1="${s*.72}" y1="${s*.15}" x2="${s*.72}" y2="${s*.55}" stroke="rgba(255,255,255,0.4)" stroke-width="${s*.008}" transform="rotate(12,${s*.72},${s*.37})" filter="url(#hs_glow)"/>
+<!-- 风斩特效 -->
+<path d="M ${s*.6},${s*.2} Q ${s*.65},${s*.25} ${s*.62},${s*.32}" stroke="rgba(150,220,255,0.5)" stroke-width="${s*.01}" fill="none"/>
+<path d="M ${s*.63},${s*.18} Q ${s*.68},${s*.22} ${s*.66},${s*.28}" stroke="rgba(150,220,255,0.35)" stroke-width="${s*.008}" fill="none"/>
+<!-- 能量外环 -->
+<circle cx="${s*.5}" cy="${s*.52}" r="${s*.38}" stroke="rgba(90,180,255,0.2)" stroke-width="${s*.01}" fill="none" stroke-dasharray="${s*.06} ${s*.04}"/>
 </svg>`;
 };
 
 SVG_SPRITES.hero_mage = function(s) {
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${s} ${s}"><defs>
-<radialGradient id="hm" cx="35%" cy="30%" r="65%"><stop offset="0%" stop-color="#ffaa66"/><stop offset="40%" stop-color="#ff6644"/><stop offset="80%" stop-color="#dd3322"/><stop offset="100%" stop-color="#aa1100"/></radialGradient>
+<radialGradient id="hm_body" cx="40%" cy="35%" r="60%"><stop offset="0%" stop-color="#ff9966"/><stop offset="50%" stop-color="#e84530"/><stop offset="100%" stop-color="#8b1a1a"/></radialGradient>
+<radialGradient id="hm_fire" cx="50%" cy="80%" r="60%"><stop offset="0%" stop-color="#fff4b0"/><stop offset="40%" stop-color="#ffaa00"/><stop offset="80%" stop-color="#ff4400"/><stop offset="100%" stop-color="#aa0000"/></radialGradient>
+<linearGradient id="hm_staff" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#8B4513"/><stop offset="100%" stop-color="#5c2d0e"/></linearGradient>
+<filter id="hm_glow"><feGaussianBlur stdDeviation="2" result="g"/><feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
 </defs>
-<ellipse cx="${s*.5}" cy="${s*.88}" rx="${s*.28}" ry="${s*.05}" fill="rgba(255,100,68,0.2)"/>
-<circle cx="${s*.5}" cy="${s*.5}" r="${s*.36}" fill="url(#hm)"/>
-<ellipse cx="${s*.38}" cy="${s*.35}" rx="${s*.1}" ry="${s*.07}" fill="rgba(255,255,255,0.35)"/>
-<circle cx="${s*.43}" cy="${s*.45}" r="${s*.055}" fill="#fff"/>
-<circle cx="${s*.57}" cy="${s*.45}" r="${s*.055}" fill="#fff"/>
-<circle cx="${s*.44}" cy="${s*.46}" r="${s*.025}" fill="#112"/>
-<circle cx="${s*.58}" cy="${s*.46}" r="${s*.025}" fill="#112"/>
-<path d="M ${s*.44},${s*.6} Q ${s*.5},${s*.64} ${s*.56},${s*.6}" stroke="#aa1100" stroke-width="${s*.015}" fill="none" stroke-linecap="round"/>
-<circle cx="${s*.5}" cy="${s*.5}" r="${s*.38}" stroke="rgba(255,100,0,0.3)" stroke-width="${s*.015}" fill="none"/>
-<circle cx="${s*.25}" cy="${s*.35}" r="${s*.05}" fill="#ffaa00" opacity="0.6"/>
-<circle cx="${s*.75}" cy="${s*.65}" r="${s*.04}" fill="#ffaa00" opacity="0.5"/>
-<circle cx="${s*.3}" cy="${s*.7}" r="${s*.035}" fill="#ffaa00" opacity="0.4"/>
+<!-- 阴影 -->
+<ellipse cx="${s*.5}" cy="${s*.92}" rx="${s*.3}" ry="${s*.045}" fill="rgba(100,20,0,0.25)"/>
+<!-- 身体 -->
+<circle cx="${s*.5}" cy="${s*.52}" r="${s*.34}" fill="url(#hm_body)"/>
+<!-- 法袍 -->
+<path d="M ${s*.32},${s*.5} Q ${s*.5},${s*.42} ${s*.68},${s*.5} L ${s*.65},${s*.8} Q ${s*.5},${s*.85} ${s*.35},${s*.8} Z" fill="rgba(120,20,30,0.6)" stroke="#6b0f1a" stroke-width="${s*.006}"/>
+<!-- 法袍花纹 -->
+<path d="M ${s*.4},${s*.55} Q ${s*.5},${s*.5} ${s*.6},${s*.55}" stroke="rgba(255,200,100,0.4)" stroke-width="${s*.008}" fill="none"/>
+<path d="M ${s*.42},${s*.62} Q ${s*.5},${s*.58} ${s*.58},${s*.62}" stroke="rgba(255,200,100,0.3)" stroke-width="${s*.006}" fill="none"/>
+<!-- 法师帽 -->
+<path d="M ${s*.35},${s*.35} L ${s*.5},${s*.1} L ${s*.65},${s*.35}" fill="#7b1818" stroke="#4a0e0e" stroke-width="${s*.008}"/>
+<path d="M ${s*.33},${s*.35} Q ${s*.5},${s*.38} ${s*.67},${s*.35}" fill="#9b2020" stroke="#4a0e0e" stroke-width="${s*.006}"/>
+<!-- 帽子星星装饰 -->
+<circle cx="${s*.5}" cy="${s*.2}" r="${s*.02}" fill="#ffcc00" opacity="0.8"/>
+<!-- 眼睛 - 发光 -->
+<ellipse cx="${s*.43}" cy="${s*.42}" rx="${s*.04}" ry="${s*.035}" fill="#fff"/>
+<ellipse cx="${s*.57}" cy="${s*.42}" rx="${s*.04}" ry="${s*.035}" fill="#fff"/>
+<circle cx="${s*.44}" cy="${s*.425}" r="${s*.02}" fill="#ff4400"/>
+<circle cx="${s*.58}" cy="${s*.425}" r="${s*.02}" fill="#ff4400"/>
+<circle cx="${s*.44}" cy="${s*.42}" r="${s*.008}" fill="#ffcc00"/>
+<circle cx="${s*.58}" cy="${s*.42}" r="${s*.008}" fill="#ffcc00"/>
+<!-- 嘴 -->
+<path d="M ${s*.45},${s*.52} Q ${s*.5},${s*.55} ${s*.55},${s*.52}" stroke="#5c1010" stroke-width="${s*.012}" fill="none" stroke-linecap="round"/>
+<!-- 法杖 -->
+<rect x="${s*.74}" y="${s*.2}" width="${s*.022}" height="${s*.55}" fill="url(#hm_staff)" rx="${s*.011}"/>
+<!-- 法杖顶部宝珠 -->
+<circle cx="${s*.75}" cy="${s*.18}" r="${s*.04}" fill="url(#hm_fire)" filter="url(#hm_glow)"/>
+<circle cx="${s*.75}" cy="${s*.18}" r="${s*.02}" fill="#fff4b0" opacity="0.8"/>
+<!-- 火焰粒子 -->
+<ellipse cx="${s*.25}" cy="${s*.3}" rx="${s*.03}" ry="${s*.04}" fill="url(#hm_fire)" opacity="0.7" filter="url(#hm_glow)"/>
+<ellipse cx="${s*.2}" cy="${s*.55}" rx="${s*.025}" ry="${s*.035}" fill="url(#hm_fire)" opacity="0.5" filter="url(#hm_glow)"/>
+<ellipse cx="${s*.78}" cy="${s*.6}" rx="${s*.02}" ry="${s*.03}" fill="url(#hm_fire)" opacity="0.55" filter="url(#hm_glow)"/>
+<ellipse cx="${s*.3}" cy="${s*.75}" rx="${s*.018}" ry="${s*.025}" fill="url(#hm_fire)" opacity="0.4"/>
+<!-- 魔法环 -->
+<circle cx="${s*.5}" cy="${s*.52}" r="${s*.38}" stroke="rgba(255,100,0,0.25)" stroke-width="${s*.012}" fill="none" stroke-dasharray="${s*.05} ${s*.03}"/>
 </svg>`;
 };
 
 SVG_SPRITES.hero_assassin = function(s) {
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${s} ${s}"><defs>
-<radialGradient id="ha" cx="35%" cy="30%" r="65%"><stop offset="0%" stop-color="#cc88ff"/><stop offset="40%" stop-color="#aa44ff"/><stop offset="80%" stop-color="#7722dd"/><stop offset="100%" stop-color="#5511aa"/></radialGradient>
+<radialGradient id="ha_body" cx="40%" cy="35%" r="60%"><stop offset="0%" stop-color="#c088ff"/><stop offset="50%" stop-color="#8030d0"/><stop offset="100%" stop-color="#3a1166"/></radialGradient>
+<linearGradient id="ha_dagger" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#e8e8e8"/><stop offset="50%" stop-color="#b8b8b8"/><stop offset="100%" stop-color="#888"/></linearGradient>
+<filter id="ha_shadow"><feGaussianBlur stdDeviation="1.5" result="g"/><feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
 </defs>
-<ellipse cx="${s*.5}" cy="${s*.88}" rx="${s*.28}" ry="${s*.05}" fill="rgba(170,68,255,0.2)"/>
-<circle cx="${s*.5}" cy="${s*.5}" r="${s*.36}" fill="url(#ha)"/>
-<ellipse cx="${s*.38}" cy="${s*.35}" rx="${s*.1}" ry="${s*.07}" fill="rgba(255,255,255,0.35)"/>
-<circle cx="${s*.43}" cy="${s*.45}" r="${s*.055}" fill="#fff"/>
-<circle cx="${s*.57}" cy="${s*.45}" r="${s*.055}" fill="#fff"/>
-<circle cx="${s*.44}" cy="${s*.46}" r="${s*.025}" fill="#112"/>
-<circle cx="${s*.58}" cy="${s*.46}" r="${s*.025}" fill="#112"/>
-<path d="M ${s*.46},${s*.58} L ${s*.54},${s*.58}" stroke="#5511aa" stroke-width="${s*.015}" stroke-linecap="round"/>
-<circle cx="${s*.5}" cy="${s*.5}" r="${s*.38}" stroke="rgba(170,68,255,0.3)" stroke-width="${s*.015}" fill="none"/>
-<polygon points="${s*.72},${s*.35} ${s*.78},${s*.3} ${s*.75},${s*.6}" fill="#aaa" opacity="0.7"/>
+<!-- 阴影 -->
+<ellipse cx="${s*.5}" cy="${s*.92}" rx="${s*.3}" ry="${s*.045}" fill="rgba(60,10,100,0.3)"/>
+<!-- 暗影飘带 -->
+<path d="M ${s*.25},${s*.6} Q ${s*.2},${s*.7} ${s*.15},${s*.8}" stroke="rgba(160,80,255,0.3)" stroke-width="${s*.015}" fill="none"/>
+<path d="M ${s*.75},${s*.6} Q ${s*.8},${s*.7} ${s*.85},${s*.8}" stroke="rgba(160,80,255,0.3)" stroke-width="${s*.015}" fill="none"/>
+<!-- 身体 -->
+<circle cx="${s*.5}" cy="${s*.52}" r="${s*.34}" fill="url(#ha_body)"/>
+<!-- 兜帽 -->
+<path d="M ${s*.3},${s*.42} Q ${s*.3},${s*.15} ${s*.5},${s*.12} Q ${s*.7},${s*.15} ${s*.7},${s*.42}" fill="#2a0845" stroke="#1a0530" stroke-width="${s*.008}"/>
+<path d="M ${s*.3},${s*.42} Q ${s*.5},${s*.48} ${s*.7},${s*.42}" fill="#3a1060"/>
+<!-- 面罩 -->
+<path d="M ${s*.35},${s*.48} L ${s*.65},${s*.48} L ${s*.62},${s*.58} Q ${s*.5},${s*.6} ${s*.38},${s*.58} Z" fill="#1a0530" opacity="0.7"/>
+<!-- 眼睛 - 锐利 -->
+<path d="M ${s*.38},${s*.42} L ${s*.43},${s*.4} L ${s*.48},${s*.42} L ${s*.43},${s*.44} Z" fill="#fff"/>
+<path d="M ${s*.52},${s*.42} L ${s*.57},${s*.4} L ${s*.62},${s*.42} L ${s*.57},${s*.44} Z" fill="#fff"/>
+<circle cx="${s*.43}" cy="${s*.42}" r="${s*.015}" fill="#9900ff"/>
+<circle cx="${s*.57}" cy="${s*.42}" r="${s*.015}" fill="#9900ff"/>
+<!-- 左匕首 -->
+<polygon points="${s*.2},${s*.35} ${s*.22},${s*.32} ${s*.24},${s*.55} ${s*.22},${s*.56}" fill="url(#ha_dagger)"/>
+<rect x="${s*.195}" y="${s*.55}" width="${s*.05}" height="${s*.02}" fill="#4a2080" rx="${s*.005}"/>
+<rect x="${s*.205}" y="${s*.57}" width="${s*.03}" height="${s*.06}" fill="#2a0845" rx="${s*.005}"/>
+<!-- 右匕首 -->
+<polygon points="${s*.76},${s*.35} ${s*.78},${s*.32} ${s*.8},${s*.55} ${s*.78},${s*.56}" fill="url(#ha_dagger)"/>
+<rect x="${s*.755}" y="${s*.55}" width="${s*.05}" height="${s*.02}" fill="#4a2080" rx="${s*.005}"/>
+<rect x="${s*.765}" y="${s*.57}" width="${s*.03}" height="${s*.06}" fill="#2a0845" rx="${s*.005}"/>
+<!-- 毒雾粒子 -->
+<circle cx="${s*.22}" cy="${s*.28}" r="${s*.015}" fill="#aa66ff" opacity="0.4"/>
+<circle cx="${s*.78}" cy="${s*.28}" r="${s*.012}" fill="#aa66ff" opacity="0.35"/>
+<circle cx="${s*.15}" cy="${s*.5}" r="${s*.01}" fill="#cc88ff" opacity="0.3"/>
+<!-- 暗影环 -->
+<circle cx="${s*.5}" cy="${s*.52}" r="${s*.38}" stroke="rgba(150,50,255,0.2)" stroke-width="${s*.01}" fill="none" stroke-dasharray="${s*.03} ${s*.06}"/>
 </svg>`;
 };
 
 SVG_SPRITES.hero_paladin = function(s) {
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${s} ${s}"><defs>
-<radialGradient id="hp" cx="35%" cy="30%" r="65%"><stop offset="0%" stop-color="#ffee88"/><stop offset="40%" stop-color="#ffcc44"/><stop offset="80%" stop-color="#ddaa22"/><stop offset="100%" stop-color="#aa8800"/></radialGradient>
+<radialGradient id="hp_body" cx="40%" cy="35%" r="60%"><stop offset="0%" stop-color="#fff4c0"/><stop offset="50%" stop-color="#ffc832"/><stop offset="100%" stop-color="#b8860b"/></radialGradient>
+<linearGradient id="hp_shield" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ffd700"/><stop offset="50%" stop-color="#daa520"/><stop offset="100%" stop-color="#b8860b"/></linearGradient>
+<linearGradient id="hp_armor" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#fff8dc"/><stop offset="100%" stop-color="#daa520"/></linearGradient>
+<filter id="hp_holy"><feGaussianBlur stdDeviation="2" result="g"/><feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
 </defs>
-<ellipse cx="${s*.5}" cy="${s*.88}" rx="${s*.28}" ry="${s*.05}" fill="rgba(255,204,68,0.2)"/>
-<circle cx="${s*.5}" cy="${s*.5}" r="${s*.36}" fill="url(#hp)"/>
-<ellipse cx="${s*.38}" cy="${s*.35}" rx="${s*.1}" ry="${s*.07}" fill="rgba(255,255,255,0.4)"/>
-<circle cx="${s*.43}" cy="${s*.45}" r="${s*.055}" fill="#fff"/>
-<circle cx="${s*.57}" cy="${s*.45}" r="${s*.055}" fill="#fff"/>
-<circle cx="${s*.44}" cy="${s*.46}" r="${s*.025}" fill="#112"/>
-<circle cx="${s*.58}" cy="${s*.46}" r="${s*.025}" fill="#112"/>
-<path d="M ${s*.44},${s*.6} Q ${s*.5},${s*.64} ${s*.56},${s*.6}" stroke="#aa8800" stroke-width="${s*.015}" fill="none" stroke-linecap="round"/>
-<circle cx="${s*.5}" cy="${s*.5}" r="${s*.38}" stroke="rgba(255,204,68,0.35)" stroke-width="${s*.02}" fill="none"/>
-<rect x="${s*.48}" y="${s*.28}" width="${s*.04}" height="${s*.15}" fill="rgba(255,255,255,0.5)" rx="1"/>
-<rect x="${s*.42}" y="${s*.33}" width="${s*.16}" height="${s*.04}" fill="rgba(255,255,255,0.5)" rx="1"/>
+<!-- 圣光底部光环 -->
+<ellipse cx="${s*.5}" cy="${s*.92}" rx="${s*.32}" ry="${s*.05}" fill="rgba(255,215,0,0.3)" filter="url(#hp_holy)"/>
+<!-- 身体 -->
+<circle cx="${s*.5}" cy="${s*.52}" r="${s*.34}" fill="url(#hp_body)"/>
+<!-- 圣骑士重甲 -->
+<path d="M ${s*.33},${s*.4} Q ${s*.5},${s*.33} ${s*.67},${s*.4} L ${s*.65},${s*.72} Q ${s*.5},${s*.78} ${s*.35},${s*.72} Z" fill="url(#hp_armor)" stroke="#b8860b" stroke-width="${s*.008}"/>
+<!-- 甲胸十字 -->
+<rect x="${s*.48}" y="${s*.42}" width="${s*.04}" height="${s*.2}" fill="#b8860b" rx="${s*.005}"/>
+<rect x="${s*.4}" y="${s*.49}" width="${s*.2}" height="${s*.04}" fill="#b8860b" rx="${s*.005}"/>
+<!-- 肩甲 -->
+<ellipse cx="${s*.32}" cy="${s*.4}" rx="${s*.07}" ry="${s*.05}" fill="url(#hp_shield)" stroke="#8b6914" stroke-width="${s*.006}"/>
+<ellipse cx="${s*.68}" cy="${s*.4}" rx="${s*.07}" ry="${s*.05}" fill="url(#hp_shield)" stroke="#8b6914" stroke-width="${s*.006}"/>
+<!-- 头冠 -->
+<path d="M ${s*.37},${s*.3} L ${s*.4},${s*.2} L ${s*.45},${s*.27} L ${s*.5},${s*.17} L ${s*.55},${s*.27} L ${s*.6},${s*.2} L ${s*.63},${s*.3}" fill="#ffd700" stroke="#b8860b" stroke-width="${s*.006}"/>
+<!-- 头冠宝石 -->
+<circle cx="${s*.5}" cy="${s*.22}" r="${s*.015}" fill="#ff4444"/>
+<!-- 眼睛 -->
+<ellipse cx="${s*.43}" cy="${s*.38}" rx="${s*.035}" ry="${s*.03}" fill="#fff"/>
+<ellipse cx="${s*.57}" cy="${s*.38}" rx="${s*.035}" ry="${s*.03}" fill="#fff"/>
+<circle cx="${s*.44}" cy="${s*.385}" r="${s*.017}" fill="#4a90d9"/>
+<circle cx="${s*.58}" cy="${s*.385}" r="${s*.017}" fill="#4a90d9"/>
+<circle cx="${s*.445}" cy="${s*.38}" r="${s*.006}" fill="#fff"/>
+<circle cx="${s*.585}" cy="${s*.38}" r="${s*.006}" fill="#fff"/>
+<!-- 嘴 -->
+<path d="M ${s*.45},${s*.46} Q ${s*.5},${s*.49} ${s*.55},${s*.46}" stroke="#8b6914" stroke-width="${s*.012}" fill="none" stroke-linecap="round"/>
+<!-- 盾牌 -->
+<path d="M ${s*.12},${s*.35} L ${s*.28},${s*.32} L ${s*.28},${s*.6} Q ${s*.2},${s*.65} ${s*.12},${s*.55} Z" fill="url(#hp_shield)" stroke="#8b6914" stroke-width="${s*.01}"/>
+<rect x="${s*.18}" y="${s*.38}" width="${s*.025}" height="${s*.16}" fill="#fff" opacity="0.6" rx="${s*.005}"/>
+<rect x="${s*.14}" y="${s*.44}" width="${s*.1}" height="${s*.025}" fill="#fff" opacity="0.6" rx="${s*.005}"/>
+<!-- 圣光光芒 -->
+<line x1="${s*.5}" y1="${s*.05}" x2="${s*.5}" y2="${s*.12}" stroke="rgba(255,215,0,0.5)" stroke-width="${s*.01}" filter="url(#hp_holy)"/>
+<line x1="${s*.3}" y1="${s*.1}" x2="${s*.36}" y2="${s*.16}" stroke="rgba(255,215,0,0.4)" stroke-width="${s*.008}" filter="url(#hp_holy)"/>
+<line x1="${s*.7}" y1="${s*.1}" x2="${s*.64}" y2="${s*.16}" stroke="rgba(255,215,0,0.4)" stroke-width="${s*.008}" filter="url(#hp_holy)"/>
+<!-- 神圣外环 -->
+<circle cx="${s*.5}" cy="${s*.52}" r="${s*.39}" stroke="rgba(255,215,0,0.25)" stroke-width="${s*.015}" fill="none"/>
 </svg>`;
 };
 
 SVG_SPRITES.hero_archer = function(s) {
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${s} ${s}"><defs>
-<radialGradient id="har" cx="35%" cy="30%" r="65%"><stop offset="0%" stop-color="#88ffcc"/><stop offset="40%" stop-color="#44ddaa"/><stop offset="80%" stop-color="#22aa77"/><stop offset="100%" stop-color="#118855"/></radialGradient>
+<radialGradient id="har_body" cx="40%" cy="35%" r="60%"><stop offset="0%" stop-color="#90eec0"/><stop offset="50%" stop-color="#3dbd7d"/><stop offset="100%" stop-color="#1a6b42"/></radialGradient>
+<linearGradient id="har_bow" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#8B6914"/><stop offset="50%" stop-color="#6b4e12"/><stop offset="100%" stop-color="#4a350d"/></linearGradient>
+<linearGradient id="har_arrow" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#ddd"/><stop offset="100%" stop-color="#888"/></linearGradient>
 </defs>
-<ellipse cx="${s*.5}" cy="${s*.88}" rx="${s*.28}" ry="${s*.05}" fill="rgba(68,221,170,0.2)"/>
-<circle cx="${s*.5}" cy="${s*.5}" r="${s*.36}" fill="url(#har)"/>
-<ellipse cx="${s*.38}" cy="${s*.35}" rx="${s*.1}" ry="${s*.07}" fill="rgba(255,255,255,0.35)"/>
-<circle cx="${s*.43}" cy="${s*.45}" r="${s*.055}" fill="#fff"/>
-<circle cx="${s*.57}" cy="${s*.45}" r="${s*.055}" fill="#fff"/>
-<circle cx="${s*.44}" cy="${s*.46}" r="${s*.025}" fill="#112"/>
-<circle cx="${s*.58}" cy="${s*.46}" r="${s*.025}" fill="#112"/>
-<path d="M ${s*.44},${s*.6} Q ${s*.5},${s*.63} ${s*.56},${s*.6}" stroke="#118855" stroke-width="${s*.015}" fill="none" stroke-linecap="round"/>
-<circle cx="${s*.5}" cy="${s*.5}" r="${s*.38}" stroke="rgba(68,221,170,0.3)" stroke-width="${s*.015}" fill="none"/>
-<path d="M ${s*.75},${s*.25} Q ${s*.72},${s*.5} ${s*.75},${s*.75}" stroke="#886644" stroke-width="${s*.02}" fill="none"/>
-<line x1="${s*.73}" y1="${s*.25}" x2="${s*.73}" y2="${s*.75}" stroke="#aaa" stroke-width="${s*.008}"/>
+<!-- 阴影 -->
+<ellipse cx="${s*.5}" cy="${s*.92}" rx="${s*.28}" ry="${s*.04}" fill="rgba(20,80,50,0.25)"/>
+<!-- 身体 -->
+<circle cx="${s*.5}" cy="${s*.52}" r="${s*.34}" fill="url(#har_body)"/>
+<!-- 游侠斗篷 -->
+<path d="M ${s*.3},${s*.38} Q ${s*.25},${s*.5} ${s*.2},${s*.75}" stroke="#2d5a3d" stroke-width="${s*.02}" fill="none"/>
+<path d="M ${s*.7},${s*.38} Q ${s*.75},${s*.5} ${s*.8},${s*.75}" stroke="#2d5a3d" stroke-width="${s*.02}" fill="none"/>
+<path d="M ${s*.3},${s*.38} Q ${s*.5},${s*.42} ${s*.7},${s*.38}" fill="#2d5a3d" opacity="0.5"/>
+<!-- 皮甲 -->
+<path d="M ${s*.38},${s*.45} Q ${s*.5},${s*.42} ${s*.62},${s*.45} L ${s*.6},${s*.68} Q ${s*.5},${s*.72} ${s*.4},${s*.68} Z" fill="#5c3d11" opacity="0.6" stroke="#3a2508" stroke-width="${s*.005}"/>
+<!-- 兜帽 -->
+<path d="M ${s*.33},${s*.38} Q ${s*.33},${s*.2} ${s*.5},${s*.16} Q ${s*.67},${s*.2} ${s*.67},${s*.38}" fill="#2d5a3d" stroke="#1a3a25" stroke-width="${s*.008}"/>
+<!-- 眼睛 -->
+<ellipse cx="${s*.43}" cy="${s*.4}" rx="${s*.038}" ry="${s*.03}" fill="#fff"/>
+<ellipse cx="${s*.57}" cy="${s*.4}" rx="${s*.038}" ry="${s*.03}" fill="#fff"/>
+<circle cx="${s*.44}" cy="${s*.405}" r="${s*.017}" fill="#2d8b57"/>
+<circle cx="${s*.58}" cy="${s*.405}" r="${s*.017}" fill="#2d8b57"/>
+<circle cx="${s*.445}" cy="${s*.4}" r="${s*.006}" fill="#fff"/>
+<circle cx="${s*.585}" cy="${s*.4}" r="${s*.006}" fill="#fff"/>
+<!-- 微笑 -->
+<path d="M ${s*.45},${s*.49} Q ${s*.5},${s*.52} ${s*.55},${s*.49}" stroke="#1a4030" stroke-width="${s*.01}" fill="none" stroke-linecap="round"/>
+<!-- 弓 -->
+<path d="M ${s*.76},${s*.2} Q ${s*.68},${s*.45} ${s*.76},${s*.7}" stroke="url(#har_bow)" stroke-width="${s*.025}" fill="none" stroke-linecap="round"/>
+<!-- 弓弦 -->
+<line x1="${s*.76}" y1="${s*.2}" x2="${s*.76}" y2="${s*.7}" stroke="#ccc" stroke-width="${s*.006}"/>
+<!-- 弓弦拉伸 -->
+<path d="M ${s*.76},${s*.2} Q ${s*.68},${s*.45} ${s*.76},${s*.7}" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="${s*.01}"/>
+<!-- 箭矢 -->
+<line x1="${s*.68}" y1="${s*.45}" x2="${s*.82}" y2="${s*.45}" stroke="url(#har_arrow)" stroke-width="${s*.012}"/>
+<polygon points="${s*.82},${s*.43} ${s*.86},${s*.45} ${s*.82},${s*.47}" fill="#aaa"/>
+<!-- 箭壶 -->
+<rect x="${s*.26}" y="${s*.45}" width="${s*.06}" height="${s*.22}" fill="#5c3d11" rx="${s*.01}" stroke="#3a2508" stroke-width="${s*.005}"/>
+<line x1="${s*.27}" y1="${s*.43}" x2="${s*.27}" y2="${s*.45}" stroke="#888" stroke-width="${s*.006}"/>
+<line x1="${s*.29}" y1="${s*.42}" x2="${s*.29}" y2="${s*.45}" stroke="#888" stroke-width="${s*.006}"/>
+<line x1="${s*.31}" y1="${s*.43}" x2="${s*.31}" y2="${s*.45}" stroke="#888" stroke-width="${s*.006}"/>
+<!-- 叶子装饰 -->
+<ellipse cx="${s*.22}" cy="${s*.3}" rx="${s*.015}" ry="${s*.025}" fill="rgba(100,200,100,0.5)" transform="rotate(-20,${s*.22},${s*.3})"/>
+<ellipse cx="${s*.8}" cy="${s*.75}" rx="${s*.012}" ry="${s*.02}" fill="rgba(100,200,100,0.4)" transform="rotate(15,${s*.8},${s*.75})"/>
+<!-- 自然环 -->
+<circle cx="${s*.5}" cy="${s*.52}" r="${s*.38}" stroke="rgba(50,180,100,0.2)" stroke-width="${s*.01}" fill="none" stroke-dasharray="${s*.04} ${s*.05}"/>
 </svg>`;
 };
 
 SVG_SPRITES.hero_necromancer = function(s) {
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${s} ${s}"><defs>
-<radialGradient id="hn" cx="35%" cy="30%" r="65%"><stop offset="0%" stop-color="#88eedd"/><stop offset="40%" stop-color="#44ccaa"/><stop offset="80%" stop-color="#22aa88"/><stop offset="100%" stop-color="#118866"/></radialGradient>
+<radialGradient id="hn_body" cx="40%" cy="35%" r="60%"><stop offset="0%" stop-color="#6bccb0"/><stop offset="50%" stop-color="#2a9a7a"/><stop offset="100%" stop-color="#0d4a3a"/></radialGradient>
+<radialGradient id="hn_orb" cx="40%" cy="30%" r="60%"><stop offset="0%" stop-color="#aaffee"/><stop offset="60%" stop-color="#44ddbb"/><stop offset="100%" stop-color="#009977"/></radialGradient>
+<linearGradient id="hn_staff" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#3a3a3a"/><stop offset="100%" stop-color="#1a1a1a"/></linearGradient>
+<filter id="hn_glow"><feGaussianBlur stdDeviation="2" result="g"/><feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
 </defs>
-<ellipse cx="${s*.5}" cy="${s*.88}" rx="${s*.28}" ry="${s*.05}" fill="rgba(68,204,170,0.2)"/>
-<circle cx="${s*.5}" cy="${s*.5}" r="${s*.36}" fill="url(#hn)"/>
-<ellipse cx="${s*.38}" cy="${s*.35}" rx="${s*.1}" ry="${s*.07}" fill="rgba(255,255,255,0.3)"/>
-<circle cx="${s*.43}" cy="${s*.45}" r="${s*.055}" fill="#fff"/>
-<circle cx="${s*.57}" cy="${s*.45}" r="${s*.055}" fill="#fff"/>
-<circle cx="${s*.44}" cy="${s*.46}" r="${s*.025}" fill="#112"/>
-<circle cx="${s*.58}" cy="${s*.46}" r="${s*.025}" fill="#112"/>
-<path d="M ${s*.44},${s*.6} Q ${s*.5},${s*.64} ${s*.56},${s*.6}" stroke="#118866" stroke-width="${s*.015}" fill="none" stroke-linecap="round"/>
-<circle cx="${s*.5}" cy="${s*.5}" r="${s*.38}" stroke="rgba(68,204,170,0.3)" stroke-width="${s*.015}" fill="none"/>
-<circle cx="${s*.3}" cy="${s*.3}" r="${s*.03}" fill="#aaffdd" opacity="0.5"/>
-<circle cx="${s*.72}" cy="${s*.38}" r="${s*.025}" fill="#aaffdd" opacity="0.4"/>
-<circle cx="${s*.28}" cy="${s*.65}" r="${s*.02}" fill="#aaffdd" opacity="0.35"/>
+<!-- 阴影 -->
+<ellipse cx="${s*.5}" cy="${s*.92}" rx="${s*.3}" ry="${s*.05}" fill="rgba(0,80,60,0.3)"/>
+<!-- 灵魂飘带 -->
+<path d="M ${s*.3},${s*.7} Q ${s*.2},${s*.8} ${s*.15},${s*.88}" stroke="rgba(100,255,200,0.25)" stroke-width="${s*.012}" fill="none"/>
+<path d="M ${s*.7},${s*.7} Q ${s*.8},${s*.8} ${s*.85},${s*.88}" stroke="rgba(100,255,200,0.25)" stroke-width="${s*.012}" fill="none"/>
+<!-- 身体 -->
+<circle cx="${s*.5}" cy="${s*.52}" r="${s*.34}" fill="url(#hn_body)"/>
+<!-- 死灵法袍 -->
+<path d="M ${s*.32},${s*.48} Q ${s*.5},${s*.4} ${s*.68},${s*.48} L ${s*.66},${s*.82} Q ${s*.5},${s*.88} ${s*.34},${s*.82} Z" fill="#0d2a22" stroke="#092018" stroke-width="${s*.006}"/>
+<!-- 法袍骨纹装饰 -->
+<path d="M ${s*.43},${s*.55} L ${s*.43},${s*.7}" stroke="rgba(200,255,230,0.3)" stroke-width="${s*.005}"/>
+<path d="M ${s*.57},${s*.55} L ${s*.57},${s*.7}" stroke="rgba(200,255,230,0.3)" stroke-width="${s*.005}"/>
+<path d="M ${s*.4},${s*.6} L ${s*.6},${s*.6}" stroke="rgba(200,255,230,0.2)" stroke-width="${s*.005}"/>
+<!-- 兜帽 - 尖角 -->
+<path d="M ${s*.3},${s*.4} Q ${s*.3},${s*.15} ${s*.5},${s*.08} Q ${s*.7},${s*.15} ${s*.7},${s*.4}" fill="#0d2a22" stroke="#061510" stroke-width="${s*.01}"/>
+<!-- 兜帽阴影 -->
+<path d="M ${s*.33},${s*.4} Q ${s*.5},${s*.46} ${s*.67},${s*.4}" fill="#061510"/>
+<!-- 眼睛 - 幽绿发光 -->
+<ellipse cx="${s*.43}" cy="${s*.38}" rx="${s*.035}" ry="${s*.03}" fill="#00ff88" filter="url(#hn_glow)" opacity="0.9"/>
+<ellipse cx="${s*.57}" cy="${s*.38}" rx="${s*.035}" ry="${s*.03}" fill="#00ff88" filter="url(#hn_glow)" opacity="0.9"/>
+<circle cx="${s*.43}" cy="${s*.38}" r="${s*.012}" fill="#fff"/>
+<circle cx="${s*.57}" cy="${s*.38}" r="${s*.012}" fill="#fff"/>
+<!-- 骷髅法杖 -->
+<rect x="${s*.73}" y="${s*.2}" width="${s*.02}" height="${s*.55}" fill="url(#hn_staff)" rx="${s*.01}"/>
+<!-- 法杖顶部骷髅 -->
+<circle cx="${s*.74}" cy="${s*.17}" r="${s*.035}" fill="#e8e0d0" stroke="#8a7a6a" stroke-width="${s*.005}"/>
+<circle cx="${s*.725}" cy="${s*.16}" r="${s*.01}" fill="#1a1a1a"/>
+<circle cx="${s*.755}" cy="${s*.16}" r="${s*.01}" fill="#1a1a1a"/>
+<path d="M ${s*.73},${s*.185} L ${s*.75},${s*.185}" stroke="#1a1a1a" stroke-width="${s*.005}"/>
+<!-- 幽灵球 -->
+<circle cx="${s*.2}" cy="${s*.35}" r="${s*.035}" fill="url(#hn_orb)" opacity="0.7" filter="url(#hn_glow)"/>
+<circle cx="${s*.82}" cy="${s*.55}" r="${s*.03}" fill="url(#hn_orb)" opacity="0.6" filter="url(#hn_glow)"/>
+<circle cx="${s*.25}" cy="${s*.7}" r="${s*.025}" fill="url(#hn_orb)" opacity="0.5" filter="url(#hn_glow)"/>
+<!-- 灵魂碎片 -->
+<path d="M ${s*.18},${s*.5} Q ${s*.15},${s*.45} ${s*.18},${s*.42}" stroke="rgba(100,255,200,0.4)" stroke-width="${s*.008}" fill="none"/>
+<path d="M ${s*.83},${s*.4} Q ${s*.86},${s*.37} ${s*.83},${s*.34}" stroke="rgba(100,255,200,0.35)" stroke-width="${s*.006}" fill="none"/>
+<!-- 死亡之环 -->
+<circle cx="${s*.5}" cy="${s*.52}" r="${s*.39}" stroke="rgba(0,255,150,0.15)" stroke-width="${s*.012}" fill="none" stroke-dasharray="${s*.02} ${s*.04} ${s*.06} ${s*.04}"/>
 </svg>`;
 };
 
