@@ -17,7 +17,6 @@ SkinFxSystem.prototype._skill_cyberpunk = function(x, y) {
     this.particles.emit(x, y, Math.floor(28*m), { colors:['#00ffcc','#ff00ff','#ffffff'], speedMin:5, speedMax:11, sizeMin:3, sizeMax:6, lifeMin:0.5, lifeMax:1.0, shape:'square', glow:true, glowSize:10 });
     this.particles.emit(x, y, Math.floor(12*m), { colors:['#ffffff','#aaffee'], speedMin:2, speedMax:5, sizeMin:2, sizeMax:4, lifeMin:0.6, lifeMax:1, shape:'spark', glow:true });
     this.particles.addShockwave(x, y, '#00ffcc', 80, 0.3);
-    Utils.shake(3);
 };
 SkinFxSystem.prototype._trail_cyberpunk = function(x, y) {
     this.particles.emit(x, y, Math.max(1, Math.floor(1*this.quality.particleMult)), { colors:['#00ffcc','#ff00ff'], speedMin:0.2, speedMax:1, sizeMin:2, sizeMax:3, lifeMin:0.2, lifeMax:0.35, shape:'square', offsetX:4, offsetY:4 });
@@ -43,7 +42,6 @@ SkinFxSystem.prototype._skill_steambot = function(x, y) {
     this.particles.emit(x, y, Math.floor(22*m), { colors:['#cccccc','#ffffff','#888888'], speedMin:5, speedMax:10, sizeMin:4, sizeMax:7, lifeMin:0.5, lifeMax:0.9, shape:'circle', gravity:0.8 });
     this.particles.emit(x, y, Math.floor(10*m), { colors:['#ffcc44','#ffaa00','#ffffff'], speedMin:3, speedMax:6, sizeMin:2, sizeMax:5, lifeMin:0.6, lifeMax:1, shape:'spark', glow:true });
     this.particles.addShockwave(x, y, '#ffaa33', 70, 0.3);
-    Utils.shake(3);
 };
 SkinFxSystem.prototype._trail_steambot = function(x, y) {
     this.particles.emit(x, y, Math.max(1, Math.floor(1*this.quality.particleMult)), { colors:['#cccccc','#aaaaaa'], speedMin:0.5, speedMax:2, sizeMin:3, sizeMax:5, lifeMin:0.4, lifeMax:0.7, shape:'circle', gravity:-0.5, offsetX:3, offsetY:3 });
@@ -66,7 +64,6 @@ SkinFxSystem.prototype._skill_nanocore = function(x, y) {
     const m = this.quality.particleMult;
     this.particles.emit(x, y, Math.floor(35*m), { colors:['#44ffaa','#88ffdd','#ffffff'], speedMin:2, speedMax:9, sizeMin:2, sizeMax:5, lifeMin:0.6, lifeMax:1.2, shape:'circle', glow:true, glowSize:10 });
     this.particles.addShockwave(x, y, '#44ffaa', 80, 0.35);
-    Utils.shake(3);
 };
 SkinFxSystem.prototype._trail_nanocore = function(x, y) {
     this.particles.emit(x, y, Math.max(1, Math.floor(2*this.quality.particleMult)), { colors:['#44ffaa','#88ffdd'], speedMin:0.5, speedMax:2, sizeMin:2, sizeMax:3, lifeMin:0.3, lifeMax:0.5, shape:'circle', offsetX:6, offsetY:6 });
@@ -93,7 +90,6 @@ SkinFxSystem.prototype._skill_thunder = function(x, y) {
     this.particles.emit(x, y, Math.floor(10*m), { colors:['#ffffff','#ffee88'], speedMin:0, speedMax:2, sizeMin:6, sizeMax:12, lifeMin:0.1, lifeMax:0.3, shape:'ring', offsetX:20, offsetY:20 });
     this.particles.addShockwave(x, y, '#ffee00', 120, 0.4);
     this.particles.triggerScreenFlash('#ffff44', 0.2, 0.12);
-    Utils.shake(6);
 };
 SkinFxSystem.prototype._trail_thunder = function(x, y) {
     if(Math.random()<0.3) this.particles.emit(x, y, 1, { colors:['#ffff88','#ffee00'], speedMin:0, speedMax:1, sizeMin:2, sizeMax:4, lifeMin:0.1, lifeMax:0.2, shape:'spark', offsetX:3, offsetY:3 });
@@ -120,7 +116,6 @@ SkinFxSystem.prototype._skill_glacier = function(x, y) {
     this.particles.emit(x, y, Math.floor(12*m), { colors:['#ffffff','#ccf0ff'], speedMin:1, speedMax:4, sizeMin:4, sizeMax:7, lifeMin:0.8, lifeMax:1.5, shape:'star', gravity:-0.5, offsetX:15, offsetY:15 });
     this.particles.addShockwave(x, y, '#88ddff', 110, 0.45);
     this.particles.triggerScreenFlash('#aaeeff', 0.15, 0.1);
-    Utils.shake(5);
 };
 SkinFxSystem.prototype._trail_glacier = function(x, y) {
     this.particles.emit(x, y, Math.max(1, Math.floor(1*this.quality.particleMult)), { colors:['#aaeeff','#ffffff'], speedMin:0.3, speedMax:1.5, sizeMin:2, sizeMax:3, lifeMin:0.3, lifeMax:0.5, shape:'diamond', gravity:-0.3, offsetX:4, offsetY:4 });
@@ -148,7 +143,6 @@ SkinFxSystem.prototype._skill_shadow = function(x, y) {
     this.particles.emit(x, y, Math.floor(10*m), { colors:['#ff00ff','#ff44ff'], speedMin:0, speedMax:2, sizeMin:6, sizeMax:10, lifeMin:0.2, lifeMax:0.5, shape:'ring', offsetX:15, offsetY:15, glow:true });
     this.particles.addShockwave(x, y, '#aa00ff', 100, 0.4);
     this.particles.triggerScreenFlash('#6600aa', 0.15, 0.12);
-    Utils.shake(5);
 };
 SkinFxSystem.prototype._trail_shadow = function(x, y) {
     this.particles.emit(x, y, Math.max(1, Math.floor(1*this.quality.particleMult)), { colors:['#6600aa','#4400aa'], speedMin:0, speedMax:0.5, sizeMin:3, sizeMax:4, lifeMin:0.3, lifeMax:0.5, shape:'circle', offsetX:5, offsetY:5 });
@@ -176,7 +170,6 @@ SkinFxSystem.prototype._skill_kitsune = function(x, y) {
     this.particles.emit(x, y, Math.floor(10*m), { colors:['#44aaff','#88ccff'], speedMin:1, speedMax:4, sizeMin:4, sizeMax:7, lifeMin:0.8, lifeMax:1.4, shape:'circle', gravity:-1 });
     this.particles.addShockwave(x, y, '#44aaff', 120, 0.45);
     this.particles.triggerScreenFlash('#44aaff', 0.12, 0.1);
-    Utils.shake(6);
 };
 SkinFxSystem.prototype._trail_kitsune = function(x, y) {
     this.particles.emit(x, y, Math.max(1, Math.floor(1*this.quality.particleMult)), { colors:['#44aaff','#ff8844'], speedMin:0.3, speedMax:1.5, sizeMin:2, sizeMax:4, lifeMin:0.3, lifeMax:0.5, shape:'circle', gravity:-0.3, offsetX:4, offsetY:4 });
@@ -204,7 +197,6 @@ SkinFxSystem.prototype._skill_dragonking = function(x, y) {
     this.particles.emit(x, y, Math.floor(15*m), { colors:['#88ddff','#aaddff'], speedMin:2, speedMax:6, sizeMin:4, sizeMax:7, lifeMin:0.8, lifeMax:1.5, shape:'circle', gravity:-1.5 });
     this.particles.addShockwave(x, y, '#4488ff', 140, 0.5);
     this.particles.triggerScreenFlash('#4488ff', 0.18, 0.12);
-    Utils.shake(7);
 };
 SkinFxSystem.prototype._trail_dragonking = function(x, y) {
     this.particles.emit(x, y, Math.max(1, Math.floor(1*this.quality.particleMult)), { colors:['#66bbff','#88ddff'], speedMin:0.5, speedMax:2, sizeMin:2, sizeMax:4, lifeMin:0.3, lifeMax:0.6, shape:'circle', gravity:-0.5, offsetX:5, offsetY:5 });
@@ -231,7 +223,6 @@ SkinFxSystem.prototype._skill_wukong = function(x, y) {
     this.particles.emit(x, y, Math.floor(12*m), { colors:['#ffffff','#ffee88'], speedMin:1, speedMax:4, sizeMin:5, sizeMax:8, lifeMin:0.8, lifeMax:1.4, shape:'circle', gravity:-1, offsetX:15, offsetY:15 });
     this.particles.addShockwave(x, y, '#ffcc00', 150, 0.5);
     this.particles.triggerScreenFlash('#ffcc00', 0.2, 0.12);
-    Utils.shake(8);
 };
 SkinFxSystem.prototype._trail_wukong = function(x, y) {
     this.particles.emit(x, y, Math.max(1, Math.floor(1*this.quality.particleMult)), { colors:['#ffcc00','#ffee00'], speedMin:0.3, speedMax:1.5, sizeMin:2, sizeMax:4, lifeMin:0.3, lifeMax:0.5, shape:'circle', gravity:-0.3, offsetX:3, offsetY:3 });
@@ -262,7 +253,6 @@ SkinFxSystem.prototype._skill_voidwalker = function(x, y) {
     this.particles.emit(x, y, Math.floor(8*m), { colors:['#4400aa','#220066'], speedMin:0, speedMax:1, sizeMin:10, sizeMax:16, lifeMin:0.3, lifeMax:0.6, shape:'ring', glow:true });
     this.particles.addShockwave(x, y, '#8844ff', 130, 0.45);
     this.particles.triggerScreenFlash('#4400aa', 0.15, 0.12);
-    Utils.shake(6);
 };
 SkinFxSystem.prototype._trail_voidwalker = function(x, y) {
     this.particles.emit(x, y, Math.max(1, Math.floor(1*this.quality.particleMult)), { colors:['#8844ff','#6633aa'], speedMin:0, speedMax:0.8, sizeMin:2, sizeMax:3, lifeMin:0.3, lifeMax:0.6, shape:'circle', offsetX:4, offsetY:4 });
@@ -292,7 +282,6 @@ SkinFxSystem.prototype._skill_bloodmoon = function(x, y) {
     this.particles.emit(x, y, Math.floor(12*m), { colors:['#880000','#aa0000'], speedMin:1, speedMax:4, sizeMin:2, sizeMax:4, lifeMin:0.7, lifeMax:1.2, shape:'circle', gravity:2 });
     this.particles.addShockwave(x, y, '#ff0000', 120, 0.5);
     this.particles.triggerScreenFlash('#ff0000', 0.2, 0.12);
-    Utils.shake(6);
 };
 SkinFxSystem.prototype._trail_bloodmoon = function(x, y) {
     this.particles.emit(x, y, Math.max(1, Math.floor(2*this.quality.particleMult)), { colors:['#cc0000','#aa0000','#ff4444'], speedMin:0.3, speedMax:1.5, sizeMin:2, sizeMax:4, lifeMin:0.3, lifeMax:0.6, shape:'circle', gravity:1, offsetX:3, offsetY:2 });
@@ -319,7 +308,6 @@ SkinFxSystem.prototype._skill_chaoseye = function(x, y) {
     this.particles.emit(x, y, Math.floor(12*m), { colors:['#ffffff','#ffee88','#ff88cc'], speedMin:0, speedMax:3, sizeMin:6, sizeMax:12, lifeMin:0.2, lifeMax:0.5, shape:'ring', offsetX:20, offsetY:20, hueShift:true });
     this.particles.addShockwave(x, y, '#ff44ff', 140, 0.5);
     this.particles.triggerScreenFlash('#ffffff', 0.25, 0.15);
-    Utils.shake(7);
 };
 SkinFxSystem.prototype._trail_chaoseye = function(x, y) {
     this.particles.emit(x, y, Math.max(1, Math.floor(2*this.quality.particleMult)), { colors:['#ff4488','#44ff88','#4488ff','#ffaa00','#aa44ff'], speedMin:0.5, speedMax:2, sizeMin:2, sizeMax:4, lifeMin:0.3, lifeMax:0.5, shape:'circle', hueShift:true, offsetX:5, offsetY:5 });

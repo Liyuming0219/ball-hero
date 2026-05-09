@@ -1446,7 +1446,7 @@ class SkinFxSystem {
         });
         this.particles.addShockwave(x, y, '#88ddff', 100, 0.5);
         this.particles.triggerScreenFlash('#88ddff', 0.15, 0.12);
-        Utils.shake(5);
+        // Utils.shake(5);
     }
 
     // 移动拖尾
@@ -1510,7 +1510,7 @@ class SkinFxSystem {
         });
         this.particles.triggerScreenFlash('#ff2233', 0.2, 0.12);
         this.particles.addBeam(x, y, 200, 8, '#33aa44', 0.4);
-        Utils.shake(8);
+        // Utils.shake(8);
     }
     _trail_watermelon(x, y) {
         this.particles.emit(x, y, Math.max(1, Math.floor(3 * this.quality.particleMult)), {
@@ -1572,7 +1572,7 @@ class SkinFxSystem {
             }, i * 30);
         }
         this.particles.triggerScreenFlash('#ff88aa', 0.15, 0.12);
-        Utils.shake(6);
+        // Utils.shake(6);
     }
     _trail_strawberry(x, y) {
         this.particles.emit(x, y, Math.max(1, Math.floor(3 * this.quality.particleMult)), {
@@ -1616,7 +1616,7 @@ class SkinFxSystem {
         this.particles.addShockwave(x, y, '#ff9900', 100, 0.5);
         this.particles.addShockwave(x, y, '#ffcc44', 70, 0.35);
         this.particles.triggerScreenFlash('#ffcc00', 0.12, 0.1);
-        Utils.shake(5);
+        // Utils.shake(5);
     }
     _trail_orange(x, y) {
         this.particles.emit(x, y, Math.max(1, Math.floor(2 * this.quality.particleMult)), {
@@ -1675,7 +1675,7 @@ class SkinFxSystem {
         this.particles.addShockwave(x, y, '#ff6622', 90, 0.5);
         this.particles.addShockwave(x, y, '#88ddff', 120, 0.6);
         this.particles.triggerScreenFlash('#88ddff', 0.15, 0.1);
-        Utils.shake(7);
+        // Utils.shake(7);
     }
     _trail_fox(x, y) {
         this.particles.emit(x, y, Math.max(1, Math.floor(3 * this.quality.particleMult)), {
@@ -1732,7 +1732,7 @@ class SkinFxSystem {
         setTimeout(() => this.particles.addShockwave(x, y, '#ffcc00', 160, 0.75), 100);
         this.particles.addBeam(x, y, 250, 10, '#7744dd', 0.5);
         this.particles.triggerScreenFlash('#7744dd', 0.18, 0.14);
-        Utils.shake(10);
+        // Utils.shake(10);
     }
     _trail_dragon(x, y) {
         this.particles.emit(x, y, Math.max(1, Math.floor(3 * this.quality.particleMult)), {
@@ -1786,7 +1786,7 @@ class SkinFxSystem {
         this.particles.addShockwave(x, y, '#44ffaa', 90, 0.45);
         this.particles.addShockwave(x, y, '#1a1a2e', 60, 0.3);
         this.particles.triggerScreenFlash('#44ffaa', 0.12, 0.1);
-        Utils.shake(6);
+        // Utils.shake(6);
     }
     _trail_cat(x, y) {
         this.particles.emit(x, y, Math.max(1, Math.floor(2 * this.quality.particleMult)), {
@@ -1848,7 +1848,7 @@ class SkinFxSystem {
         this.particles.addShockwave(x, y, '#88ccff', 80, 0.4);
         this.particles.addBeam(x, y, 220, 8, '#88ccff', 0.4);
         this.particles.triggerScreenFlash('#ffffff', 0.2, 0.12);
-        Utils.shake(7);
+        // Utils.shake(7);
     }
     _trail_diamond(x, y) {
         this.particles.emit(x, y, Math.max(1, Math.floor(2.5 * this.quality.particleMult)), {
@@ -1903,7 +1903,7 @@ class SkinFxSystem {
         setTimeout(() => this.particles.addShockwave(x, y, '#ffcc00', 140, 0.65), 80);
         this.particles.addBeam(x, y, 280, 12, '#ff4422', 0.5);
         this.particles.triggerScreenFlash('#ff4422', 0.2, 0.14);
-        Utils.shake(9);
+        // Utils.shake(9);
     }
     _trail_ruby(x, y) {
         this.particles.emit(x, y, Math.max(1, Math.floor(3 * this.quality.particleMult)), {
@@ -1952,7 +1952,7 @@ class SkinFxSystem {
         this.particles.addShockwave(x, y, '#44dd77', 95, 0.5);
         this.particles.addShockwave(x, y, '#88ffaa', 65, 0.35);
         this.particles.triggerScreenFlash('#44dd77', 0.12, 0.1);
-        Utils.shake(5);
+        // Utils.shake(5);
     }
     _trail_emerald(x, y) {
         this.particles.emit(x, y, Math.max(1, Math.floor(2 * this.quality.particleMult)), {
@@ -2000,7 +2000,7 @@ class SkinFxSystem {
         setTimeout(() => this.particles.addShockwave(x, y, '#ff44aa', 170, 0.8), 100);
         this.particles.addBeam(x, y, 260, 10, '#aa44ff', 0.5);
         this.particles.triggerScreenFlash('#aa44ff', 0.2, 0.14);
-        Utils.shake(9);
+        // Utils.shake(9);
     }
     _trail_nebula(x, y) {
         this.particles.emit(x, y, Math.max(1, Math.floor(3 * this.quality.particleMult)), {
@@ -2063,7 +2063,7 @@ class SkinFxSystem {
         this.particles.addShockwave(x, y, '#000', 100, 0.5);
         this.particles.addShockwave(x, y, '#ff6600', 140, 0.7);
         this.particles.triggerScreenFlash('#000000', 0.25, 0.15);
-        Utils.shake(8);
+        // Utils.shake(8);
     }
     _trail_blackhole(x, y) {
         this.particles.emit(x, y, Math.max(1, Math.floor(2 * this.quality.particleMult)), {
@@ -2131,7 +2131,7 @@ class SkinFxSystem {
         setTimeout(() => this.particles.addShockwave(x, y, '#ffcc00', 160, 0.8), 90);
         this.particles.addBeam(x, y, 300, 12, '#ff6600', 0.55);
         this.particles.triggerScreenFlash('#ff6600', 0.22, 0.15);
-        Utils.shake(12);
+        // Utils.shake(12);
     }
     _trail_phoenix(x, y) {
         this.particles.emit(x, y, Math.max(1, Math.floor(4 * this.quality.particleMult)), {
