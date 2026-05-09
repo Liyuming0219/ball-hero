@@ -60,23 +60,31 @@ class SpriteLoader {
             this._drawType(tmpCtx, type, cx, cy, r, phase, def);
             tmpCtx.restore();
 
-            // 在最终canvas上合成：外发光 + 本体
+            // 在最终canvas上合成：锐利彩色描边 + 本体
             var canvas = document.createElement('canvas');
             canvas.width = drawSize;
             canvas.height = drawSize;
             var ctx = canvas.getContext('2d');
 
-            // 外发光层：轻柔边缘光，提升辨识度但不脏
-            ctx.save();
-            ctx.shadowColor = def.color || '#ffffff';
-            ctx.shadowBlur = 5;
-            ctx.shadowOffsetX = 0;
-            ctx.shadowOffsetY = 0;
-            ctx.globalAlpha = 0.35;
-            ctx.drawImage(tmpCanvas, 0, 0);
-            ctx.restore();
+            // 锐利描边层：通过多方向偏移绘制实现清晰轮廓（不用模糊的shadowBlur）
+            var outlineColor = def.color || '#ffffff';
+            var outlineWidth = 2; // 2像素描边
+            ctx.globalAlpha = 0.7;
+            for (var ox = -outlineWidth; ox <= outlineWidth; ox++) {
+                for (var oy = -outlineWidth; oy <= outlineWidth; oy++) {
+                    if (ox === 0 && oy === 0) continue;
+                    if (Math.abs(ox) + Math.abs(oy) > outlineWidth + 1) continue;
+                    ctx.drawImage(tmpCanvas, ox, oy);
+                }
+            }
+            // 用描边颜色着色（source-in）
+            ctx.globalCompositeOperation = 'source-in';
+            ctx.fillStyle = outlineColor;
+            ctx.fillRect(0, 0, drawSize, drawSize);
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.globalAlpha = 1;
 
-            // 本体层：清晰绘制
+            // 本体层：清晰绘制在描边之上
             ctx.drawImage(tmpCanvas, 0, 0);
 
             frames.push(canvas);

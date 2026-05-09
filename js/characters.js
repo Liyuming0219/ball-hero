@@ -711,12 +711,13 @@ this.expToNext = 80;
             ctx.fill();
             ctx.globalAlpha = this.invincibleTime > 0 && Math.floor(this.invincibleTime * 20) % 2 === 0 ? 0.4 : 1;
 
-            // 身体外圈光晕
-            ctx.globalAlpha *= 0.25;
-            ctx.fillStyle = this.def.color;
+            // 身体描边轮廓（锐利清晰，深色背景下一眼可见）
+            ctx.strokeStyle = this._lighten(this.def.color, 0.6);
+            ctx.lineWidth = 3;
             ctx.beginPath();
-            ctx.arc(sx, sy + bob, this.radius + 8, 0, TWO_PI);
-            ctx.fill();
+            ctx.arc(sx, sy + bob, this.radius + 1, 0, TWO_PI);
+            ctx.stroke();
+
             ctx.globalAlpha = this.invincibleTime > 0 && Math.floor(this.invincibleTime * 20) % 2 === 0 ? 0.4 : 1;
 
             // 身体（增强：径向渐变增加立体感）
