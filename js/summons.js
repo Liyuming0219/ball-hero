@@ -356,7 +356,7 @@ class Summon {
                 this.color, 0.15
             );
             if (isCrit) particles.explode(target.x, target.y, this.colors, 6, 3);
-            Utils.shake(isCrit ? 3 : 1);
+            // Utils.shake(isCrit ? 3 : 1);
             return died;
 
         } else if (this.type === 'skeleton_mage') {
@@ -398,7 +398,7 @@ class Summon {
                     if (d) hitAny = true;
                 }
             }
-            Utils.shake(2);
+            // Utils.shake(2);
             return hitAny;
 
         } else if (this.type === 'skeleton_tank') {
@@ -407,7 +407,7 @@ class Summon {
             const smashRange = (this.attackRange + 15) * (this.owner.bonuses.areaMult || 1);
             particles.addShockwave(this.x, this.y, this.color, smashRange, 0.2);
             particles.addFlash(this.x, this.y, '#6699ff', 30, 0.15);
-            Utils.shake(2);
+            // Utils.shake(2);
 
             let hitAny = false;
             for (const e of enemies) {
@@ -433,7 +433,7 @@ class Summon {
                 lifeMin: 0.2, lifeMax: 0.5,
                 glow: true,
             });
-            Utils.shake(isCrit ? 5 : 3);
+            // Utils.shake(isCrit ? 5 : 3);
 
             for (const e of enemies) {
                 if (!e.alive) continue;
@@ -1051,7 +1051,7 @@ class SummonManager {
             glowSize: 10,
         });
         this.particles.addFlash(x, y, '#aaffee', 80, 0.3);
-        Utils.shake(6);
+        // Utils.shake(6);
 
         return s;
     }

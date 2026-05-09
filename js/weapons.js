@@ -358,7 +358,7 @@ class WeaponSystem {
         }
 
         if (hitCount > 0) {
-            Utils.shake(3 + Math.min(hitCount, 4));
+            // Utils.shake(3 + Math.min(hitCount, 4));
             this.particles.addFlash(px + Math.cos(angle) * range * 0.5, py + Math.sin(angle) * range * 0.5, this.player.def.color, 35 + hitCount * 5, 0.12);
             // 多段命中额外冲击波
             if (hitCount >= 3) {
@@ -448,7 +448,7 @@ class WeaponSystem {
             glow: true,
         });
         this.particles.addFlash(px, py, '#88ddff', 40, 0.15);
-        Utils.shake(5);
+        // Utils.shake(5);
     }
 
     // --- 火球攻击 ---
@@ -512,7 +512,7 @@ class WeaponSystem {
             glowSize: 12,
         });
         this.particles.addFlash(px, py, '#ff6644', range * 0.6, 0.25);
-        Utils.shake(8);
+        // Utils.shake(8);
 
         for (const enemy of enemies) {
             if (!enemy.alive) continue;
@@ -604,7 +604,7 @@ class WeaponSystem {
             }
         }
 
-        if (hitCount > 0) Utils.shake(2 + Math.min(hitCount, 3));
+        // if (hitCount > 0) Utils.shake(2 + Math.min(hitCount, 3));
     }
 
     // 刺客被动：暗影步瞬移
@@ -664,7 +664,7 @@ class WeaponSystem {
                 if (died) this._onKill(enemy);
             }
         }
-        Utils.shake(6);
+        // Utils.shake(6);
     }
 
     // --- 锤击攻击（圣骑士）---
@@ -695,7 +695,7 @@ class WeaponSystem {
             sizeMin: 3, sizeMax: 5,
             lifeMin: 0.4, lifeMax: 0.8,
         });
-        Utils.shake(5);
+        // Utils.shake(5);
 
         for (const enemy of enemies) {
             if (!enemy.alive) continue;
@@ -838,7 +838,7 @@ class WeaponSystem {
             lifeMin: 0.3, lifeMax: 0.7,
             glow: true,
         });
-        Utils.shake(6);
+        // Utils.shake(6);
     }
 
     // --- 召唤攻击（亡灵师）---
@@ -908,7 +908,7 @@ class WeaponSystem {
             lifeMin: 0.3, lifeMax: 0.7,
             glow: true,
         });
-        Utils.shake(5);
+        // Utils.shake(5);
 
         // 对范围内敌人造成一次伤害
         for (const enemy of enemies) {
@@ -986,7 +986,7 @@ class WeaponSystem {
             if (window._game) window._game._critBlurTimer = 0.1;
             // 基础暴击闪光 + 星光爆发
             this.particles.addFlash(enemy.x, enemy.y, '#ffcc00', 30, 0.15);
-            Utils.shake(3);
+            // Utils.shake(3);
             // 径向光芒粒子
             this.particles.emit(enemy.x, enemy.y, 8, {
                 colors: ['#ffcc00', '#ffee44', '#ffffff'],
@@ -1068,7 +1068,7 @@ class WeaponSystem {
                 this.player.heal(healAmt, this.particles);
             }
             this.particles.explode(enemy.x, enemy.y, shadowHarvest ? ['#aa22ff', '#cc44ff', '#ff66ff'] : ['#ff6644', '#ffaa00', '#ffff44'], 12, 5);
-            Utils.shake(4);
+            // Utils.shake(4);
         }
         // 击杀回血
         if (this.player.bonuses.killHeal > 0) {

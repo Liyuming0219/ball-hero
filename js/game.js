@@ -777,7 +777,7 @@ class Game {
                         sizeMin: 2, sizeMax: 5, lifeMin: 0.4, lifeMax: 0.7, glow: true, glowSize: 8,
                     });
                     this.particles.triggerScreenFlash(cc, 0.12, 0.1);
-                    Utils.shake(8);
+                    // Utils.shake(8);
                     this.player._comboMilestone = 0;
                 }
 
@@ -832,7 +832,7 @@ class Game {
                     enemy.alive = false;
                     this.particles.explode(enemy.x, enemy.y, ['#ff8800', '#ffaa22', '#ffff44'], 20, 6);
                     this.particles.addShockwave(enemy.x, enemy.y, '#ff8800', 100, 0.3);
-                    Utils.shake(8);
+                    // Utils.shake(8);
                     this._spawnExp(enemy);
                     if (result && result !== 'blocked') {
                         this.damageVignette = 0.8;
@@ -955,7 +955,7 @@ class Game {
             if (newBoss && newBoss !== this.activeBoss) {
                 // Boss登场特效：多层冲击波 + 屏闪 + 粒子爆发 + 震屏
                 this.screenFlash = { color: '#ff2200', alpha: 0.5 };
-                Utils.shake(12);
+                // Utils.shake(12);
                 this.particles.addShockwave(newBoss.x, newBoss.y, '#ff4400', 200, 0.6);
                 this.particles.addShockwave(newBoss.x, newBoss.y, '#ffaa00', 150, 0.45);
                 this.particles.addShockwave(newBoss.x, newBoss.y, '#ffffff', 100, 0.3);
@@ -1069,7 +1069,7 @@ class Game {
                     // 星形散射粒子
                     this.particles.emit(this.player.x, this.player.y, 8, LEVELUP_STAR_PARTICLES);
                     this.screenFlash = { color: '#88ddff', alpha: 0.25 };
-                    Utils.shake(4);
+                    // Utils.shake(4);
                     SFX.levelUp();
                     this.combatLog.addEntry(`⬆ 升级! Lv.${this.player.level}`, '#44aaff');
                     // 皮肤技能释放特效
@@ -1122,7 +1122,7 @@ class Game {
             // Boss击败时的华丽特效
             this.particles.superExplode(this.player.x, this.player.y, ['#ffaa00', '#ff6644', '#ffff44']);
             this.particles.addShockwave(this.player.x, this.player.y, '#ffaa00', 300, 0.5);
-            Utils.shake(12);
+            // Utils.shake(12);
             return;
         }
 
@@ -1306,7 +1306,7 @@ class Game {
                 // 全屏白闪 + 震动
                 this.particles.addFlash(this.player.x, this.player.y, '#ff8844', 400, 0.3);
                 this.particles.addShockwave(this.player.x, this.player.y, '#ffaa44', 500, 0.5);
-                Utils.shake(12);
+                // Utils.shake(12);
                 break;
             }
             case 'magnet': {
@@ -2807,7 +2807,7 @@ class Game {
                 const range = 80;
                 this.particles.explode(r.x, r.y, ['#55ddbb', '#88ffdd', '#aaffee'], 15, 5);
                 this.particles.addShockwave(r.x, r.y, '#55ddbb', range, 0.3);
-                Utils.shake(4);
+                // Utils.shake(4);
                 for (const e of this.enemies) {
                     if (!e.alive) continue;
                     if (Utils.dist(r.x, r.y, e.x, e.y) < range + e.radius) {
@@ -2853,7 +2853,7 @@ class Game {
             case 'bossSlam': {
                 // Boss地震：对范围内造成伤害
                 const slamRange = 180;
-                Utils.shake(15);
+                // Utils.shake(15);
                 this.particles.addShockwave(boss.x, boss.y, '#ff6644', slamRange, 0.4);
                 const dist = Utils.dist(boss.x, boss.y, this.player.x, this.player.y);
                 if (dist < slamRange) {
@@ -2897,7 +2897,7 @@ class Game {
                     lifeMin: 0.3, lifeMax: 0.6,
                     glow: true, glowSize: 8,
                 });
-                Utils.shake(6);
+                // Utils.shake(6);
                 break;
             }
 
@@ -2925,7 +2925,7 @@ class Game {
                 blackhole._pullForce = 120; // 吸引力
                 this.mapHazards.push(blackhole);
                 this.particles.addShockwave(event.x, event.y, '#6622cc', event.radius, 0.5);
-                Utils.shake(8);
+                // Utils.shake(8);
                 break;
             }
 
@@ -2936,7 +2936,7 @@ class Game {
                 whirlHazard._followBoss = boss; // 跟随Boss移动
                 this.mapHazards.push(whirlHazard);
                 this.particles.addShockwave(boss.x, boss.y, '#cc1111', whirlRadius, 0.4);
-                Utils.shake(10);
+                // Utils.shake(10);
                 break;
             }
 
@@ -2975,7 +2975,7 @@ class Game {
                     this.mapHazards.push(pillar);
                 }
                 this.particles.addShockwave(event.x, event.y, '#44ccee', cageR + 20, 0.4);
-                Utils.shake(6);
+                // Utils.shake(6);
                 break;
             }
 
@@ -3053,7 +3053,7 @@ class Game {
                         }
                     }
                 }
-                Utils.shake(8);
+                // Utils.shake(8);
                 break;
             }
 
@@ -3075,7 +3075,7 @@ class Game {
                     boss._shieldHp = event.shieldHp;
                 }
                 this.particles.addShockwave(boss.x, boss.y, '#44cc44', 150, 0.4);
-                Utils.shake(8);
+                // Utils.shake(8);
                 break;
             }
         }
