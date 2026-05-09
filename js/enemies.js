@@ -199,7 +199,7 @@ const BossVariants = [
 
 // 主题专属Boss - 每个地图主题对应一个独特多阶段Boss
 const ThemeBosses = {
-    void: {
+    void_abyss: {
         name: '虚空裂隙守卫',
         color: '#9944ff',
         colors: ['#6622cc', '#9944ff', '#cc88ff'],
@@ -208,7 +208,7 @@ const ThemeBosses = {
         radiusMult: 1.3,
         desc: '传送+暗能量射线+虚空黑洞',
     },
-    crimson: {
+    crimson_waste: {
         name: '猩红屠夫',
         color: '#cc1111',
         colors: ['#881111', '#cc1111', '#ff4444'],
@@ -217,7 +217,7 @@ const ThemeBosses = {
         radiusMult: 1.4,
         desc: '狂暴冲锋+旋风斩+血刃风暴',
     },
-    frost: {
+    frost_realm: {
         name: '永冻冰龙',
         color: '#44ccee',
         colors: ['#2288bb', '#44ccee', '#aaeeff'],
@@ -226,7 +226,7 @@ const ThemeBosses = {
         radiusMult: 1.5,
         desc: '冰息吐息+冰晶牢笼+暴风雪',
     },
-    corruption: {
+    dark_forest: {
         name: '腐化之母',
         color: '#44cc44',
         colors: ['#227722', '#44cc44', '#88ff88'],
@@ -234,6 +234,24 @@ const ThemeBosses = {
         hpMult: 2.5,
         radiusMult: 1.6,
         desc: '毒雾区域+触手拍击+分裂增殖',
+    },
+    nether_volcano: {
+        name: '熔岩巨兽',
+        color: '#ff6600',
+        colors: ['#cc3300', '#ff6600', '#ffaa00'],
+        pattern: 'crimsonButcher',
+        hpMult: 2.3,
+        radiusMult: 1.5,
+        desc: '岩浆喷射+地裂冲锋+陨石坠落',
+    },
+    celestial_ruins: {
+        name: '天界守护者',
+        color: '#ddaa44',
+        colors: ['#aa7722', '#ddaa44', '#ffeebb'],
+        pattern: 'voidGuardian',
+        hpMult: 2.0,
+        radiusMult: 1.4,
+        desc: '圣光射线+传送+审判之环',
     },
 };
 

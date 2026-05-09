@@ -1014,66 +1014,122 @@ const GameEvents = {
 };
 
 // ============================================
-// 地图主题系统
+// 可选地图系统（玩家选择）
 // ============================================
-const MapThemes = [
+const GameMaps = [
     {
-        id: 'void',
+        id: 'void_abyss',
         name: '虚空深渊',
-        timeRange: [0, 90],   // 0~1:30
-        bgGrad: ['#0c0c1e', '#12123a', '#0e0e28'],
-        glowA: 'rgba(60,30,120,0.22)',
-        glowB: 'rgba(25,60,100,0.18)',
-        gridColor: '#222244',
-        dotColor: '#3a3a66',
-        starColor: '#aabbee',
+        desc: '紫色水晶漂浮的无尽虚空，神秘而幽深',
+        icon: '🌌',
+        // 视觉主题配置
+        bgGrad: ['#0a0a1a', '#141432', '#0c0c24'],
+        glowA: 'rgba(80,40,160,0.28)',
+        glowB: 'rgba(30,60,120,0.22)',
+        gridColor: 'rgba(60,50,120,0.35)',
+        dotColor: '#4a4a88',
+        starColor: '#bbaaff',
         fogColor: null,
         decorType: 'crystal',
-        decorColor: '#8866cc',
+        decorColor: '#9966ee',
+        // 环境特色
+        ambientParticles: { color: '#8855ff', count: 15, speed: 0.3, glow: true },
+        specialEffect: 'floatingCrystals', // 漂浮的紫色水晶碎片
     },
     {
-        id: 'crimson',
+        id: 'crimson_waste',
         name: '猩红荒原',
-        timeRange: [90, 210],  // 1:30~3:30
-        bgGrad: ['#1a0c0c', '#281212', '#200e0e'],
-        glowA: 'rgba(120,30,30,0.24)',
-        glowB: 'rgba(100,50,20,0.18)',
-        gridColor: '#3a2222',
-        dotColor: '#553333',
-        starColor: '#ddaa88',
-        fogColor: 'rgba(80,15,15,0.06)',
+        desc: '炽热的红色荒漠，残破石柱矗立在血色天空下',
+        icon: '🔥',
+        bgGrad: ['#1c0808', '#2e1414', '#241010'],
+        glowA: 'rgba(150,30,20,0.30)',
+        glowB: 'rgba(120,60,20,0.22)',
+        gridColor: 'rgba(100,40,30,0.30)',
+        dotColor: '#664433',
+        starColor: '#ffaa77',
+        fogColor: 'rgba(100,20,10,0.08)',
         decorType: 'pillar',
-        decorColor: '#aa6644',
+        decorColor: '#cc7744',
+        ambientParticles: { color: '#ff4422', count: 20, speed: 0.6, glow: false },
+        specialEffect: 'embers', // 飘舞的火焰灰烬
     },
     {
-        id: 'frost',
+        id: 'frost_realm',
         name: '冰封虚域',
-        timeRange: [210, 360], // 3:30~6:00
-        bgGrad: ['#0c1020', '#121a38', '#0e1630'],
-        glowA: 'rgba(30,60,130,0.24)',
-        glowB: 'rgba(20,90,120,0.20)',
-        gridColor: '#223844',
-        dotColor: '#334a5a',
-        starColor: '#bbddff',
-        fogColor: 'rgba(15,30,60,0.06)',
+        desc: '永恒冰雪覆盖的极寒之地，冰晶折射着幽蓝光芒',
+        icon: '❄️',
+        bgGrad: ['#081018', '#101c34', '#0c1628'],
+        glowA: 'rgba(40,80,160,0.30)',
+        glowB: 'rgba(20,120,150,0.24)',
+        gridColor: 'rgba(50,90,130,0.30)',
+        dotColor: '#3a5a70',
+        starColor: '#aaddff',
+        fogColor: 'rgba(20,40,80,0.08)',
         decorType: 'iceSpike',
-        decorColor: '#66aacc',
+        decorColor: '#55bbdd',
+        ambientParticles: { color: '#88ccff', count: 25, speed: 0.2, glow: true },
+        specialEffect: 'snowfall', // 飘落的雪花
     },
     {
-        id: 'corruption',
-        name: '腐化之地',
-        timeRange: [360, 99999], // 6:00+
-        bgGrad: ['#14101e', '#1c1430', '#181028'],
-        glowA: 'rgba(80,20,100,0.26)',
-        glowB: 'rgba(30,80,20,0.18)',
-        gridColor: '#302244',
-        dotColor: '#4a3366',
-        starColor: '#ccaaee',
-        fogColor: 'rgba(40,15,60,0.06)',
+        id: 'dark_forest',
+        name: '暗影森林',
+        desc: '腐化蔓延的远古密林，萤火虫在毒雾中闪烁',
+        icon: '🌲',
+        bgGrad: ['#0a1208', '#141e10', '#0c180a'],
+        glowA: 'rgba(20,100,40,0.26)',
+        glowB: 'rgba(80,120,20,0.20)',
+        gridColor: 'rgba(40,80,30,0.28)',
+        dotColor: '#3a5533',
+        starColor: '#aaffaa',
+        fogColor: 'rgba(20,60,15,0.10)',
         decorType: 'tree',
-        decorColor: '#88cc55',
+        decorColor: '#66aa44',
+        ambientParticles: { color: '#44ff88', count: 30, speed: 0.15, glow: true },
+        specialEffect: 'fireflies', // 闪烁的萤火虫
+    },
+    {
+        id: 'nether_volcano',
+        name: '熔岩地狱',
+        desc: '岩浆翻涌的地下世界，热浪扭曲着空气',
+        icon: '🌋',
+        bgGrad: ['#1a0800', '#2a1000', '#200c00'],
+        glowA: 'rgba(200,60,0,0.30)',
+        glowB: 'rgba(180,100,0,0.20)',
+        gridColor: 'rgba(150,50,10,0.25)',
+        dotColor: '#884422',
+        starColor: '#ffcc44',
+        fogColor: 'rgba(100,30,0,0.10)',
+        decorType: 'lavaRock',
+        decorColor: '#ff6600',
+        ambientParticles: { color: '#ff8800', count: 18, speed: 0.8, glow: true },
+        specialEffect: 'lavaDrops', // 上浮的岩浆液滴
+    },
+    {
+        id: 'celestial_ruins',
+        name: '天界废墟',
+        desc: '崩塌的天空神殿，金色碎片在虚空中缓慢旋转',
+        icon: '✨',
+        bgGrad: ['#0c0c18', '#161630', '#101028'],
+        glowA: 'rgba(100,80,20,0.28)',
+        glowB: 'rgba(60,40,120,0.22)',
+        gridColor: 'rgba(80,70,40,0.30)',
+        dotColor: '#555544',
+        starColor: '#ffeebb',
+        fogColor: 'rgba(50,40,10,0.06)',
+        decorType: 'ruins',
+        decorColor: '#ddaa44',
+        ambientParticles: { color: '#ffdd66', count: 12, speed: 0.1, glow: true },
+        specialEffect: 'goldenDust', // 金色光尘缓慢飘落
     },
 ];
+
+// 旧版 MapThemes 兼容（敌人系统引用）—— 映射为第一张地图
+const MapThemes = GameMaps.map((m, i) => ({
+    ...m,
+    id: m.id,
+    name: m.name,
+    timeRange: [i * 90, (i + 1) * 90],
+}));
 
 // ============================================
 // 每日挑战排行榜 - localStorage 持久化

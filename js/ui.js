@@ -672,6 +672,232 @@ class UISystem {
         return null;
     }
 
+    // --- 地图选择界面 ---
+    renderMapSelect(dt) {
+        const ctx = this.ctx;
+        const W = this.W;
+        const H = this.H;
+        const S = this.scale;
+        this._titleTime += dt;
+
+        // ── 背景渐变（深色宇宙风） ──
+        const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+        bgGrad.addColorStop(0, '#080818');
+        bgGrad.addColorStop(0.5, '#0c1228');
+        bgGrad.addColorStop(1, '#0a0a20');
+        ctx.fillStyle = bgGrad;
+        ctx.fillRect(0, 0, W, H);
+
+        // ── 星空背景 ──
+        ctx.fillStyle = '#ffffff';
+        for (let i = 0; i < 40; i++) {
+            const sx = (Math.sin(i * 127.1 + this._titleTime * 0.08) * 0.5 + 0.5) * W;
+            const sy = (Math.cos(i * 311.7 + this._titleTime * 0.04) * 0.5 + 0.5) * H;
+            const sr = 0.8 + Math.sin(this._titleTime * 2.5 + i) * 0.4;
+            ctx.globalAlpha = 0.2 + Math.sin(this._titleTime * 2 + i * 0.7) * 0.15;
+            ctx.beginPath();
+            ctx.arc(sx, sy, sr, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+
+        // ── 标题 ──
+        ctx.font = this._font('bold', 30);
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = 'rgba(0,0,0,0.3)';
+        ctx.fillText('选择战场', W / 2 + 2, H * 0.06 + 2);
+        const titleGrad = ctx.createLinearGradient(W / 2 - 100 * S, 0, W / 2 + 100 * S, 0);
+        titleGrad.addColorStop(0, '#66ddff');
+        titleGrad.addColorStop(0.5, '#ffffff');
+        titleGrad.addColorStop(1, '#ffcc66');
+        ctx.fillStyle = titleGrad;
+        ctx.fillText('选择战场', W / 2, H * 0.06);
+
+        // 副标题
+        ctx.font = this._font(null, 13);
+        ctx.fillStyle = 'rgba(200,220,240,0.6)';
+        ctx.fillText('每个战场拥有独特的环境和视觉氛围', W / 2, H * 0.11);
+        ctx.textBaseline = 'alphabetic';
+
+        // === 地图卡片网格 ===
+        const maps = typeof GameMaps !== 'undefined' ? GameMaps : [];
+        const cols = W < 700 ? 2 : 3;
+        const rows = Math.ceil(maps.length / cols);
+        const cardAreaTop = H * 0.15;
+        const cardAreaBottom = H * 0.82;
+        const availH = cardAreaBottom - cardAreaTop;
+        const gapX = Math.round(14 * S);
+        const gapY = Math.round(12 * S);
+        const cardW = Math.min(Math.round(220 * S), Math.floor((W - gapX * (cols + 1)) / cols));
+        const cardH = Math.min(Math.round(180 * S), Math.floor((availH - gapY * (rows - 1)) / rows));
+        const gridW = cols * cardW + (cols - 1) * gapX;
+        const gridH = rows * cardH + (rows - 1) * gapY;
+        const gridStartX = (W - gridW) / 2;
+        const gridStartY = cardAreaTop + (availH - gridH) / 2;
+
+        // 初始化地图选择索引
+        if (this._selectedMap === undefined) this._selectedMap = 0;
+
+        let clickedMapId = null;
+        for (let i = 0; i < maps.length; i++) {
+            const map = maps[i];
+            const col = i % cols;
+            const row = Math.floor(i / cols);
+            const cx = gridStartX + col * (cardW + gapX);
+            const cy = gridStartY + row * (cardH + gapY);
+            const isSelected = i === this._selectedMap;
+            const isHover = this.mouseX >= cx && this.mouseX <= cx + cardW &&
+                            this.mouseY >= cy && this.mouseY <= cy + cardH;
+
+            // ── 卡片背景（使用地图主题色渐变） ──
+            ctx.save();
+            const cardGrad = ctx.createLinearGradient(cx, cy, cx, cy + cardH);
+            cardGrad.addColorStop(0, map.bgGrad[0]);
+            cardGrad.addColorStop(0.5, map.bgGrad[1]);
+            cardGrad.addColorStop(1, map.bgGrad[2]);
+            ctx.fillStyle = cardGrad;
+            if (isSelected) {
+                ctx.shadowColor = map.decorColor;
+                ctx.shadowBlur = 20 * S;
+            } else if (isHover) {
+                ctx.shadowColor = map.decorColor;
+                ctx.shadowBlur = 10 * S;
+            }
+            this._roundRect(ctx, cx, cy, cardW, cardH, 14 * S);
+            ctx.fill();
+
+            // 边框
+            ctx.strokeStyle = isSelected ? map.decorColor : (isHover ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.12)');
+            ctx.lineWidth = isSelected ? 2.5 : 1.5;
+            this._roundRect(ctx, cx, cy, cardW, cardH, 14 * S);
+            ctx.stroke();
+            ctx.restore();
+
+            // ── 卡片裁剪 ──
+            ctx.save();
+            this._roundRect(ctx, cx, cy, cardW, cardH, 14 * S);
+            ctx.clip();
+
+            // ── 装饰性小星星（模拟地图氛围） ──
+            ctx.fillStyle = map.starColor;
+            for (let s = 0; s < 8; s++) {
+                const starX = cx + (Math.sin(s * 73.7) * 0.5 + 0.5) * cardW;
+                const starY = cy + (Math.cos(s * 127.3) * 0.5 + 0.5) * cardH;
+                const starAlpha = 0.15 + 0.15 * Math.sin(this._titleTime * 2 + s + i * 3);
+                ctx.globalAlpha = starAlpha;
+                ctx.beginPath();
+                ctx.arc(starX, starY, 1.5 * S, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            ctx.globalAlpha = 1;
+
+            // ── 光晕装饰 ──
+            ctx.globalAlpha = 0.15;
+            ctx.fillStyle = map.glowA;
+            ctx.beginPath();
+            ctx.arc(cx + cardW * 0.3, cy + cardH * 0.4, cardH * 0.35, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.globalAlpha = 1;
+
+            // ── 地图图标 ──
+            const iconY = cy + cardH * 0.32;
+            ctx.font = this._font(null, 36, 'serif');
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(map.icon, cx + cardW / 2, iconY);
+
+            // ── 地图名称 ──
+            ctx.font = this._font('bold', 15);
+            ctx.fillStyle = '#ffffff';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(map.name, cx + cardW / 2, cy + cardH * 0.60);
+
+            // ── 地图描述 ──
+            ctx.font = this._font(null, 10);
+            ctx.fillStyle = 'rgba(200,220,240,0.75)';
+            this._wrapText(ctx, map.desc, cx + cardW / 2, cy + cardH * 0.75, cardW - 16 * S, 14 * S, 2);
+
+            // ── 选中标记 ──
+            if (isSelected) {
+                ctx.fillStyle = map.decorColor;
+                ctx.globalAlpha = 0.8;
+                ctx.fillRect(cx, cy + cardH - 4 * S, cardW, 4 * S);
+                ctx.globalAlpha = 1;
+            }
+
+            ctx.restore(); // 结束裁剪
+
+            // 点击选择
+            if (isHover && this.consumeClick()) {
+                this._selectedMap = i;
+            }
+        }
+
+        // === 返回按钮 ===
+        const backW = Math.round(90 * S);
+        const backH = Math.round(34 * S);
+        const backX = Math.round(16 * S);
+        const backBtnY = Math.round(16 * S);
+        const backHover = this.mouseX >= backX && this.mouseX <= backX + backW &&
+                          this.mouseY >= backBtnY && this.mouseY <= backBtnY + backH;
+        ctx.fillStyle = backHover ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.05)';
+        ctx.strokeStyle = backHover ? '#ffffff' : 'rgba(255,255,255,0.25)';
+        ctx.lineWidth = 1.5;
+        this._roundRect(ctx, backX, backBtnY, backW, backH, 17 * S);
+        ctx.fill();
+        this._roundRect(ctx, backX, backBtnY, backW, backH, 17 * S);
+        ctx.stroke();
+        ctx.font = this._font('bold', 13);
+        ctx.fillStyle = backHover ? '#fff' : '#8899aa';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('← 返回', backX + backW / 2, backBtnY + backH / 2);
+        ctx.textBaseline = 'alphabetic';
+
+        // === 开始战斗按钮 ===
+        const btnW = Math.round(180 * S);
+        const btnH = Math.round(50 * S);
+        const btnX = (W - btnW) / 2;
+        const btnY = H * 0.86;
+        const startHover = this.mouseX >= btnX && this.mouseX <= btnX + btnW &&
+                           this.mouseY >= btnY && this.mouseY <= btnY + btnH;
+
+        ctx.save();
+        const selectedMap = maps[this._selectedMap] || maps[0];
+        const btnGrad = ctx.createLinearGradient(btnX, btnY, btnX + btnW, btnY + btnH);
+        btnGrad.addColorStop(0, startHover ? '#77ffcc' : '#55eebb');
+        btnGrad.addColorStop(1, startHover ? '#55ccff' : '#44aadd');
+        ctx.fillStyle = btnGrad;
+        if (startHover) { ctx.shadowColor = '#44ddff'; ctx.shadowBlur = 18 * S; }
+        this._roundRect(ctx, btnX, btnY, btnW, btnH, 25 * S);
+        ctx.fill();
+        ctx.restore();
+
+        ctx.font = this._font('bold', 18);
+        ctx.fillStyle = '#fff';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('进入 ' + selectedMap.name, btnX + btnW / 2, btnY + btnH / 2);
+        ctx.textBaseline = 'alphabetic';
+
+        // === 处理点击 ===
+        if (backHover && this.consumeClick()) {
+            this._selectedMap = 0;
+            this.clicked = false;
+            return '__back__';
+        }
+        if (startHover && this.consumeClick()) {
+            const mapId = selectedMap.id;
+            this._selectedMap = 0;
+            this.clicked = false;
+            return mapId;
+        }
+        this.clicked = false;
+        return null;
+    }
+
     // --- 天赋商店界面 ---
     _renderShop(dt) {
         const ctx = this.ctx;

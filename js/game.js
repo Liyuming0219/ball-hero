@@ -55,8 +55,10 @@ class Game {
         }
 
         // 游戏状态
-        this.state = 'title'; // title, settings, menu, playing, upgrading, dead, paused, victory
+        this.state = 'title'; // title, settings, menu, mapSelect, playing, upgrading, dead, paused, victory
         this.gameMode = 'normal'; // normal / daily
+        this.selectedMapId = null; // 玩家选择的地图ID
+        this._pendingCharId = null; // 地图选择前暂存角色ID
         this.dailySeed = null;
         this.dailyRng = null;     // 种子随机数生成器
         this.dailyModifiers = []; // 每日修饰符
@@ -349,6 +351,9 @@ class Game {
             case 'menu':
                 this._updateMenu(dt);
                 break;
+            case 'mapSelect':
+                this._updateMapSelect(dt);
+                break;
             case 'playing':
                 this._updatePlaying(dt);
                 break;
@@ -419,6 +424,7 @@ class Game {
             if (typeof skinManager !== 'undefined') {
                 skinManager._trialSkinId = trialSkinId;
             }
+            this.selectedMapId = GameMaps[0].id; // 试玩使用默认地图
             this._startGame('swordsman');
             return;
         }
@@ -429,21 +435,38 @@ class Game {
                 return;
             }
             if (selected === '__daily__') {
-                // 每日挑战模式
+                // 每日挑战模式 - 直接开始（随机地图）
                 this.gameMode = 'daily';
                 const seed = DailyLeaderboard.getSeed();
                 this.dailySeed = seed;
                 this.dailyRng = Utils.seededRandom(seed);
                 this.dailyModifiers = DailyLeaderboard.getDailyModifiers(seed);
                 const charId = DailyLeaderboard.getDailyCharacter(seed);
+                this.selectedMapId = GameMaps[seed % GameMaps.length].id;
                 this._startGame(charId);
             } else {
+                // 普通模式 - 进入地图选择
                 this.gameMode = 'normal';
                 this.dailySeed = null;
                 this.dailyRng = null;
                 this.dailyModifiers = [];
-                this._startGame(selected);
+                this._pendingCharId = selected;
+                this.state = 'mapSelect';
             }
+        }
+    }
+
+    // === 地图选择 ===
+    _updateMapSelect(dt) {
+        const result = this.ui.renderMapSelect(dt);
+        if (result === '__back__') {
+            this.state = 'menu';
+            this._pendingCharId = null;
+        } else if (result) {
+            // result 是选择的地图ID
+            this.selectedMapId = result;
+            this._startGame(this._pendingCharId);
+            this._pendingCharId = null;
         }
     }
 
@@ -1957,6 +1980,12 @@ class Game {
     }
 
     _getMapTheme(t) {
+        // 优先使用玩家选择的地图
+        if (this.selectedMapId) {
+            const map = GameMaps.find(m => m.id === this.selectedMapId);
+            if (map) return map;
+        }
+        // 回退：基于时间的旧逻辑
         for (let i = MapThemes.length - 1; i >= 0; i--) {
             if (t >= MapThemes[i].timeRange[0]) return MapThemes[i];
         }
@@ -2233,6 +2262,9 @@ class Game {
             }
         }
         this._renderDecors(ctx, camera, theme, W, H, gt);
+
+        // ── 地图特殊环境粒子（雪花/萤火虫/余烬等） ──
+        this._renderAmbientEffect(ctx, camera, theme, W, H, gt);
     }
 
     _renderDecors(ctx, camera, theme, W, H, gt) {
@@ -2312,10 +2344,128 @@ class Game {
                 ctx.beginPath();
                 ctx.arc(4 * Math.sin(gt + d.rot), -12 + 3 * Math.cos(gt * 0.7), 1.5, 0, TWO_PI);
                 ctx.fill();
+            } else if (theme.decorType === 'lavaRock') {
+                // 熔岩岩石
+                ctx.fillStyle = '#442200';
+                ctx.beginPath();
+                ctx.moveTo(-8, 6);
+                ctx.lineTo(-4, -10);
+                ctx.lineTo(4, -12);
+                ctx.lineTo(9, -4);
+                ctx.lineTo(7, 8);
+                ctx.closePath();
+                ctx.fill();
+                // 岩浆裂纹
+                ctx.strokeStyle = '#ff4400';
+                ctx.lineWidth = 1.5;
+                ctx.globalAlpha = 0.3 + 0.15 * Math.sin(gt * 2 + d.rot);
+                ctx.beginPath();
+                ctx.moveTo(-3, -6);
+                ctx.lineTo(0, 0);
+                ctx.lineTo(3, 4);
+                ctx.stroke();
+            } else if (theme.decorType === 'ruins') {
+                // 天界废墟碎片
+                ctx.fillStyle = theme.decorColor;
+                ctx.globalAlpha = 0.2 + 0.08 * Math.sin(gt * 0.4 + d.rot);
+                // 残破拱门
+                ctx.fillRect(-6, -14, 3, 22);
+                ctx.fillRect(3, -14, 3, 22);
+                ctx.fillRect(-6, -16, 12, 3);
+                // 光点
+                ctx.fillStyle = '#ffffaa';
+                ctx.globalAlpha = 0.3 * Math.abs(Math.sin(gt + d.rot * 3));
+                ctx.beginPath();
+                ctx.arc(0, -8, 2, 0, TWO_PI);
+                ctx.fill();
             }
             ctx.restore();
         }
         ctx.restore();
+    }
+
+    // === 地图特殊环境粒子效果 ===
+    _renderAmbientEffect(ctx, camera, theme, W, H, gt) {
+        if (!theme.specialEffect) return;
+        const mobile = this.isMobile;
+        const count = mobile ? 12 : (theme.ambientParticles ? theme.ambientParticles.count : 15);
+
+        // 初始化环境粒子（只在地图切换时重建）
+        if (!this._ambientFx || this._ambientFx._mapId !== theme.id) {
+            this._ambientFx = { _mapId: theme.id, particles: [] };
+            for (let i = 0; i < count; i++) {
+                this._ambientFx.particles.push({
+                    x: Math.random() * W,
+                    y: Math.random() * H,
+                    vx: (Math.random() - 0.5) * 30,
+                    vy: -10 - Math.random() * 40,
+                    size: 1.5 + Math.random() * 3,
+                    alpha: 0.2 + Math.random() * 0.5,
+                    phase: Math.random() * TWO_PI,
+                    life: Math.random(),
+                });
+            }
+        }
+
+        const pColor = theme.ambientParticles ? theme.ambientParticles.color : theme.starColor;
+        const pGlow = theme.ambientParticles ? theme.ambientParticles.glow : false;
+        const effect = theme.specialEffect;
+
+        ctx.fillStyle = pColor;
+        for (const p of this._ambientFx.particles) {
+            // 根据效果类型更新运动方式
+            if (effect === 'snowfall') {
+                p.x += Math.sin(gt * 0.5 + p.phase) * 0.3;
+                p.y += 0.4 + p.size * 0.1;
+                if (p.y > H) { p.y = -5; p.x = Math.random() * W; }
+            } else if (effect === 'embers') {
+                p.x += Math.sin(gt + p.phase) * 0.5;
+                p.y -= 0.5 + p.size * 0.2;
+                p.alpha = 0.3 + 0.3 * Math.sin(gt * 3 + p.phase);
+                if (p.y < -10) { p.y = H + 5; p.x = Math.random() * W; }
+            } else if (effect === 'fireflies') {
+                p.x += Math.sin(gt * 0.8 + p.phase) * 0.4;
+                p.y += Math.cos(gt * 0.6 + p.phase * 1.3) * 0.3;
+                p.alpha = 0.1 + 0.5 * Math.abs(Math.sin(gt * 1.5 + p.phase));
+                // 包裹
+                if (p.x < 0) p.x = W;
+                if (p.x > W) p.x = 0;
+                if (p.y < 0) p.y = H;
+                if (p.y > H) p.y = 0;
+            } else if (effect === 'lavaDrops') {
+                p.y -= 0.3 + p.size * 0.15;
+                p.x += Math.sin(gt * 0.7 + p.phase) * 0.2;
+                p.alpha = 0.4 + 0.3 * Math.sin(gt * 2 + p.phase);
+                if (p.y < -10) { p.y = H + 5; p.x = Math.random() * W; }
+            } else if (effect === 'floatingCrystals') {
+                p.x += Math.sin(gt * 0.3 + p.phase) * 0.2;
+                p.y += Math.cos(gt * 0.25 + p.phase * 0.7) * 0.15;
+                p.alpha = 0.2 + 0.2 * Math.sin(gt * 0.8 + p.phase);
+                if (p.x < 0) p.x = W;
+                if (p.x > W) p.x = 0;
+                if (p.y < 0) p.y = H;
+                if (p.y > H) p.y = 0;
+            } else if (effect === 'goldenDust') {
+                p.x += Math.sin(gt * 0.2 + p.phase) * 0.15;
+                p.y += 0.15 + p.size * 0.05;
+                p.alpha = 0.15 + 0.25 * Math.sin(gt * 0.6 + p.phase);
+                if (p.y > H) { p.y = -5; p.x = Math.random() * W; }
+            }
+
+            ctx.globalAlpha = p.alpha;
+            if (pGlow && !mobile) {
+                // 发光效果：画两层
+                ctx.globalAlpha = p.alpha * 0.3;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size + 3, 0, TWO_PI);
+                ctx.fill();
+                ctx.globalAlpha = p.alpha;
+            }
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, TWO_PI);
+            ctx.fill();
+        }
+        ctx.globalAlpha = 1;
     }
 
     // === 升级选择 ===
