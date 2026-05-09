@@ -226,43 +226,21 @@ class SkinRenderer {
     _body_watermelon(ctx, x, y, r, angle) {
         const t = this._time;
         this._shadow(ctx, x, y, r);
-        this._glow(ctx, x, y, r, '#22aa44', 0.08);
         ctx.save(); ctx.translate(x, y);
-        // 深绿基底
-        const wg = ctx.createRadialGradient(-r * 0.15, -r * 0.15, 0, 0, 0, r);
-        wg.addColorStop(0, '#3daa55');
-        wg.addColorStop(0.35, '#2d8844');
-        wg.addColorStop(0.65, '#1e6633');
-        wg.addColorStop(1, '#104422');
-        ctx.fillStyle = wg;
+        const g = ctx.createRadialGradient(-r*0.3, -r*0.3, 0, 0, 0, r);
+        g.addColorStop(0, '#5fd47a'); g.addColorStop(0.5, '#3aad52');
+        g.addColorStop(0.8, '#1e7a35'); g.addColorStop(1, '#0d4d1f');
+        ctx.fillStyle = g;
         ctx.beginPath(); ctx.arc(0, 0, r, 0, TWO_PI_SK); ctx.fill();
-        // 深色纵条纹
-        ctx.strokeStyle = '#0e3318'; ctx.lineWidth = r * 0.09; ctx.globalAlpha = 0.5;
-        for (let i = 0; i < 6; i++) {
-            const sa = i * TWO_PI_SK / 6 + t * 0.05;
-            ctx.beginPath();
-            ctx.moveTo(Math.cos(sa) * r * 0.1, -r * 0.88);
-            ctx.quadraticCurveTo(Math.cos(sa) * r * 0.7, 0, Math.cos(sa + Math.PI) * r * 0.1, r * 0.88);
-            ctx.stroke();
+        ctx.strokeStyle = '#0a3013'; ctx.lineWidth = r * 0.14;
+        ctx.lineCap = 'round'; ctx.globalAlpha = 0.6;
+        for (let i = 0; i < 5; i++) {
+            const a = i * TWO_PI_SK / 5 + angle * 0.1;
+            ctx.beginPath(); ctx.arc(0, 0, r * 0.7, a - 0.5, a + 0.5); ctx.stroke();
         }
         ctx.globalAlpha = 1;
-        // 光泽
-        if (this.quality.detailLevel >= 2) {
-            ctx.globalAlpha = 0.07; ctx.fillStyle = '#88ffaa';
-            ctx.beginPath(); ctx.ellipse(-r * 0.3, -r * 0.2, r * 0.4, r * 0.2, -0.5, 0, TWO_PI_SK); ctx.fill();
-            ctx.globalAlpha = 1;
-        }
-        // 高光
-        ctx.globalAlpha = 0.4; ctx.fillStyle = '#88ffaa';
-        ctx.beginPath(); ctx.arc(-r * 0.25, -r * 0.3, r * 0.1, 0, TWO_PI_SK); ctx.fill();
-        ctx.globalAlpha = 0.2;
-        ctx.beginPath(); ctx.arc(-r * 0.1, -r * 0.4, r * 0.05, 0, TWO_PI_SK); ctx.fill();
-        // 瓜蒂
-        ctx.globalAlpha = 1; ctx.fillStyle = '#886633';
-        ctx.fillRect(-r * 0.04, -r * 0.96, r * 0.08, r * 0.14);
-        ctx.strokeStyle = '#44aa33'; ctx.lineWidth = 1.5; ctx.lineCap = 'round';
-        ctx.beginPath(); ctx.moveTo(0, -r * 0.96);
-        ctx.quadraticCurveTo(r * 0.15, -r * 1.1, r * 0.2, -r * 0.9); ctx.stroke();
+        ctx.fillStyle = 'rgba(255,255,255,0.4)';
+        ctx.beginPath(); ctx.arc(-r*0.3, -r*0.3, r*0.15, 0, TWO_PI_SK); ctx.fill();
         ctx.restore();
     }
 
@@ -324,54 +302,27 @@ class SkinRenderer {
     _body_strawberry(ctx, x, y, r, angle) {
         const t = this._time;
         this._shadow(ctx, x, y, r);
-        this._glow(ctx, x, y, r, '#ff6699', 0.12);
         ctx.save(); ctx.translate(x, y);
-        // 草莓主体
-        const sg = ctx.createRadialGradient(-r * 0.1, -r * 0.15, 0, 0, r * 0.1, r);
-        sg.addColorStop(0, '#ff6688');
-        sg.addColorStop(0.3, '#ff3355');
-        sg.addColorStop(0.6, '#dd2244');
-        sg.addColorStop(0.85, '#aa1133');
-        sg.addColorStop(1, '#771122');
-        ctx.fillStyle = sg;
+        const g = ctx.createRadialGradient(-r*0.2, -r*0.2, 0, 0, r*0.1, r);
+        g.addColorStop(0, '#ff6b7a'); g.addColorStop(0.4, '#e63350');
+        g.addColorStop(0.75, '#bf1e3d'); g.addColorStop(1, '#8b0a2a');
+        ctx.fillStyle = g;
         ctx.beginPath(); ctx.arc(0, 0, r, 0, TWO_PI_SK); ctx.fill();
-        // 种子 — 斐波那契螺旋自然分布
-        if (this.quality.detailLevel >= 1) {
-            ctx.fillStyle = '#ffee88';
-            const seedCount = this.quality.detailLevel >= 3 ? 22 : 14;
-            const goldenAngle = Math.PI * (3 - Math.sqrt(5));
-            for (let i = 1; i <= seedCount; i++) {
-                const frac = i / (seedCount + 1);
-                const dist = r * (0.2 + frac * 0.6);
-                const ang = i * goldenAngle;
-                const sx = Math.cos(ang) * dist, sy = Math.sin(ang) * dist;
-                if (sx * sx + sy * sy > r * r * 0.8) continue;
-                ctx.globalAlpha = 0.7;
-                ctx.beginPath(); ctx.ellipse(sx, sy, r * 0.032, r * 0.022, ang, 0, TWO_PI_SK); ctx.fill();
-                // 凹坑阴影
-                ctx.globalAlpha = 0.12; ctx.fillStyle = '#440000';
-                ctx.beginPath(); ctx.arc(sx + 0.5, sy + 0.5, r * 0.025, 0, TWO_PI_SK); ctx.fill();
-                ctx.fillStyle = '#ffee88';
-            }
-            ctx.globalAlpha = 1;
+        ctx.fillStyle = '#ffe44d';
+        var seeds = [[0.3,0.1],[-0.35,0.15],[0.1,0.45],[-0.15,-0.3],[0.35,-0.2],[-0.4,-0.1],[0.05,-0.55],[0.25,0.5],[-0.25,0.45]];
+        for (var i = 0; i < seeds.length; i++) {
+            var sx = seeds[i][0], sy = seeds[i][1];
+            if (sx*sx+sy*sy > 0.7) continue;
+            ctx.beginPath(); ctx.arc(sx*r, sy*r, r*0.06, 0, TWO_PI_SK); ctx.fill();
         }
-        // 叶片
-        ctx.fillStyle = '#22aa44';
-        for (let i = 0; i < 5; i++) {
-            const la = -Math.PI / 2 + (i - 2) * 0.35;
+        ctx.fillStyle = '#2cb84b';
+        for (var j = -1; j <= 1; j++) {
             ctx.beginPath();
-            ctx.ellipse(Math.cos(la) * r * 0.2, -r * 0.75 + Math.sin(la) * r * 0.1, r * 0.16, r * 0.06, la + 0.2, 0, TWO_PI_SK);
+            ctx.ellipse(j*r*0.2, -r*0.85, r*0.2, r*0.08, j*0.3, 0, TWO_PI_SK);
             ctx.fill();
         }
-        // 绿蒂
-        ctx.fillStyle = '#33bb44';
-        ctx.beginPath(); ctx.arc(0, -r * 0.82, r * 0.08, 0, TWO_PI_SK); ctx.fill();
-        // 高光
-        ctx.globalAlpha = 0.45; ctx.fillStyle = '#ffaacc';
-        ctx.beginPath(); ctx.arc(-r * 0.2, -r * 0.25, r * 0.12, 0, TWO_PI_SK); ctx.fill();
-        ctx.globalAlpha = 0.25;
-        ctx.beginPath(); ctx.arc(-r * 0.05, -r * 0.38, r * 0.06, 0, TWO_PI_SK); ctx.fill();
-        ctx.globalAlpha = 1;
+        ctx.fillStyle = 'rgba(255,255,255,0.35)';
+        ctx.beginPath(); ctx.arc(-r*0.25, -r*0.3, r*0.12, 0, TWO_PI_SK); ctx.fill();
         ctx.restore();
     }
 
@@ -422,110 +373,24 @@ class SkinRenderer {
     _body_orange(ctx, x, y, r, angle) {
         const t = this._time;
         this._shadow(ctx, x, y, r);
-        this._glow(ctx, x, y, r, '#ff9900', 0.12);
-        // 3D球体主体 - 偏移光源渐变
-        const g = ctx.createRadialGradient(x - r * 0.35, y - r * 0.35, r * 0.05, x + r * 0.15, y + r * 0.15, r * 1.05);
-        g.addColorStop(0, '#ffe066'); g.addColorStop(0.15, '#ffcc44');
-        g.addColorStop(0.4, '#ff9f00'); g.addColorStop(0.7, '#e87800');
-        g.addColorStop(0.9, '#cc5500'); g.addColorStop(1, '#993a00');
+        ctx.save(); ctx.translate(x, y);
+        const g = ctx.createRadialGradient(-r*0.2, -r*0.25, 0, 0, 0, r);
+        g.addColorStop(0, '#ffb347'); g.addColorStop(0.4, '#ff8c1a');
+        g.addColorStop(0.75, '#e06600'); g.addColorStop(1, '#a34400');
         ctx.fillStyle = g;
-        ctx.beginPath(); ctx.arc(x, y, r, 0, TWO_PI_SK); ctx.fill();
-        // 表皮毛孔纹理 - 柑橘特有的细密凹陷
+        ctx.beginPath(); ctx.arc(0, 0, r, 0, TWO_PI_SK); ctx.fill();
         if (this.quality.detailLevel >= 1) {
-            ctx.save();
-            ctx.beginPath(); ctx.arc(x, y, r, 0, TWO_PI_SK); ctx.clip();
-            // 大毛孔(凹陷阴影)
-            ctx.fillStyle = 'rgba(180,100,0,0.12)';
-            const n = this.quality.detailLevel >= 2 ? 50 : 22;
-            for (let i = 0; i < n; i++) {
-                const a = i * 2.399 + 0.5; const d = r * 0.1 + (i / n) * r * 0.82;
-                const px = x + Math.cos(a) * d, py = y + Math.sin(a) * d;
-                const pSize = 0.8 + Math.sin(i * 3.14) * 0.3;
-                ctx.beginPath(); ctx.arc(px, py, pSize, 0, TWO_PI_SK); ctx.fill();
+            ctx.fillStyle = 'rgba(255,200,100,0.15)';
+            for (var i = 0; i < 12; i++) {
+                var a = i * 1.37, d = r * (0.3 + (i%3)*0.2);
+                ctx.beginPath(); ctx.arc(Math.cos(a)*d, Math.sin(a)*d, r*0.04, 0, TWO_PI_SK); ctx.fill();
             }
-            // 毛孔高光(凸起)
-            ctx.fillStyle = 'rgba(255,220,100,0.08)';
-            for (let i = 0; i < n; i++) {
-                const a = i * 2.399 + 0.5; const d = r * 0.1 + (i / n) * r * 0.82;
-                const px = x + Math.cos(a) * d - 0.4, py = y + Math.sin(a) * d - 0.4;
-                ctx.beginPath(); ctx.arc(px, py, 0.5, 0, TWO_PI_SK); ctx.fill();
-            }
-            ctx.restore();
         }
-        // 脐部(底部圆形凹陷)
-        if (this.quality.detailLevel >= 1) {
-            ctx.save(); ctx.globalAlpha = 0.25;
-            const navelG = ctx.createRadialGradient(x, y + r * 0.75, 0, x, y + r * 0.75, r * 0.15);
-            navelG.addColorStop(0, '#885500'); navelG.addColorStop(0.5, '#aa6600'); navelG.addColorStop(1, 'transparent');
-            ctx.fillStyle = navelG;
-            ctx.beginPath(); ctx.arc(x, y + r * 0.75, r * 0.15, 0, TWO_PI_SK); ctx.fill();
-            ctx.restore();
-        }
-        // 顶部蒂柄+叶子 - 更真实
-        ctx.save();
-        // 蒂柄凹陷
-        ctx.fillStyle = '#8a6a2a';
-        ctx.beginPath(); ctx.arc(x, y - r * 0.88, r * 0.08, 0, TWO_PI_SK); ctx.fill();
-        // 木质蒂柄
-        const stemG = ctx.createLinearGradient(x, y - r * 0.88, x, y - r * 1.12);
-        stemG.addColorStop(0, '#6a5a3a'); stemG.addColorStop(0.5, '#8a7a4a'); stemG.addColorStop(1, '#5a4a2a');
-        ctx.fillStyle = stemG;
-        ctx.beginPath();
-        ctx.moveTo(x - r * 0.035, y - r * 0.88);
-        ctx.lineTo(x - r * 0.025, y - r * 1.08);
-        ctx.lineTo(x + r * 0.025, y - r * 1.08);
-        ctx.lineTo(x + r * 0.035, y - r * 0.88);
-        ctx.closePath(); ctx.fill();
-        // 叶子(两片，不对称)
-        ctx.fillStyle = '#3a9a2a';
-        // 右叶(大)
-        ctx.beginPath();
-        ctx.moveTo(x + r * 0.02, y - r * 1.05);
-        ctx.bezierCurveTo(x + r * 0.15, y - r * 1.2, x + r * 0.3, y - r * 1.15, x + r * 0.28, y - r * 1.0);
-        ctx.bezierCurveTo(x + r * 0.22, y - r * 0.95, x + r * 0.1, y - r * 0.98, x + r * 0.02, y - r * 1.05);
-        ctx.fill();
-        // 左叶(小)
-        ctx.fillStyle = '#4aaa3a';
-        ctx.beginPath();
-        ctx.moveTo(x - r * 0.02, y - r * 1.06);
-        ctx.bezierCurveTo(x - r * 0.1, y - r * 1.18, x - r * 0.18, y - r * 1.12, x - r * 0.16, y - r * 1.02);
-        ctx.bezierCurveTo(x - r * 0.12, y - r * 0.98, x - r * 0.05, y - r * 1.0, x - r * 0.02, y - r * 1.06);
-        ctx.fill();
-        // 叶脉
-        if (this.quality.detailLevel >= 2) {
-            ctx.strokeStyle = 'rgba(30,80,20,0.4)'; ctx.lineWidth = 0.5;
-            ctx.beginPath(); ctx.moveTo(x + r * 0.05, y - r * 1.05);
-            ctx.lineTo(x + r * 0.22, y - r * 1.06); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(x - r * 0.04, y - r * 1.07);
-            ctx.lineTo(x - r * 0.13, y - r * 1.07); ctx.stroke();
-        }
+        ctx.fillStyle = '#3aaa50';
+        ctx.beginPath(); ctx.ellipse(0, -r*0.85, r*0.12, r*0.06, 0, 0, TWO_PI_SK); ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,0.4)';
+        ctx.beginPath(); ctx.arc(-r*0.25, -r*0.28, r*0.13, 0, TWO_PI_SK); ctx.fill();
         ctx.restore();
-        // 主高光
-        this._hl(ctx, x, y, r);
-        // 高画质：边缘散射光+环境光
-        if (this.quality.detailLevel >= 2) {
-            ctx.save();
-            // 边缘散射(rim light)
-            ctx.globalAlpha = 0.08;
-            ctx.strokeStyle = '#ffee88'; ctx.lineWidth = r * 0.08;
-            ctx.beginPath(); ctx.arc(x, y, r * 0.92, Math.PI * 0.7, Math.PI * 1.6); ctx.stroke();
-            // 二级高光弧
-            ctx.globalAlpha = 0.1 + Math.sin(t * 1.5) * 0.02;
-            ctx.fillStyle = '#fff';
-            ctx.beginPath(); ctx.ellipse(x - r * 0.2, y - r * 0.35, r * 0.25, r * 0.06, -0.4, 0, TWO_PI_SK); ctx.fill();
-            ctx.restore();
-        }
-        // 极致：飘散橙汁粒子+香气
-        if (this.quality.detailLevel >= 3) {
-            ctx.save(); ctx.globalAlpha = 0.35;
-            for (let i = 0; i < 5; i++) {
-                const a = t * 0.8 + i * 1.3;
-                const d = r * 1.4 + Math.sin(t * 2.5 + i) * r * 0.2;
-                ctx.fillStyle = i % 2 ? '#ffbb44' : '#ffdd88';
-                ctx.beginPath(); ctx.arc(x + Math.cos(a) * d, y + Math.sin(a) * d, 1.5 + Math.sin(t * 3 + i) * 0.5, 0, TWO_PI_SK); ctx.fill();
-            }
-            ctx.restore();
-        }
     }
 
     _proj_orange(ctx, x, y, r, angle) {
@@ -583,55 +448,55 @@ class SkinRenderer {
     _body_fox(ctx, x, y, r, angle) {
         const t = this._time;
         this._shadow(ctx, x, y, r);
-        this._glow(ctx, x, y, r, '#ff8844', 0.08);
         ctx.save(); ctx.translate(x, y);
-        // 橙色圆脸
-        const fg = ctx.createRadialGradient(-r * 0.1, -r * 0.1, 0, 0, 0, r);
-        fg.addColorStop(0, '#ffaa55'); fg.addColorStop(0.4, '#ff8833');
-        fg.addColorStop(0.7, '#dd6622'); fg.addColorStop(1, '#aa4411');
-        ctx.fillStyle = fg;
+        var g = ctx.createRadialGradient(-r*0.15, -r*0.1, 0, 0, 0, r);
+        g.addColorStop(0, '#ffaa55'); g.addColorStop(0.5, '#ee7722');
+        g.addColorStop(0.85, '#cc5500'); g.addColorStop(1, '#883300');
+        ctx.fillStyle = g;
         ctx.beginPath(); ctx.arc(0, 0, r, 0, TWO_PI_SK); ctx.fill();
-        // 白色脸部
-        ctx.fillStyle = '#fff8ee';
-        ctx.beginPath(); ctx.ellipse(0, r * 0.15, r * 0.55, r * 0.5, 0, 0, TWO_PI_SK); ctx.fill();
-        // 三角耳朵
-        for (let s = -1; s <= 1; s += 2) {
-            ctx.fillStyle = '#ff7722';
+        // White belly
+        ctx.fillStyle = '#fff5ee';
+        ctx.beginPath(); ctx.ellipse(0, r*0.3, r*0.55, r*0.45, 0, 0, Math.PI); ctx.fill();
+        // Big pointy ears
+        ctx.fillStyle = '#ee7722';
+        for (var s = -1; s <= 1; s += 2) {
             ctx.beginPath();
-            ctx.moveTo(s * r * 0.3, -r * 0.65);
-            ctx.lineTo(s * r * 0.55, -r * 1.1);
-            ctx.lineTo(s * r * 0.7, -r * 0.6);
+            ctx.moveTo(s*r*0.4, -r*0.6);
+            ctx.lineTo(s*r*0.7, -r*1.4);
+            ctx.lineTo(s*r*0.9, -r*0.5);
             ctx.closePath(); ctx.fill();
             ctx.fillStyle = '#ffaaaa';
             ctx.beginPath();
-            ctx.moveTo(s * r * 0.35, -r * 0.7);
-            ctx.lineTo(s * r * 0.5, -r * 1.0);
-            ctx.lineTo(s * r * 0.62, -r * 0.7);
+            ctx.moveTo(s*r*0.48, -r*0.65);
+            ctx.lineTo(s*r*0.68, -r*1.2);
+            ctx.lineTo(s*r*0.8, -r*0.58);
             ctx.closePath(); ctx.fill();
+            ctx.fillStyle = '#ee7722';
         }
-        // 大萌眼
-        for (let s = -1; s <= 1; s += 2) {
-            const ex = s * r * 0.25, ey = -r * 0.05;
-            ctx.fillStyle = '#fff';
-            ctx.beginPath(); ctx.ellipse(ex, ey, r * 0.14, r * 0.15, 0, 0, TWO_PI_SK); ctx.fill();
-            ctx.fillStyle = '#332200';
-            ctx.beginPath(); ctx.arc(ex + s * r * 0.02, ey, r * 0.09, 0, TWO_PI_SK); ctx.fill();
-            ctx.fillStyle = '#fff';
-            ctx.beginPath(); ctx.arc(ex + s * r * 0.04, ey - r * 0.04, r * 0.035, 0, TWO_PI_SK); ctx.fill();
-        }
-        // 鼻子
+        // Eyes
+        ctx.fillStyle = '#111';
+        ctx.beginPath(); ctx.arc(-r*0.25, -r*0.1, r*0.1, 0, TWO_PI_SK); ctx.fill();
+        ctx.beginPath(); ctx.arc(r*0.25, -r*0.1, r*0.1, 0, TWO_PI_SK); ctx.fill();
+        ctx.fillStyle = '#fff';
+        ctx.beginPath(); ctx.arc(-r*0.22, -r*0.13, r*0.04, 0, TWO_PI_SK); ctx.fill();
+        ctx.beginPath(); ctx.arc(r*0.28, -r*0.13, r*0.04, 0, TWO_PI_SK); ctx.fill();
+        // Nose
         ctx.fillStyle = '#222';
-        ctx.beginPath(); ctx.moveTo(0, r * 0.1); ctx.lineTo(-r * 0.05, r * 0.16); ctx.lineTo(r * 0.05, r * 0.16); ctx.closePath(); ctx.fill();
-        // 微笑
-        ctx.strokeStyle = '#222'; ctx.lineWidth = 1; ctx.lineCap = 'round';
-        ctx.beginPath(); ctx.moveTo(-r * 0.08, r * 0.22); ctx.quadraticCurveTo(0, r * 0.3, r * 0.08, r * 0.22); ctx.stroke();
-        // 蓬松尾巴
+        ctx.beginPath(); ctx.arc(0, r*0.05, r*0.06, 0, TWO_PI_SK); ctx.fill();
+        // Bushy tail
         if (this.quality.detailLevel >= 1) {
-            const tailSway = Math.sin(t * 3) * 0.15;
-            ctx.fillStyle = '#ff8833';
-            ctx.beginPath(); ctx.ellipse(r * 0.7, r * 0.3, r * 0.45, r * 0.25, 0.5 + tailSway, 0, TWO_PI_SK); ctx.fill();
-            ctx.fillStyle = '#fff8ee';
-            ctx.beginPath(); ctx.arc(r * 1.0, r * 0.15, r * 0.12, 0, TWO_PI_SK); ctx.fill();
+            ctx.fillStyle = '#ee7722'; ctx.globalAlpha = 0.8;
+            var ta = Math.PI * 0.7 + Math.sin(t*2) * 0.2;
+            ctx.beginPath();
+            ctx.moveTo(Math.cos(ta)*r*0.5, Math.sin(ta)*r*0.5);
+            ctx.quadraticCurveTo(Math.cos(ta)*r*1.5, Math.sin(ta)*r*1.2,
+                Math.cos(ta+0.5)*r*1.3, Math.sin(ta+0.5)*r*1.0);
+            ctx.quadraticCurveTo(Math.cos(ta+0.3)*r*0.8, Math.sin(ta+0.3)*r*0.8,
+                Math.cos(ta)*r*0.5, Math.sin(ta)*r*0.5);
+            ctx.fill();
+            ctx.fillStyle = '#fff5ee';
+            ctx.beginPath(); ctx.arc(Math.cos(ta+0.4)*r*1.2, Math.sin(ta+0.4)*r*0.9, r*0.15, 0, TWO_PI_SK); ctx.fill();
+            ctx.globalAlpha = 1;
         }
         ctx.restore();
     }
@@ -692,122 +557,46 @@ class SkinRenderer {
     _body_dragon(ctx, x, y, r, angle) {
         const t = this._time;
         this._shadow(ctx, x, y, r);
-        this._glow(ctx, x, y, r, '#8855ff', 0.15);
-        // 翅膀(展开扇动)
-        const wingFlap = Math.sin(t * 3.5) * 0.15 + 0.85;
-        if (this.quality.detailLevel >= 1) {
-            for (let s = -1; s <= 1; s += 2) {
-                ctx.save(); ctx.globalAlpha = 0.7;
-                // 翼膜渐变
-                const wg = ctx.createLinearGradient(x, y, x + s * r * 1.8 * wingFlap, y - r * 1.0 * wingFlap);
-                wg.addColorStop(0, '#9966ff'); wg.addColorStop(0.6, '#7744cc'); wg.addColorStop(1, '#553399');
-                ctx.fillStyle = wg;
-                ctx.beginPath();
-                ctx.moveTo(x + s * r * 0.45, y - r * 0.2);
-                ctx.quadraticCurveTo(x + s * r * 1.6 * wingFlap, y - r * 1.4 * wingFlap, x + s * r * 1.5 * wingFlap, y - r * 0.1);
-                ctx.quadraticCurveTo(x + s * r * 1.1, y + r * 0.15, x + s * r * 0.45, y - r * 0.1);
-                ctx.closePath(); ctx.fill();
-                // 翼爪尖
-                ctx.fillStyle = '#ffcc44';
-                const clawX = x + s * r * 1.55 * wingFlap;
-                const clawY = y - r * 1.35 * wingFlap;
-                ctx.beginPath(); ctx.arc(clawX, clawY, r * 0.04, 0, TWO_PI_SK); ctx.fill();
-                // 翼膜骨架(3条)
-                if (this.quality.detailLevel >= 2) {
-                    ctx.strokeStyle = 'rgba(100,60,180,0.6)'; ctx.lineWidth = 1.5; ctx.lineCap = 'round';
-                    for (let b = 0; b < 3; b++) {
-                        const bf = 0.4 + b * 0.3;
-                        ctx.beginPath();
-                        ctx.moveTo(x + s * r * 0.45, y - r * 0.15);
-                        ctx.quadraticCurveTo(x + s * r * (0.8 + b * 0.2) * wingFlap, y - r * (0.5 + b * 0.3) * wingFlap, x + s * r * (1.0 + b * 0.2) * wingFlap, y - r * (0.1 + b * 0.3) * wingFlap);
-                        ctx.stroke();
-                    }
-                }
-                ctx.restore();
-            }
-        }
-        // 鳞甲身体
-        const bg = ctx.createRadialGradient(x - r * 0.15, y - r * 0.2, r * 0.1, x, y, r);
-        bg.addColorStop(0, '#bb99ff'); bg.addColorStop(0.35, '#8866dd'); bg.addColorStop(0.7, '#5533aa'); bg.addColorStop(1, '#2a1166');
-        ctx.fillStyle = bg;
-        ctx.beginPath(); ctx.arc(x, y, r, 0, TWO_PI_SK); ctx.fill();
-        // 腹部亮色
-        const bellyG = ctx.createRadialGradient(x, y + r * 0.15, 0, x, y + r * 0.15, r * 0.55);
-        bellyG.addColorStop(0, 'rgba(200,180,255,0.4)'); bellyG.addColorStop(1, 'transparent');
-        ctx.fillStyle = bellyG;
-        ctx.beginPath(); ctx.ellipse(x, y + r * 0.1, r * 0.5, r * 0.45, 0, 0, TWO_PI_SK); ctx.fill();
-        // 鳞片纹理
-        if (this.quality.detailLevel >= 1) {
-            ctx.save();
-            ctx.beginPath(); ctx.arc(x, y, r, 0, TWO_PI_SK); ctx.clip();
-            ctx.strokeStyle = 'rgba(200,170,255,0.3)'; ctx.lineWidth = 0.7;
-            const rows = this.quality.detailLevel >= 2 ? 5 : 3;
-            for (let row = 0; row < rows; row++) {
-                const ry2 = y - r * 0.5 + (row + 1) * (r * 1.2 / (rows + 1));
-                for (let col = 0; col < 6; col++) {
-                    const rx2 = x - r * 0.7 + (col + (row % 2) * 0.5) * (r * 1.4 / 6);
-                    ctx.beginPath(); ctx.arc(rx2, ry2, r * 0.12, Math.PI * 0.8, Math.PI * 2.2); ctx.stroke();
-                }
-            }
-            ctx.restore();
-        }
-        // 弯角(金色、带纹)
-        for (let s = -1; s <= 1; s += 2) {
-            ctx.save();
-            // 角主体
-            const hornG = ctx.createLinearGradient(x + s * r * 0.3, y - r * 0.75, x + s * r * 0.5, y - r * 1.4);
-            hornG.addColorStop(0, '#eebb44'); hornG.addColorStop(0.5, '#ffdd66'); hornG.addColorStop(1, '#cc9922');
-            ctx.fillStyle = hornG;
+        ctx.save(); ctx.translate(x, y);
+        var g = ctx.createRadialGradient(-r*0.2, -r*0.2, 0, 0, 0, r);
+        g.addColorStop(0, '#c495f0'); g.addColorStop(0.4, '#9955dd');
+        g.addColorStop(0.75, '#6633aa'); g.addColorStop(1, '#331166');
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(0, 0, r, 0, TWO_PI_SK); ctx.fill();
+        // Pale belly
+        ctx.fillStyle = '#eeddff'; ctx.globalAlpha = 0.4;
+        ctx.beginPath(); ctx.ellipse(0, r*0.2, r*0.4, r*0.35, 0, 0, TWO_PI_SK); ctx.fill();
+        ctx.globalAlpha = 1;
+        // Wings
+        ctx.fillStyle = '#aa55ee';
+        for (var s = -1; s <= 1; s += 2) {
             ctx.beginPath();
-            ctx.moveTo(x + s * r * 0.25, y - r * 0.7);
-            ctx.quadraticCurveTo(x + s * r * 0.5, y - r * 1.2, x + s * r * 0.42, y - r * 1.4);
-            ctx.quadraticCurveTo(x + s * r * 0.35, y - r * 1.1, x + s * r * 0.15, y - r * 0.8);
+            ctx.moveTo(s*r*0.7, -r*0.2);
+            ctx.lineTo(s*r*1.5, -r*0.7);
+            ctx.lineTo(s*r*1.4, r*0.1);
+            ctx.lineTo(s*r*0.8, r*0.2);
             ctx.closePath(); ctx.fill();
-            // 角纹
-            ctx.strokeStyle = 'rgba(150,100,0,0.4)'; ctx.lineWidth = 0.8;
-            ctx.beginPath(); ctx.moveTo(x + s * r * 0.22, y - r * 0.8); ctx.lineTo(x + s * r * 0.35, y - r * 0.85); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(x + s * r * 0.28, y - r * 0.95); ctx.lineTo(x + s * r * 0.4, y - r * 1.0); ctx.stroke();
-            ctx.restore();
+            ctx.strokeStyle = '#7733bb'; ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.moveTo(s*r*0.8, -r*0.1);
+            ctx.lineTo(s*r*1.3, -r*0.5); ctx.stroke();
         }
-        // 龙眼(大红竖瞳、威严)
-        const eyeR = r * 0.12;
-        for (let s = -1; s <= 1; s += 2) {
-            const ex = x + s * r * 0.24;
-            const ey = y - r * 0.12;
-            // 眼底发光
-            ctx.save(); ctx.globalAlpha = 0.5;
-            ctx.fillStyle = '#ff6644';
-            ctx.beginPath(); ctx.arc(ex, ey, eyeR * 1.3, 0, TWO_PI_SK); ctx.fill();
-            ctx.restore();
-            // 眼球
-            const eyeG = ctx.createRadialGradient(ex, ey, 0, ex, ey, eyeR);
-            eyeG.addColorStop(0, '#ffcc44'); eyeG.addColorStop(0.5, '#ff4422'); eyeG.addColorStop(1, '#880000');
-            ctx.fillStyle = eyeG;
-            ctx.beginPath(); ctx.ellipse(ex, ey, eyeR, eyeR * 1.15, 0, 0, TWO_PI_SK); ctx.fill();
-            // 竖瞳
-            ctx.fillStyle = '#000';
-            ctx.beginPath(); ctx.ellipse(ex, ey, eyeR * 0.2, eyeR * 0.85, 0, 0, TWO_PI_SK); ctx.fill();
-            // 高光
-            ctx.fillStyle = 'rgba(255,255,255,0.8)';
-            ctx.beginPath(); ctx.arc(ex - eyeR * 0.3, ey - eyeR * 0.3, eyeR * 0.2, 0, TWO_PI_SK); ctx.fill();
+        // Horns
+        ctx.fillStyle = '#ffcc44';
+        for (var s2 = -1; s2 <= 1; s2 += 2) {
+            ctx.beginPath();
+            ctx.moveTo(s2*r*0.2, -r*0.8);
+            ctx.lineTo(s2*r*0.35, -r*1.3);
+            ctx.lineTo(s2*r*0.45, -r*0.7);
+            ctx.closePath(); ctx.fill();
         }
-        // 小嘴巴/鼻孔
-        ctx.fillStyle = '#2a1155';
-        ctx.beginPath(); ctx.ellipse(x - r * 0.08, y + r * 0.18, r * 0.03, r * 0.025, 0, 0, TWO_PI_SK); ctx.fill();
-        ctx.beginPath(); ctx.ellipse(x + r * 0.08, y + r * 0.18, r * 0.03, r * 0.025, 0, 0, TWO_PI_SK); ctx.fill();
-        // 鼻烟(高画质)
-        if (this.quality.detailLevel >= 2) {
-            ctx.save(); ctx.globalAlpha = 0.2 + Math.sin(t * 2.5) * 0.08;
-            for (let i = 0; i < 2; i++) {
-                const sx = x + (i === 0 ? -1 : 1) * r * 0.08;
-                const sy = y + r * 0.12;
-                const smokeY = sy - r * 0.15 - Math.sin(t * 3 + i) * r * 0.05;
-                ctx.fillStyle = 'rgba(180,160,220,0.4)';
-                ctx.beginPath(); ctx.arc(sx + Math.sin(t * 2 + i) * r * 0.03, smokeY, r * 0.06, 0, TWO_PI_SK); ctx.fill();
-            }
-            ctx.restore();
-        }
-        this._hl(ctx, x, y, r);
+        // Eyes
+        ctx.fillStyle = '#ffee44';
+        ctx.beginPath(); ctx.arc(-r*0.25, -r*0.1, r*0.1, 0, TWO_PI_SK); ctx.fill();
+        ctx.beginPath(); ctx.arc(r*0.25, -r*0.1, r*0.1, 0, TWO_PI_SK); ctx.fill();
+        ctx.fillStyle = '#111';
+        ctx.beginPath(); ctx.arc(-r*0.25, -r*0.1, r*0.05, 0, TWO_PI_SK); ctx.fill();
+        ctx.beginPath(); ctx.arc(r*0.25, -r*0.1, r*0.05, 0, TWO_PI_SK); ctx.fill();
+        ctx.restore();
     }
 
     _proj_dragon(ctx, x, y, r, angle) {
@@ -868,59 +657,45 @@ class SkinRenderer {
     _body_cat(ctx, x, y, r, angle) {
         const t = this._time;
         this._shadow(ctx, x, y, r);
-        this._glow(ctx, x, y, r, '#aaaacc', 0.08);
         ctx.save(); ctx.translate(x, y);
-        // 灰紫圆脸
-        const cg = ctx.createRadialGradient(-r * 0.1, -r * 0.1, 0, 0, 0, r);
-        cg.addColorStop(0, '#9999bb'); cg.addColorStop(0.4, '#777799');
-        cg.addColorStop(0.7, '#555577'); cg.addColorStop(1, '#333355');
-        ctx.fillStyle = cg;
+        var g = ctx.createRadialGradient(-r*0.15, -r*0.15, 0, 0, 0, r);
+        g.addColorStop(0, '#8888aa'); g.addColorStop(0.5, '#555577');
+        g.addColorStop(0.85, '#333355'); g.addColorStop(1, '#1a1a33');
+        ctx.fillStyle = g;
         ctx.beginPath(); ctx.arc(0, 0, r, 0, TWO_PI_SK); ctx.fill();
-        // 浅色脸颊
-        ctx.fillStyle = '#ccccdd';
-        ctx.beginPath(); ctx.ellipse(0, r * 0.1, r * 0.5, r * 0.45, 0, 0, TWO_PI_SK); ctx.fill();
-        // 尖耳朵
-        for (let s = -1; s <= 1; s += 2) {
-            ctx.fillStyle = '#666688';
+        // Cat ears
+        ctx.fillStyle = '#555577';
+        for (var s = -1; s <= 1; s += 2) {
             ctx.beginPath();
-            ctx.moveTo(s * r * 0.25, -r * 0.65);
-            ctx.lineTo(s * r * 0.45, -r * 1.15);
-            ctx.lineTo(s * r * 0.65, -r * 0.6);
+            ctx.moveTo(s*r*0.3, -r*0.7);
+            ctx.lineTo(s*r*0.55, -r*1.35);
+            ctx.lineTo(s*r*0.75, -r*0.6);
             ctx.closePath(); ctx.fill();
-            ctx.fillStyle = '#aa8899';
+            ctx.fillStyle = '#ffaacc';
             ctx.beginPath();
-            ctx.moveTo(s * r * 0.3, -r * 0.7);
-            ctx.lineTo(s * r * 0.43, -r * 1.0);
-            ctx.lineTo(s * r * 0.56, -r * 0.68);
+            ctx.moveTo(s*r*0.38, -r*0.72);
+            ctx.lineTo(s*r*0.55, -r*1.15);
+            ctx.lineTo(s*r*0.67, -r*0.65);
             ctx.closePath(); ctx.fill();
+            ctx.fillStyle = '#555577';
         }
-        // 大猫眼(竖瞳)
-        for (let s = -1; s <= 1; s += 2) {
-            const ex = s * r * 0.28, ey = -r * 0.05;
-            ctx.fillStyle = '#eeffee';
-            ctx.beginPath(); ctx.ellipse(ex, ey, r * 0.15, r * 0.17, 0, 0, TWO_PI_SK); ctx.fill();
-            ctx.fillStyle = '#33cc66';
-            ctx.beginPath(); ctx.ellipse(ex, ey, r * 0.1, r * 0.14, 0, 0, TWO_PI_SK); ctx.fill();
+        // Green slit eyes
+        for (var s2 = -1; s2 <= 1; s2 += 2) {
+            ctx.fillStyle = '#44ff88';
+            ctx.beginPath(); ctx.arc(s2*r*0.28, -r*0.05, r*0.14, 0, TWO_PI_SK); ctx.fill();
             ctx.fillStyle = '#111';
-            ctx.beginPath(); ctx.ellipse(ex, ey, r * 0.035, r * 0.12, 0, 0, TWO_PI_SK); ctx.fill();
-            ctx.fillStyle = 'rgba(255,255,255,0.7)';
-            ctx.beginPath(); ctx.arc(ex - r * 0.03, ey - r * 0.04, r * 0.03, 0, TWO_PI_SK); ctx.fill();
+            ctx.beginPath(); ctx.ellipse(s2*r*0.28, -r*0.05, r*0.04, r*0.12, 0, 0, TWO_PI_SK); ctx.fill();
         }
-        // 鼻子
-        ctx.fillStyle = '#ff99aa';
-        ctx.beginPath(); ctx.ellipse(0, r * 0.12, r * 0.05, r * 0.035, 0, 0, TWO_PI_SK); ctx.fill();
-        // w嘴
-        ctx.strokeStyle = '#555'; ctx.lineWidth = r * 0.025; ctx.lineCap = 'round';
-        ctx.beginPath(); ctx.moveTo(-r * 0.1, r * 0.2); ctx.quadraticCurveTo(-r * 0.04, r * 0.27, 0, r * 0.22); ctx.stroke();
-        ctx.beginPath(); ctx.moveTo(r * 0.1, r * 0.2); ctx.quadraticCurveTo(r * 0.04, r * 0.27, 0, r * 0.22); ctx.stroke();
-        // 胡须
-        ctx.strokeStyle = '#555'; ctx.lineWidth = r * 0.015;
-        for (let s = -1; s <= 1; s += 2) {
-            for (let i = 0; i < 3; i++) {
-                const wy = r * 0.14 + (i - 1) * r * 0.07;
-                ctx.beginPath(); ctx.moveTo(s * r * 0.15, wy);
-                ctx.lineTo(s * r * 0.55, wy + (i - 1) * r * 0.05); ctx.stroke();
-            }
+        // Nose
+        ctx.fillStyle = '#ffaaaa';
+        ctx.beginPath(); ctx.arc(0, r*0.15, r*0.05, 0, TWO_PI_SK); ctx.fill();
+        // Tail
+        if (this.quality.detailLevel >= 1) {
+            ctx.strokeStyle = '#555577'; ctx.lineWidth = r*0.15; ctx.lineCap = 'round';
+            var ta = Math.sin(t*3) * 0.4;
+            ctx.beginPath(); ctx.moveTo(r*0.5, r*0.3);
+            ctx.quadraticCurveTo(r*1.2, r*0.1+ta*r*0.3, r*1.0, -r*0.3+ta*r*0.2);
+            ctx.stroke();
         }
         ctx.restore();
     }
@@ -982,79 +757,43 @@ class SkinRenderer {
     _body_diamond(ctx, x, y, r, angle) {
         const t = this._time;
         this._shadow(ctx, x, y, r);
-        const hue = (t * 30) % 360;
-        // 外层折射光
-        if (this.quality.detailLevel >= 1) {
-            ctx.save(); ctx.translate(x, y);
-            ctx.globalAlpha = 0.2;
-            const rays = this.quality.detailLevel >= 3 ? 12 : 8;
-            for (let i = 0; i < rays; i++) {
-                const ra = i * TWO_PI_SK / rays + t * 0.5;
-                const rLen = r * (0.3 + Math.sin(t * 2 + i * 0.8) * 0.1);
-                ctx.strokeStyle = `hsl(${(hue + i * 30) % 360}, 60%, 85%)`;
-                ctx.lineWidth = 1.5;
-                ctx.beginPath(); ctx.moveTo(Math.cos(ra) * r, Math.sin(ra) * r);
-                ctx.lineTo(Math.cos(ra) * (r + rLen), Math.sin(ra) * (r + rLen)); ctx.stroke();
-            }
-            ctx.globalAlpha = 1; ctx.restore();
-        }
-        this._glow(ctx, x, y, r, '#aaccff', 0.15);
+        this._glow(ctx, x, y, r, '#88ccff', 0.1);
         ctx.save(); ctx.translate(x, y);
-        // 主体 — 蓝白钻石球
-        const dg = ctx.createRadialGradient(-r * 0.15, -r * 0.2, 0, 0, 0, r);
-        dg.addColorStop(0, '#ffffff');
-        dg.addColorStop(0.2, '#e8f4ff');
-        dg.addColorStop(0.5, '#a8d8ff');
-        dg.addColorStop(0.8, '#6699cc');
-        dg.addColorStop(1, '#334466');
-        ctx.fillStyle = dg;
-        ctx.beginPath(); ctx.arc(0, 0, r, 0, TWO_PI_SK); ctx.fill();
-        // 钻石切割面: 台面(八边形)
-        ctx.strokeStyle = 'rgba(255,255,255,0.4)'; ctx.lineWidth = 1;
-        ctx.beginPath();
-        for (let i = 0; i < 8; i++) {
-            const a = i * Math.PI / 4 - Math.PI / 8;
-            const px = Math.cos(a) * r * 0.4, py = Math.sin(a) * r * 0.4;
-            if (i === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
-        }
-        ctx.closePath(); ctx.stroke();
-        // 冠部切割线: 台面顶点到腰部
-        ctx.strokeStyle = 'rgba(255,255,255,0.25)'; ctx.lineWidth = 0.8;
-        for (let i = 0; i < 8; i++) {
-            const a = i * Math.PI / 4 - Math.PI / 8;
-            const nextA = a + Math.PI / 8;
+        var sides = 8;
+        var diamondPath = function() {
             ctx.beginPath();
-            ctx.moveTo(Math.cos(a) * r * 0.4, Math.sin(a) * r * 0.4);
-            ctx.lineTo(Math.cos(nextA) * r * 0.85, Math.sin(nextA) * r * 0.85);
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.moveTo(Math.cos(a) * r * 0.4, Math.sin(a) * r * 0.4);
-            ctx.lineTo(Math.cos(a - Math.PI / 8) * r * 0.85, Math.sin(a - Math.PI / 8) * r * 0.85);
-            ctx.stroke();
+            for (var i = 0; i < sides; i++) {
+                var a = (i/sides) * TWO_PI_SK - Math.PI/2;
+                var pr = r * (i%2 === 0 ? 1.0 : 0.88);
+                var px = Math.cos(a)*pr, py = Math.sin(a)*pr;
+                i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+            }
+            ctx.closePath();
+        };
+        var dg = ctx.createLinearGradient(-r, -r, r, r);
+        dg.addColorStop(0, '#e8f4ff'); dg.addColorStop(0.3, '#aaddff');
+        dg.addColorStop(0.5, '#ffffff'); dg.addColorStop(0.7, '#88ccee');
+        dg.addColorStop(1, '#446688');
+        ctx.fillStyle = dg; diamondPath(); ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.lineWidth = 1;
+        for (var i = 0; i < sides; i++) {
+            var a2 = (i/sides) * TWO_PI_SK - Math.PI/2;
+            ctx.beginPath(); ctx.moveTo(0, 0);
+            ctx.lineTo(Math.cos(a2)*r*0.85, Math.sin(a2)*r*0.85); ctx.stroke();
         }
-        // 腰部环
-        ctx.strokeStyle = 'rgba(200,220,255,0.3)'; ctx.lineWidth = 1.2;
-        ctx.beginPath(); ctx.arc(0, 0, r * 0.85, 0, TWO_PI_SK); ctx.stroke();
-        // 切面高光三角
-        if (this.quality.detailLevel >= 2) {
-            ctx.globalAlpha = 0.08;
-            for (let i = 0; i < 8; i++) {
-                const a1 = i * Math.PI / 4, a2 = a1 + Math.PI / 8;
-                ctx.fillStyle = `hsl(${(hue + i * 45) % 360}, 40%, 90%)`;
-                ctx.beginPath();
-                ctx.moveTo(0, 0);
-                ctx.lineTo(Math.cos(a1) * r * 0.4, Math.sin(a1) * r * 0.4);
-                ctx.lineTo(Math.cos(a2) * r * 0.4, Math.sin(a2) * r * 0.4);
-                ctx.closePath(); ctx.fill();
+        if (this.quality.detailLevel >= 1) {
+            var colors = ['#ff4444','#44ff44','#4444ff','#ffff44','#ff44ff'];
+            ctx.globalAlpha = 0.25;
+            for (var j = 0; j < colors.length; j++) {
+                var ra = t*1.5 + j*TWO_PI_SK/colors.length;
+                ctx.fillStyle = colors[j];
+                ctx.beginPath(); ctx.arc(Math.cos(ra)*r*0.35, Math.sin(ra)*r*0.35, r*0.12, 0, TWO_PI_SK); ctx.fill();
             }
             ctx.globalAlpha = 1;
         }
-        // 高光
-        ctx.globalAlpha = 0.6; ctx.fillStyle = '#ffffff';
-        ctx.beginPath(); ctx.arc(-r * 0.2, -r * 0.25, r * 0.1, 0, TWO_PI_SK); ctx.fill();
-        ctx.globalAlpha = 0.3;
-        ctx.beginPath(); ctx.arc(r * 0.15, -r * 0.1, r * 0.06, 0, TWO_PI_SK); ctx.fill();
-        ctx.globalAlpha = 1;
+        ctx.strokeStyle = '#aaddff'; ctx.lineWidth = 1.5; diamondPath(); ctx.stroke();
+        ctx.fillStyle = 'rgba(255,255,255,0.6)';
+        ctx.beginPath(); ctx.arc(-r*0.2, -r*0.3, r*0.1, 0, TWO_PI_SK); ctx.fill();
         ctx.restore();
     }
 
@@ -1105,107 +844,39 @@ class SkinRenderer {
     _body_ruby(ctx, x, y, r, angle) {
         const t = this._time;
         this._shadow(ctx, x, y, r);
-        this._glow(ctx, x, y, r, '#ff4466', 0.28);
+        this._glow(ctx, x, y, r, '#ff3333', 0.12);
         ctx.save(); ctx.translate(x, y);
-        // 基底垫形切割(cushion cut) - 圆角六边形
-        const facets = 6;
-        ctx.beginPath();
-        for (let i = 0; i < facets; i++) {
-            const a1 = (i / facets) * TWO_PI_SK - Math.PI / 6;
-            const a2 = ((i + 1) / facets) * TWO_PI_SK - Math.PI / 6;
-            const x1 = Math.cos(a1) * r * 0.95, y1 = Math.sin(a1) * r * 0.95;
-            const x2 = Math.cos(a2) * r * 0.95, y2 = Math.sin(a2) * r * 0.95;
-            if (i === 0) ctx.moveTo(x1, y1);
-            ctx.quadraticCurveTo((x1 + x2) / 2 + Math.cos((a1 + a2) / 2) * r * 0.08, (y1 + y2) / 2 + Math.sin((a1 + a2) / 2) * r * 0.08, x2, y2);
-        }
-        ctx.closePath();
-        // 深红到暗红渐变填充
-        const bg = ctx.createRadialGradient(-r * 0.2, -r * 0.2, r * 0.05, r * 0.1, r * 0.1, r * 1.1);
-        bg.addColorStop(0, '#ff6688'); bg.addColorStop(0.2, '#ee3355');
-        bg.addColorStop(0.5, '#cc1133'); bg.addColorStop(0.75, '#990022');
-        bg.addColorStop(1, '#550011');
-        ctx.fillStyle = bg; ctx.fill();
-        // 刻面结构 - 阶梯切割线
-        const colors = ['rgba(255,80,100,0.4)', 'rgba(180,20,40,0.3)', 'rgba(255,120,140,0.3)', 'rgba(140,0,20,0.35)', 'rgba(255,100,120,0.3)', 'rgba(160,10,30,0.3)'];
-        for (let i = 0; i < facets; i++) {
-            const a1 = (i / facets) * TWO_PI_SK - Math.PI / 6;
-            const a2 = ((i + 1) / facets) * TWO_PI_SK - Math.PI / 6;
-            ctx.fillStyle = colors[i];
+        var hexPath = function() {
             ctx.beginPath();
-            ctx.moveTo(0, 0);
-            ctx.lineTo(Math.cos(a1) * r * 0.6, Math.sin(a1) * r * 0.6);
-            ctx.lineTo(Math.cos((a1 + a2) / 2) * r * 0.75, Math.sin((a1 + a2) / 2) * r * 0.75);
-            ctx.lineTo(Math.cos(a2) * r * 0.6, Math.sin(a2) * r * 0.6);
-            ctx.closePath(); ctx.fill();
+            for (var i = 0; i < 6; i++) {
+                var a = (i/6)*TWO_PI_SK - Math.PI/2;
+                var px = Math.cos(a)*r, py = Math.sin(a)*r;
+                i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+            }
+            ctx.closePath();
+        };
+        var rg = ctx.createRadialGradient(-r*0.2, -r*0.2, 0, 0, 0, r);
+        rg.addColorStop(0, '#ff6666'); rg.addColorStop(0.3, '#ee2222');
+        rg.addColorStop(0.7, '#aa0000'); rg.addColorStop(1, '#550000');
+        ctx.fillStyle = rg; hexPath(); ctx.fill();
+        ctx.strokeStyle = 'rgba(255,150,150,0.4)'; ctx.lineWidth = 1;
+        for (var i = 0; i < 6; i++) {
+            var a2 = (i/6)*TWO_PI_SK - Math.PI/2;
+            ctx.beginPath(); ctx.moveTo(0, 0);
+            ctx.lineTo(Math.cos(a2)*r*0.9, Math.sin(a2)*r*0.9); ctx.stroke();
         }
-        // 内含物丝绢纹理(silk) - 红宝石特有的针状金红石内含物
         if (this.quality.detailLevel >= 1) {
-            ctx.save(); ctx.globalAlpha = 0.12;
-            ctx.strokeStyle = '#ffaacc'; ctx.lineWidth = 0.3;
-            const silkN = this.quality.detailLevel >= 2 ? 12 : 6;
-            for (let i = 0; i < silkN; i++) {
-                const sa = i * (Math.PI / silkN);
-                const len = r * 0.5 + Math.sin(i * 2.1) * r * 0.15;
-                ctx.beginPath();
-                ctx.moveTo(Math.cos(sa) * r * 0.15, Math.sin(sa) * r * 0.15);
-                ctx.lineTo(Math.cos(sa) * len, Math.sin(sa) * len);
-                ctx.stroke();
-            }
-            ctx.restore();
+            ctx.globalAlpha = 0.3;
+            var fg = ctx.createRadialGradient(0, 0, 0, 0, 0, r*0.5);
+            fg.addColorStop(0, '#ffaa44'); fg.addColorStop(0.5, '#ff4400'); fg.addColorStop(1, 'transparent');
+            ctx.fillStyle = fg;
+            ctx.beginPath(); ctx.arc(0, 0, r*0.5, 0, TWO_PI_SK); ctx.fill();
+            ctx.globalAlpha = 1;
         }
-        // 外边(腰棱)
-        ctx.strokeStyle = 'rgba(255,180,180,0.6)'; ctx.lineWidth = 1.4;
-        ctx.beginPath();
-        for (let i = 0; i < facets; i++) {
-            const a1 = (i / facets) * TWO_PI_SK - Math.PI / 6;
-            const a2 = ((i + 1) / facets) * TWO_PI_SK - Math.PI / 6;
-            const x1 = Math.cos(a1) * r * 0.95, y1 = Math.sin(a1) * r * 0.95;
-            const x2 = Math.cos(a2) * r * 0.95, y2 = Math.sin(a2) * r * 0.95;
-            if (i === 0) ctx.moveTo(x1, y1);
-            ctx.lineTo(x2, y2);
-        }
-        ctx.closePath(); ctx.stroke();
-        // 刻面边线
-        ctx.strokeStyle = 'rgba(255,200,200,0.35)'; ctx.lineWidth = 0.5;
-        for (let i = 0; i < facets; i++) {
-            const a = (i / facets) * TWO_PI_SK - Math.PI / 6;
-            ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.cos(a) * r * 0.6, Math.sin(a) * r * 0.6); ctx.stroke();
-        }
+        ctx.strokeStyle = '#ff8888'; ctx.lineWidth = 1.5; hexPath(); ctx.stroke();
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.beginPath(); ctx.arc(-r*0.2, -r*0.25, r*0.1, 0, TWO_PI_SK); ctx.fill();
         ctx.restore();
-        // 六射星光效果(asterism) - 红宝石特有
-        if (this.quality.detailLevel >= 2) {
-            ctx.save(); ctx.globalAlpha = 0.2 + Math.sin(t * 2) * 0.05;
-            ctx.strokeStyle = '#ffddee'; ctx.lineWidth = 1.2; ctx.lineCap = 'round';
-            for (let i = 0; i < 6; i++) {
-                const sa = (i / 6) * Math.PI + t * 0.15;
-                ctx.beginPath();
-                ctx.moveTo(x + Math.cos(sa) * r * 0.1, y + Math.sin(sa) * r * 0.1);
-                ctx.lineTo(x + Math.cos(sa) * r * 0.75, y + Math.sin(sa) * r * 0.75);
-                ctx.stroke();
-            }
-            ctx.restore();
-        }
-        // 内核脉动(鸽血红核心)
-        const pulse = 0.3 + Math.sin(t * 3) * 0.08;
-        const cg = ctx.createRadialGradient(x, y, 0, x, y, r * pulse);
-        cg.addColorStop(0, 'rgba(255,255,255,0.6)'); cg.addColorStop(0.3, '#ff8899'); cg.addColorStop(1, 'transparent');
-        ctx.fillStyle = cg;
-        ctx.beginPath(); ctx.arc(x, y, r * pulse, 0, TWO_PI_SK); ctx.fill();
-        // 极致：边缘发光+旋转色散
-        if (this.quality.detailLevel >= 3) {
-            ctx.save();
-            for (let i = 0; i < 8; i++) {
-                const fa = (i / 8) * TWO_PI_SK + t * 1.5;
-                const fd = r * (0.9 + Math.sin(t * 4 + i) * 0.1);
-                ctx.globalAlpha = 0.25;
-                const fg = ctx.createRadialGradient(x + Math.cos(fa) * fd, y + Math.sin(fa) * fd, 0, x + Math.cos(fa) * fd, y + Math.sin(fa) * fd, r * 0.18);
-                fg.addColorStop(0, '#ffcc88'); fg.addColorStop(1, 'transparent');
-                ctx.fillStyle = fg;
-                ctx.beginPath(); ctx.arc(x + Math.cos(fa) * fd, y + Math.sin(fa) * fd, r * 0.18, 0, TWO_PI_SK); ctx.fill();
-            }
-            ctx.restore();
-        }
-        this._hl(ctx, x, y, r);
     }
 
     _proj_ruby(ctx, x, y, r, angle) {
@@ -1253,137 +924,28 @@ class SkinRenderer {
     _body_emerald(ctx, x, y, r, angle) {
         const t = this._time;
         this._shadow(ctx, x, y, r);
-        this._glow(ctx, x, y, r, '#44ff88', 0.15);
-        // 藤蔓环绕(身周) - enhanced with thorns and flowers
-        if (this.quality.detailLevel >= 2) {
-            ctx.save(); ctx.lineCap = 'round';
-            ctx.globalAlpha = 0.5;
-            for (let i = 0; i < 3; i++) {
-                const va = t * 0.4 + i * TWO_PI_SK / 3;
-                // Main vine
-                ctx.strokeStyle = '#33bb55'; ctx.lineWidth = 2.5;
-                ctx.beginPath();
-                const steps = 16;
-                for (let s = 0; s <= steps; s++) {
-                    const sa = va + (s / steps) * Math.PI * 1.8;
-                    const sd = r * (1.2 + Math.sin(s * 0.8 + t) * 0.15);
-                    const px = x + Math.cos(sa) * sd;
-                    const py = y + Math.sin(sa) * sd;
-                    s === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
-                }
-                ctx.stroke();
-                // Thorns along vine
-                if (this.quality.detailLevel >= 3) {
-                    ctx.strokeStyle = '#228844'; ctx.lineWidth = 1;
-                    for (let th = 0; th < 5; th++) {
-                        const tha = va + (th / 5) * Math.PI * 1.8;
-                        const thd = r * (1.2 + Math.sin(th * 0.8 + t) * 0.15);
-                        const thx = x + Math.cos(tha) * thd;
-                        const thy = y + Math.sin(tha) * thd;
-                        const thornA = tha + (th % 2 ? 0.3 : -0.3);
-                        ctx.beginPath(); ctx.moveTo(thx, thy);
-                        ctx.lineTo(thx + Math.cos(thornA) * r * 0.08, thy + Math.sin(thornA) * r * 0.08);
-                        ctx.stroke();
-                    }
-                }
-                // Leaves along vine
-                for (let l = 0; l < 4; l++) {
-                    const la = va + (l / 4) * Math.PI * 1.8;
-                    const ld = r * 1.2;
-                    const lx = x + Math.cos(la) * ld;
-                    const ly = y + Math.sin(la) * ld;
-                    ctx.fillStyle = l % 2 ? '#55dd77' : '#44cc66';
-                    ctx.beginPath(); ctx.ellipse(lx, ly, 3, 7, la + 0.5, 0, TWO_PI_SK); ctx.fill();
-                    // Leaf vein
-                    ctx.strokeStyle = '#33aa55'; ctx.lineWidth = 0.5;
-                    ctx.beginPath(); ctx.moveTo(lx - Math.cos(la + 0.5) * 2, ly - Math.sin(la + 0.5) * 2);
-                    ctx.lineTo(lx + Math.cos(la + 0.5) * 2, ly + Math.sin(la + 0.5) * 2); ctx.stroke();
-                }
-            }
-            ctx.restore();
-        }
-        // Hexagonal emerald body with step-cut facets
+        this._glow(ctx, x, y, r, '#33ff88', 0.1);
         ctx.save(); ctx.translate(x, y);
-        // Draw hexagon shape
-        const eg = ctx.createRadialGradient(-r * 0.2, -r * 0.15, 0, 0, 0, r);
-        eg.addColorStop(0, '#88ffcc'); eg.addColorStop(0.3, '#44dd88'); eg.addColorStop(0.6, '#22aa55'); eg.addColorStop(1, '#0d5533');
-        ctx.fillStyle = eg;
-        ctx.beginPath();
-        for (let i = 0; i < 6; i++) {
-            const a = (i / 6) * TWO_PI_SK - Math.PI / 6;
-            i === 0 ? ctx.moveTo(Math.cos(a) * r, Math.sin(a) * r) : ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
-        }
-        ctx.closePath(); ctx.fill();
-        // Step-cut facets (concentric hexagons with alternating shade)
-        if (this.quality.detailLevel >= 1) {
-            for (let ring = 1; ring <= 3; ring++) {
-                const rFrac = ring / 4;
-                ctx.strokeStyle = `rgba(100,255,180,${0.4 - ring * 0.08})`;
-                ctx.lineWidth = 1;
-                ctx.beginPath();
-                for (let i = 0; i <= 6; i++) {
-                    const a = (i / 6) * TWO_PI_SK - Math.PI / 6;
-                    const rr = r * (1 - rFrac);
-                    i === 0 ? ctx.moveTo(Math.cos(a) * rr, Math.sin(a) * rr) : ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr);
-                }
-                ctx.stroke();
-                // Connecting lines from outer to inner ring
-                if (ring === 1) {
-                    ctx.strokeStyle = 'rgba(100,255,180,0.2)'; ctx.lineWidth = 0.6;
-                    for (let i = 0; i < 6; i++) {
-                        const a = (i / 6) * TWO_PI_SK - Math.PI / 6;
-                        ctx.beginPath();
-                        ctx.moveTo(Math.cos(a) * r, Math.sin(a) * r);
-                        ctx.lineTo(Math.cos(a) * r * 0.75, Math.sin(a) * r * 0.75);
-                        ctx.stroke();
-                    }
-                }
-            }
-        }
-        // Jardin (garden) inclusions - characteristic of emeralds
-        if (this.quality.detailLevel >= 2) {
-            ctx.globalAlpha = 0.12;
-            ctx.strokeStyle = '#228844'; ctx.lineWidth = 0.5;
-            for (let i = 0; i < 6; i++) {
-                const ix = Math.sin(i * 2.3) * r * 0.4;
-                const iy = Math.cos(i * 3.1) * r * 0.4;
-                ctx.beginPath();
-                ctx.moveTo(ix, iy);
-                ctx.quadraticCurveTo(ix + r * 0.1, iy + r * 0.05, ix + r * 0.15, iy - r * 0.02);
-                ctx.stroke();
-            }
-            ctx.globalAlpha = 1;
-        }
-        // Dichroism effect (blue-green to yellow-green shift)
-        ctx.globalAlpha = 0.12;
-        const dichG = ctx.createLinearGradient(-r, -r, r, r);
-        dichG.addColorStop(0, '#0088ff'); dichG.addColorStop(1, '#aaff00');
-        ctx.fillStyle = dichG;
-        ctx.beginPath();
-        for (let i = 0; i < 6; i++) {
-            const a = (i / 6) * TWO_PI_SK - Math.PI / 6;
-            i === 0 ? ctx.moveTo(Math.cos(a) * r, Math.sin(a) * r) : ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
-        }
-        ctx.closePath(); ctx.fill();
-        ctx.globalAlpha = 1;
-        // Outer facet edges
-        ctx.strokeStyle = 'rgba(100,255,180,0.6)'; ctx.lineWidth = 1.5;
-        ctx.beginPath();
-        for (let i = 0; i <= 6; i++) {
-            const a = (i / 6) * TWO_PI_SK - Math.PI / 6;
-            i === 0 ? ctx.moveTo(Math.cos(a) * r, Math.sin(a) * r) : ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r);
-        }
-        ctx.stroke();
-        // Window highlight (table facet reflection)
-        ctx.globalAlpha = 0.25;
-        ctx.fillStyle = '#ffffff';
-        ctx.beginPath();
-        ctx.moveTo(-r * 0.3, -r * 0.4); ctx.lineTo(r * 0.1, -r * 0.35);
-        ctx.lineTo(r * 0.2, -r * 0.1); ctx.lineTo(-r * 0.15, -r * 0.15);
-        ctx.closePath(); ctx.fill();
-        ctx.globalAlpha = 1;
+        var rr = r * 0.85;
+        var emeraldPath = function() {
+            ctx.beginPath();
+            ctx.moveTo(-rr*0.7, -rr); ctx.lineTo(rr*0.7, -rr);
+            ctx.lineTo(rr, -rr*0.7); ctx.lineTo(rr, rr*0.7);
+            ctx.lineTo(rr*0.7, rr); ctx.lineTo(-rr*0.7, rr);
+            ctx.lineTo(-rr, rr*0.7); ctx.lineTo(-rr, -rr*0.7);
+            ctx.closePath();
+        };
+        var eg = ctx.createRadialGradient(-r*0.2, -r*0.2, 0, 0, 0, r);
+        eg.addColorStop(0, '#66ff99'); eg.addColorStop(0.3, '#33cc66');
+        eg.addColorStop(0.6, '#228844'); eg.addColorStop(1, '#114422');
+        ctx.fillStyle = eg; emeraldPath(); ctx.fill();
+        ctx.strokeStyle = 'rgba(150,255,200,0.3)'; ctx.lineWidth = 0.8;
+        ctx.beginPath(); ctx.moveTo(-rr*0.5, -rr*0.5); ctx.lineTo(rr*0.5, rr*0.5); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(rr*0.5, -rr*0.5); ctx.lineTo(-rr*0.5, rr*0.5); ctx.stroke();
+        ctx.strokeStyle = '#88ffaa'; ctx.lineWidth = 1.5; emeraldPath(); ctx.stroke();
+        ctx.fillStyle = 'rgba(255,255,255,0.4)';
+        ctx.beginPath(); ctx.arc(-r*0.2, -r*0.25, r*0.1, 0, TWO_PI_SK); ctx.fill();
         ctx.restore();
-        this._hl(ctx, x, y, r);
     }
 
     _proj_emerald(ctx, x, y, r, angle) {
@@ -1442,89 +1004,34 @@ class SkinRenderer {
     _body_nebula(ctx, x, y, r, angle) {
         const t = this._time;
         this._shadow(ctx, x, y, r);
-        this._glow(ctx, x, y, r, '#aa44ff', 0.35);
-        // 暗尘带背景(吸收暗区)
-        if (this.quality.detailLevel >= 2) {
-            ctx.save(); ctx.globalAlpha = 0.2;
-            ctx.fillStyle = '#110022';
-            ctx.beginPath();
-            ctx.moveTo(x - r * 0.6, y - r * 0.1);
-            ctx.bezierCurveTo(x - r * 0.2, y - r * 0.3, x + r * 0.3, y + r * 0.2, x + r * 0.7, y - r * 0.05);
-            ctx.bezierCurveTo(x + r * 0.4, y + r * 0.4, x - r * 0.1, y + r * 0.5, x - r * 0.6, y - r * 0.1);
-            ctx.fill(); ctx.restore();
-        }
-        // 多层气态云 - 偏移脉动，更真实的星云团块
-        const colors = ['#3322aa', '#7744dd', '#aa44ff', '#ff44aa', '#4488ff', '#22aacc'];
-        for (let i = colors.length - 1; i >= 0; i--) {
-            const lr = r * (0.35 + i * 0.13);
-            const oa = t * (0.3 + i * 0.12) + i * 1.2;
-            const ox = Math.cos(oa) * r * 0.1 * (i % 3);
-            const oy = Math.sin(oa * 0.7 + i * 0.5) * r * 0.08 * (i % 3);
-            ctx.save(); ctx.globalAlpha = 0.3 + (i % 2) * 0.12;
-            const lg = ctx.createRadialGradient(x + ox, y + oy, lr * 0.1, x + ox, y + oy, lr);
-            lg.addColorStop(0, colors[i]); lg.addColorStop(0.6, colors[i] + '88'); lg.addColorStop(1, 'transparent');
-            ctx.fillStyle = lg;
-            ctx.beginPath(); ctx.arc(x + ox, y + oy, lr, 0, TWO_PI_SK); ctx.fill();
-            ctx.restore();
-        }
-        // 柱状明亮区(创生之柱形态)
+        this._glow(ctx, x, y, r, '#8844ff', 0.15);
+        ctx.save(); ctx.translate(x, y);
+        var ng = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
+        ng.addColorStop(0, '#4422aa'); ng.addColorStop(0.4, '#220066');
+        ng.addColorStop(0.8, '#110033'); ng.addColorStop(1, '#000011');
+        ctx.fillStyle = ng;
+        ctx.beginPath(); ctx.arc(0, 0, r, 0, TWO_PI_SK); ctx.fill();
         if (this.quality.detailLevel >= 1) {
-            ctx.save(); ctx.globalAlpha = 0.2;
-            ctx.beginPath(); ctx.arc(x, y, r * 0.95, 0, TWO_PI_SK); ctx.clip();
-            const pillarG = ctx.createLinearGradient(x - r * 0.4, y + r * 0.3, x + r * 0.1, y - r * 0.8);
-            pillarG.addColorStop(0, '#cc55ff'); pillarG.addColorStop(0.5, '#6633aa'); pillarG.addColorStop(1, 'transparent');
-            ctx.fillStyle = pillarG;
-            ctx.beginPath();
-            ctx.moveTo(x - r * 0.3, y + r * 0.5);
-            ctx.bezierCurveTo(x - r * 0.2, y, x - r * 0.15, y - r * 0.4, x + r * 0.05, y - r * 0.8);
-            ctx.lineTo(x + r * 0.2, y - r * 0.7);
-            ctx.bezierCurveTo(x + r * 0.1, y - r * 0.3, x + r * 0.05, y + r * 0.1, x + r * 0.1, y + r * 0.5);
-            ctx.closePath(); ctx.fill();
-            ctx.restore();
-        }
-        // 旋转弥散环(气体旋转)
-        if (this.quality.detailLevel >= 1) {
-            ctx.save(); ctx.globalAlpha = 0.25;
-            ctx.strokeStyle = '#aa88ff'; ctx.lineWidth = 1.8;
-            ctx.translate(x, y); ctx.rotate(t * 0.6);
-            ctx.beginPath(); ctx.ellipse(0, 0, r * 0.85, r * 0.3, 0.3, 0, TWO_PI_SK); ctx.stroke();
-            // 第二环(不同倾斜)
-            ctx.rotate(Math.PI * 0.4); ctx.strokeStyle = '#ff66cc'; ctx.lineWidth = 1.0;
-            ctx.beginPath(); ctx.ellipse(0, 0, r * 0.7, r * 0.25, 0, 0, TWO_PI_SK); ctx.stroke();
-            ctx.restore();
-        }
-        // 核心新生恒星(热白点+十字星芒)
-        const cg = ctx.createRadialGradient(x, y, 0, x, y, r * 0.2);
-        cg.addColorStop(0, '#fff'); cg.addColorStop(0.3, '#eeddff'); cg.addColorStop(1, 'transparent');
-        ctx.fillStyle = cg;
-        ctx.beginPath(); ctx.arc(x, y, r * 0.2, 0, TWO_PI_SK); ctx.fill();
-        // 十字星芒
-        if (this.quality.detailLevel >= 1) {
-            ctx.save(); ctx.globalAlpha = 0.4 + Math.sin(t * 3) * 0.1;
-            ctx.strokeStyle = '#fff'; ctx.lineWidth = 1.2; ctx.lineCap = 'round';
-            const spikeLen = r * 0.4;
-            ctx.beginPath(); ctx.moveTo(x - spikeLen, y); ctx.lineTo(x + spikeLen, y); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(x, y - spikeLen); ctx.lineTo(x, y + spikeLen); ctx.stroke();
-            // 45度对角(更短)
-            ctx.globalAlpha *= 0.5; ctx.lineWidth = 0.7;
-            const d45 = spikeLen * 0.6;
-            ctx.beginPath(); ctx.moveTo(x - d45, y - d45); ctx.lineTo(x + d45, y + d45); ctx.stroke();
-            ctx.beginPath(); ctx.moveTo(x + d45, y - d45); ctx.lineTo(x - d45, y + d45); ctx.stroke();
-            ctx.restore();
-        }
-        // 散布星点(新生恒星群)
-        if (this.quality.detailLevel >= 1) {
-            ctx.fillStyle = '#fff';
-            const cnt = this.quality.detailLevel >= 3 ? 20 : 10;
-            for (let i = 0; i < cnt; i++) {
-                const sa = (i / cnt) * TWO_PI_SK + t * 0.2 + i * 0.3;
-                const sd = r * (0.25 + Math.sin(i * 1.7 + t * 0.5) * 0.4);
-                const ss = 0.8 + Math.sin(t * 3 + i * 2) * 0.5;
-                ctx.globalAlpha = 0.4 + Math.sin(t * 2 + i) * 0.25;
-                ctx.beginPath(); ctx.arc(x + Math.cos(sa) * sd, y + Math.sin(sa) * sd, ss, 0, TWO_PI_SK); ctx.fill();
+            var nColors = ['#ff44aa', '#4488ff', '#aa44ff'];
+            for (var i = 0; i < 3; i++) {
+                var a = t * 0.3 + i * TWO_PI_SK / 3;
+                var cx2 = Math.cos(a) * r * 0.3, cy2 = Math.sin(a) * r * 0.3;
+                var sg = ctx.createRadialGradient(cx2, cy2, 0, cx2, cy2, r * 0.5);
+                sg.addColorStop(0, nColors[i]); sg.addColorStop(1, 'transparent');
+                ctx.globalAlpha = 0.3; ctx.fillStyle = sg;
+                ctx.beginPath(); ctx.arc(cx2, cy2, r * 0.5, 0, TWO_PI_SK); ctx.fill();
             }
             ctx.globalAlpha = 1;
         }
+        ctx.fillStyle = '#fff';
+        for (var j = 0; j < 8; j++) {
+            var sa = j * 1.7 + t * 0.5;
+            var sd = r * (0.3 + (j % 3) * 0.2);
+            ctx.globalAlpha = 0.5 + Math.sin(t * 3 + j) * 0.3;
+            ctx.beginPath(); ctx.arc(Math.cos(sa) * sd, Math.sin(sa) * sd, 1, 0, TWO_PI_SK); ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+        ctx.restore();
     }
 
     _proj_nebula(ctx, x, y, r, angle) {
@@ -1588,51 +1095,44 @@ class SkinRenderer {
     _body_blackhole(ctx, x, y, r, angle) {
         const t = this._time;
         this._shadow(ctx, x, y, r);
-        // 吸积盘
-        if (this.quality.detailLevel >= 1) {
-            ctx.save(); ctx.translate(x, y);
-            ctx.globalAlpha = 0.3;
-            for (let i = 3; i >= 0; i--) {
-                const ringR = r * (1.6 + i * 0.35);
-                const rg = ctx.createRadialGradient(0, 0, ringR * 0.6, 0, 0, ringR);
-                rg.addColorStop(0, 'transparent');
-                rg.addColorStop(0.5, i % 2 === 0 ? '#6600cc' : '#aa44ff');
-                rg.addColorStop(1, 'transparent');
-                ctx.fillStyle = rg;
-                ctx.beginPath(); ctx.ellipse(0, 0, ringR, ringR * 0.3, t * 0.5 + i * 0.3, 0, TWO_PI_SK); ctx.fill();
-            }
-            ctx.globalAlpha = 1; ctx.restore();
-        }
-        // 螺旋吸入光线
-        if (this.quality.detailLevel >= 2) {
-            ctx.save(); ctx.translate(x, y);
-            ctx.globalAlpha = 0.15; ctx.strokeStyle = '#8844ff'; ctx.lineWidth = 1;
-            for (let i = 0; i < 8; i++) {
-                const a = i * TWO_PI_SK / 8 + t * 0.3;
-                ctx.beginPath();
-                for (let s = 0; s < 15; s++) {
-                    const sa = a + s * 0.2;
-                    const sr = r * 1.5 * (1 - s / 15);
-                    const sx = Math.cos(sa) * sr, sy = Math.sin(sa) * sr * 0.35;
-                    if (s === 0) ctx.moveTo(sx, sy); else ctx.lineTo(sx, sy);
-                }
-                ctx.stroke();
-            }
-            ctx.globalAlpha = 1; ctx.restore();
-        }
-        // 纯黑球体核心
         ctx.save(); ctx.translate(x, y);
-        const cg = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
-        cg.addColorStop(0, '#000000');
-        cg.addColorStop(0.75, '#000000');
-        cg.addColorStop(0.9, '#110022');
-        cg.addColorStop(1, '#220044');
-        ctx.fillStyle = cg;
+        // Accretion disk glow
+        if (this.quality.glowEnabled) {
+            var glowR = r * 1.8;
+            var gg = ctx.createRadialGradient(0, 0, r * 0.9, 0, 0, glowR);
+            gg.addColorStop(0, '#ff8800'); gg.addColorStop(0.3, '#ff4400');
+            gg.addColorStop(0.6, '#aa2200'); gg.addColorStop(1, 'transparent');
+            ctx.fillStyle = gg; ctx.globalAlpha = 0.4;
+            ctx.beginPath(); ctx.arc(0, 0, glowR, 0, TWO_PI_SK); ctx.fill();
+            ctx.globalAlpha = 1;
+        }
+        // Accretion disk ring - elliptical perspective
+        ctx.save();
+        ctx.rotate(t * 0.3);
+        ctx.scale(1, 0.4);
+        for (var i = 0; i < 3; i++) {
+            var diskR = r * (1.2 + i * 0.15);
+            ctx.globalAlpha = 0.7 - i * 0.2;
+            ctx.strokeStyle = i === 0 ? '#ffcc44' : (i === 1 ? '#ff8800' : '#ff4400');
+            ctx.lineWidth = r * 0.15 - i * 2;
+            ctx.beginPath(); ctx.arc(0, 0, diskR, 0, TWO_PI_SK); ctx.stroke();
+        }
+        ctx.globalAlpha = 0.8; ctx.fillStyle = '#ffffff';
+        for (var j = 0; j < 4; j++) {
+            var pa = t * 2 + j * TWO_PI_SK / 4;
+            ctx.beginPath(); ctx.arc(Math.cos(pa) * r * 1.2, Math.sin(pa) * r * 1.2, 1.5, 0, TWO_PI_SK); ctx.fill();
+        }
+        ctx.restore();
+        // Pure black core
+        ctx.globalAlpha = 1;
+        var bg = ctx.createRadialGradient(0, 0, 0, 0, 0, r);
+        bg.addColorStop(0, '#000000'); bg.addColorStop(0.7, '#000000');
+        bg.addColorStop(0.85, '#110000'); bg.addColorStop(1, '#220000');
+        ctx.fillStyle = bg;
         ctx.beginPath(); ctx.arc(0, 0, r, 0, TWO_PI_SK); ctx.fill();
-        // 事件视界光边
-        ctx.strokeStyle = '#aa66ff'; ctx.lineWidth = r * 0.05;
-        ctx.globalAlpha = 0.5 + Math.sin(t * 3) * 0.2;
-        ctx.beginPath(); ctx.arc(0, 0, r * 1.02, 0, TWO_PI_SK); ctx.stroke();
+        // Event horizon edge glow
+        ctx.strokeStyle = '#ff6600'; ctx.lineWidth = 1.5; ctx.globalAlpha = 0.6;
+        ctx.beginPath(); ctx.arc(0, 0, r, 0, TWO_PI_SK); ctx.stroke();
         ctx.globalAlpha = 1;
         ctx.restore();
     }
@@ -1685,76 +1185,42 @@ class SkinRenderer {
     _body_phoenix(ctx, x, y, r, angle) {
         const t = this._time;
         this._shadow(ctx, x, y, r);
-        // 日冕光晕
+        // Corona rays
         if (this.quality.detailLevel >= 1) {
-            const layers = this.quality.detailLevel >= 3 ? 5 : 3;
-            for (let l = layers; l >= 1; l--) {
-                const pulse = 1 + Math.sin(t * 3 + l * 0.5) * 0.08;
-                const cr = r * (1.0 + l * 0.35) * pulse;
-                ctx.globalAlpha = 0.12 / l;
-                const cg = ctx.createRadialGradient(x, y, r * 0.8, x, y, cr);
-                cg.addColorStop(0, '#ffee44');
-                cg.addColorStop(0.4, '#ffaa00');
-                cg.addColorStop(0.7, '#ff6600');
-                cg.addColorStop(1, 'transparent');
-                ctx.fillStyle = cg;
-                ctx.beginPath(); ctx.arc(x, y, cr, 0, TWO_PI_SK); ctx.fill();
-            }
-            ctx.globalAlpha = 1;
-        }
-        // 太阳耀斑
-        if (this.quality.detailLevel >= 2) {
             ctx.save(); ctx.translate(x, y);
-            ctx.globalAlpha = 0.45;
-            for (let i = 0; i < 8; i++) {
-                const fa = i * TWO_PI_SK / 8 + t * 0.3;
-                const fLen = r * (0.3 + Math.sin(t * 2 + i * 1.7) * 0.15);
-                const fx = Math.cos(fa) * r, fy = Math.sin(fa) * r;
-                ctx.fillStyle = i % 2 === 0 ? '#ffcc00' : '#ff8800';
+            var rayCount = 12;
+            ctx.globalAlpha = 0.35;
+            for (var i = 0; i < rayCount; i++) {
+                var ra = i * TWO_PI_SK / rayCount + t * 0.5;
+                var rayLen = r * (0.4 + Math.sin(t * 3 + i * 2) * 0.15);
+                ctx.strokeStyle = '#ffcc00'; ctx.lineWidth = r * 0.12;
+                ctx.lineCap = 'round';
                 ctx.beginPath();
-                ctx.moveTo(fx + Math.cos(fa + 0.25) * r * 0.08, fy + Math.sin(fa + 0.25) * r * 0.08);
-                ctx.lineTo(fx + Math.cos(fa) * fLen, fy + Math.sin(fa) * fLen);
-                ctx.lineTo(fx + Math.cos(fa - 0.25) * r * 0.08, fy + Math.sin(fa - 0.25) * r * 0.08);
-                ctx.closePath(); ctx.fill();
+                ctx.moveTo(Math.cos(ra) * r * 0.9, Math.sin(ra) * r * 0.9);
+                ctx.lineTo(Math.cos(ra) * (r + rayLen), Math.sin(ra) * (r + rayLen));
+                ctx.stroke();
             }
-            ctx.restore();
+            ctx.globalAlpha = 1; ctx.restore();
         }
+        this._glow(ctx, x, y, r, '#ff8800', 0.25);
         ctx.save(); ctx.translate(x, y);
-        // 太阳主体
-        const sg = ctx.createRadialGradient(-r * 0.2, -r * 0.2, 0, 0, 0, r);
-        sg.addColorStop(0, '#ffffff');
-        sg.addColorStop(0.12, '#fffde0');
-        sg.addColorStop(0.3, '#ffee44');
-        sg.addColorStop(0.55, '#ffaa00');
-        sg.addColorStop(0.8, '#ff6600');
+        // Sun body
+        var sg = ctx.createRadialGradient(-r * 0.15, -r * 0.15, 0, 0, 0, r);
+        sg.addColorStop(0, '#ffffff'); sg.addColorStop(0.15, '#ffee66');
+        sg.addColorStop(0.4, '#ffaa00'); sg.addColorStop(0.7, '#ff6600');
         sg.addColorStop(1, '#cc3300');
         ctx.fillStyle = sg;
         ctx.beginPath(); ctx.arc(0, 0, r, 0, TWO_PI_SK); ctx.fill();
-        // 表面对流颗粒
-        if (this.quality.detailLevel >= 2) {
-            ctx.globalAlpha = 0.1;
-            for (let i = 0; i < 12; i++) {
-                const ga = i * TWO_PI_SK / 12 + t * 0.2;
-                const gd = r * (0.3 + (i % 3) * 0.15);
-                const gx = Math.cos(ga) * gd, gy = Math.sin(ga) * gd;
-                ctx.fillStyle = i % 2 === 0 ? '#fff4b0' : '#ffe060';
-                ctx.beginPath(); ctx.arc(gx, gy, r * 0.1, 0, TWO_PI_SK); ctx.fill();
-            }
-            ctx.globalAlpha = 1;
-        }
-        // 太阳黑子
+        // Sunspots
         if (this.quality.detailLevel >= 1) {
-            ctx.globalAlpha = 0.2; ctx.fillStyle = '#cc4400';
-            const s1a = t * 0.1, s1d = r * 0.4;
-            ctx.beginPath(); ctx.arc(Math.cos(s1a) * s1d, Math.sin(s1a) * s1d, r * 0.07, 0, TWO_PI_SK); ctx.fill();
-            ctx.beginPath(); ctx.arc(Math.cos(s1a + 2) * s1d * 0.7, Math.sin(s1a + 2) * s1d * 0.7, r * 0.04, 0, TWO_PI_SK); ctx.fill();
+            ctx.fillStyle = '#cc4400'; ctx.globalAlpha = 0.3;
+            ctx.beginPath(); ctx.arc(r * 0.2, r * 0.1, r * 0.12, 0, TWO_PI_SK); ctx.fill();
+            ctx.beginPath(); ctx.arc(-r * 0.3, r * 0.25, r * 0.08, 0, TWO_PI_SK); ctx.fill();
             ctx.globalAlpha = 1;
         }
-        // 高光
-        ctx.globalAlpha = 0.7; ctx.fillStyle = '#ffffff';
-        ctx.beginPath(); ctx.arc(-r * 0.25, -r * 0.25, r * 0.12, 0, TWO_PI_SK); ctx.fill();
-        ctx.globalAlpha = 0.4;
-        ctx.beginPath(); ctx.arc(-r * 0.1, -r * 0.35, r * 0.06, 0, TWO_PI_SK); ctx.fill();
+        // Highlight
+        ctx.globalAlpha = 0.6; ctx.fillStyle = '#fff';
+        ctx.beginPath(); ctx.arc(-r * 0.25, -r * 0.3, r * 0.1, 0, TWO_PI_SK); ctx.fill();
         ctx.globalAlpha = 1;
         ctx.restore();
     }
