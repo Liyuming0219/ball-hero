@@ -2018,155 +2018,23 @@ class Game {
         ctx.fillStyle = this._bgGradCache;
         ctx.fillRect(0, 0, W, H);
 
-        // ── 角落色彩光晕（主题驱动） —— 移动端跳过，PC用OffscreenCanvas缓存 ──
-        if (!mobile) {
-            const glowKey = theme.id + '_' + W + '_' + H;
-            if (!this._bgGlowA || this._bgGlowA._key !== glowKey) {
-                // 预渲染光晕A到离屏canvas
-                const rA = Math.ceil(H * 0.5);
-                const dA = rA * 2;
-                const cA = (typeof OffscreenCanvas !== 'undefined')
-                    ? new OffscreenCanvas(dA, dA) : document.createElement('canvas');
-                cA.width = dA; cA.height = dA;
-                const ctxA = cA.getContext('2d');
-                const gA = ctxA.createRadialGradient(rA, rA, 0, rA, rA, rA);
-                gA.addColorStop(0, theme.glowA);
-                gA.addColorStop(1, 'rgba(0,0,0,0)');
-                ctxA.fillStyle = gA;
-                ctxA.fillRect(0, 0, dA, dA);
-                this._bgGlowA = cA;
-                this._bgGlowA._key = glowKey;
-                this._bgGlowA._r = rA;
+        // （已移除角落光晕球）
 
-                // 预渲染光晕B到离屏canvas
-                const rB = Math.ceil(H * 0.45);
-                const dB = rB * 2;
-                const cB = (typeof OffscreenCanvas !== 'undefined')
-                    ? new OffscreenCanvas(dB, dB) : document.createElement('canvas');
-                cB.width = dB; cB.height = dB;
-                const ctxB = cB.getContext('2d');
-                const gB = ctxB.createRadialGradient(rB, rB, 0, rB, rB, rB);
-                gB.addColorStop(0, theme.glowB);
-                gB.addColorStop(1, 'rgba(0,0,0,0)');
-                ctxB.fillStyle = gB;
-                ctxB.fillRect(0, 0, dB, dB);
-                this._bgGlowB = cB;
-                this._bgGlowB._r = rB;
-            }
-            // 绘制时只做 drawImage 偏移，避免每帧重建gradient
-            const rA = this._bgGlowA._r;
-            const cx1 = W * 0.15 - (camera.x % W) * 0.02;
-            const cy1 = H * 0.2 - (camera.y % H) * 0.02;
-            ctx.drawImage(this._bgGlowA, cx1 - rA, cy1 - rA);
-
-            const rB = this._bgGlowB._r;
-            const cx2 = W * 0.85 + (camera.x % W) * 0.015;
-            const cy2 = H * 0.8 + (camera.y % H) * 0.015;
-            ctx.drawImage(this._bgGlowB, cx2 - rB, cy2 - rB);
-        }
-
-        // ── 氛围雾气 —— 移动端跳过 ──
-        if (theme.fogColor && !mobile) {
+        // ── 氛围雾气（增强可见度）——
+        if (theme.fogColor) {
             const fogPhase = gt * 0.3;
-            ctx.globalAlpha = 0.5 + 0.3 * Math.sin(fogPhase);
+            ctx.globalAlpha = mobile ? 0.5 : (0.8 + 0.2 * Math.sin(fogPhase));
             ctx.fillStyle = theme.fogColor;
             ctx.fillRect(0, 0, W, H);
             ctx.globalAlpha = 1;
         }
 
-        // （已移除漂浮球球/菱形视差层）
+        // （已移除漂浮球球和星尘粒子）
 
-        // ── 星尘粒子（全面增强：更多+更大+十字星形+发光晕）—— 移动端减少数量 ──
-        const starCount = mobile ? 45 : 220;
-        if (!this._bgStars || this._bgStars._count !== starCount) {
-            this._bgStars = [];
-            this._bgStars._count = starCount;
-            for (let i = 0; i < starCount; i++) {
-                this._bgStars.push({
-                    wx: Math.random() * 6000 - 1000,
-                    wy: Math.random() * 6000 - 1000,
-                    r: 0.8 + Math.random() * 2.2,
-                    a: 0.25 + Math.random() * 0.35,
-                    twinkleSpeed: 0.8 + Math.random() * 2.5,
-                    twinklePhase: Math.random() * TWO_PI,
-                    isBright: Math.random() < 0.2, // 20%的星星特别亮
-                    rotSpeed: (Math.random() - 0.5) * 0.002,
-                });
-            }
-        }
-        const gameTime = this.gameTime || 0;
-        // 移动端用增强方块替代
-        if (mobile) {
-            ctx.fillStyle = theme.starColor;
-            for (const star of this._bgStars) {
-                const sx = star.wx - camera.x;
-                const sy = star.wy - camera.y;
-                if (sx < -10 || sx > W + 10 || sy < -10 || sy > H + 10) continue;
-                const alpha = star.a * (0.5 + 0.5 * Math.sin(gameTime * star.twinkleSpeed + star.twinklePhase));
-                ctx.globalAlpha = alpha;
-                const r = star.r;
-                ctx.fillRect(sx - r, sy - r, r * 2, r * 2);
-                // 亮星加十字
-                if (star.isBright) {
-                    ctx.globalAlpha = alpha * 0.5;
-                    ctx.fillRect(sx - r * 2, sy - 0.5, r * 4, 1);
-                    ctx.fillRect(sx - 0.5, sy - r * 2, 1, r * 4);
-                }
-            }
-        } else {
-            // 两遍绘制以减少 fillStyle 切换：先所有普通星，再亮星
-            // Pass 1: 普通星外晕（统一 fillStyle）
-            ctx.fillStyle = theme.starColor;
-            for (const star of this._bgStars) {
-                if (star.isBright) continue;
-                const sx = star.wx - camera.x;
-                const sy = star.wy - camera.y;
-                if (sx < -10 || sx > W + 10 || sy < -10 || sy > H + 10) continue;
-                const twinkle = 0.5 + 0.5 * Math.sin(gameTime * star.twinkleSpeed + star.twinklePhase);
-                ctx.globalAlpha = star.a * twinkle * 0.3;
-                ctx.beginPath();
-                ctx.arc(sx, sy, star.r + 2, 0, TWO_PI);
-                ctx.fill();
-                // 内核（同色）
-                ctx.globalAlpha = star.a * twinkle;
-                ctx.beginPath();
-                ctx.arc(sx, sy, star.r, 0, TWO_PI);
-                ctx.fill();
-            }
-            // Pass 2: 亮星
-            for (const star of this._bgStars) {
-                if (!star.isBright) continue;
-                const sx = star.wx - camera.x;
-                const sy = star.wy - camera.y;
-                if (sx < -10 || sx > W + 10 || sy < -10 || sy > H + 10) continue;
-                const twinkle = 0.5 + 0.5 * Math.sin(gameTime * star.twinkleSpeed + star.twinklePhase);
-                const alpha = star.a * twinkle;
-                const brightR = star.r * 1.5;
-                // 外层光晕
-                ctx.globalAlpha = alpha * 0.25;
-                ctx.fillStyle = theme.starColor;
-                ctx.beginPath();
-                ctx.arc(sx, sy, brightR + 4, 0, TWO_PI);
-                ctx.fill();
-                // 十字光芒
-                ctx.globalAlpha = alpha * 0.6;
-                ctx.fillStyle = '#ffffff';
-                const armLen = brightR * 3 * twinkle;
-                ctx.fillRect(sx - armLen, sy - 0.5, armLen * 2, 1);
-                ctx.fillRect(sx - 0.5, sy - armLen, 1, armLen * 2);
-                // 核心亮点
-                ctx.globalAlpha = alpha * 1.2;
-                ctx.beginPath();
-                ctx.arc(sx, sy, brightR * 0.8, 0, TWO_PI);
-                ctx.fill();
-            }
-        }
-        ctx.globalAlpha = 1;
-
-        // ── 网格线（主题颜色）—— 移动端使用更大间隔 ──
+        // ── 网格线（主题颜色 增强）—— 移动端使用更大间隔 ──
         const gridStep = mobile ? gridSize * 2 : gridSize;
         ctx.strokeStyle = theme.gridColor;
-        ctx.lineWidth = mobile ? 1 : 1.5;
+        ctx.lineWidth = mobile ? 1.5 : 2;
         ctx.beginPath();
         for (let x = startX; x <= endX; x += gridStep) {
             const sx = x - camera.x;
@@ -2180,20 +2048,19 @@ class Game {
         }
         ctx.stroke();
 
-        // 交叉点发光小点 —— 移动端跳过
-        if (!mobile) {
-            ctx.fillStyle = theme.dotColor;
-            for (let x = startX; x <= endX; x += gridSize) {
-                for (let y = startY; y <= endY; y += gridSize) {
-                    const px = x - camera.x;
-                    const py = y - camera.y;
-                    ctx.fillRect(px - 1, py - 1, 2, 2);
-                }
+        // 交叉点发光小点（增大）
+        ctx.fillStyle = theme.dotColor;
+        const dotR = mobile ? 1.5 : 2.5;
+        for (let x = startX; x <= endX; x += gridSize) {
+            for (let y = startY; y <= endY; y += gridSize) {
+                const px = x - camera.x;
+                const py = y - camera.y;
+                ctx.fillRect(px - dotR, py - dotR, dotR * 2, dotR * 2);
             }
         }
 
         // ── 环境装饰物（固定在世界坐标）—— 大幅增加数量 ──
-        const decorCount = mobile ? 20 : 120;
+        const decorCount = mobile ? 40 : 200;
         if (!this._mapDecors || this._mapDecors._count !== decorCount) {
             this._mapDecors = [];
             this._mapDecors._count = decorCount;
@@ -2220,7 +2087,7 @@ class Game {
             const sy = d.wy - camera.y;
             if (sx < -80 || sx > W + 80 || sy < -80 || sy > H + 80) continue;
 
-            ctx.globalAlpha = 0.30 + 0.10 * Math.sin(gt * 0.5 + d.rot);
+            ctx.globalAlpha = 0.55 + 0.15 * Math.sin(gt * 0.5 + d.rot);
             ctx.save();
             ctx.translate(sx, sy);
             ctx.scale(d.scale, d.scale);
