@@ -2230,9 +2230,16 @@ class RelicDrop {
     }
 }
 
-// 敌人弹幕
+// 敌人弹幕（含对象池）
+const _bulletPool = [];
+
 class EnemyBullet {
     constructor(x, y, angle, speed, damage, color) {
+        this._trailBuf = new Float32Array(12); // 6个点 × 2(x,y)
+        this.init(x, y, angle, speed, damage, color);
+    }
+
+    init(x, y, angle, speed, damage, color) {
         this.x = x;
         this.y = y;
         this.angle = angle;
@@ -2244,10 +2251,22 @@ class EnemyBullet {
         this.alive = true;
         this.life = 3;
         this.age = 0;
-        // 拖尾历史 — 环形缓冲（避免shift()的数组搬移开销）
-        this._trailBuf = new Float32Array(12); // 6个点 × 2(x,y)
         this._trailHead = 0;
         this._trailLen = 0;
+        return this;
+    }
+
+    static create(x, y, angle, speed, damage, color) {
+        if (_bulletPool.length > 0) {
+            return _bulletPool.pop().init(x, y, angle, speed, damage, color);
+        }
+        return new EnemyBullet(x, y, angle, speed, damage, color);
+    }
+
+    static recycle(bullet) {
+        if (_bulletPool.length < 200) { // 池上限
+            _bulletPool.push(bullet);
+        }
     }
 
     update(dt) {

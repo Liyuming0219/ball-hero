@@ -768,14 +768,21 @@ class WeaponSystem {
         const px = this.player.x;
         const py = this.player.y;
 
-        // 找到敌人最密集的区域
+        // 找到敌人最密集的区域（采样优化，避免O(n²)）
         let bestX = px, bestY = py, bestCount = 0;
-        for (const e of enemies) {
+        const sampleStep = enemies.length > 50 ? Math.ceil(enemies.length / 30) : 1;
+        for (let si = 0; si < enemies.length; si += sampleStep) {
+            const e = enemies[si];
             if (!e.alive) continue;
             let count = 0;
-            for (const e2 of enemies) {
+            const candidates = this._spatialHash
+                ? this._spatialHash.query(e.x, e.y, 120)
+                : enemies;
+            for (let ci = 0; ci < candidates.length; ci++) {
+                const e2 = candidates[ci];
                 if (!e2.alive) continue;
-                if (Utils.dist(e.x, e.y, e2.x, e2.y) < 120) count++;
+                const ddx = e2.x - e.x, ddy = e2.y - e.y;
+                if (ddx * ddx + ddy * ddy < 14400) count++; // 120²
             }
             if (count > bestCount) {
                 bestCount = count;
@@ -940,14 +947,19 @@ class WeaponSystem {
         this._logDmg(this._weaponNames[projectile.type] || '弹幕', damage, isCrit, died);
         this.particles.addDamageText(enemy.x, enemy.y, damage, isCrit, projectile.color);
 
-        // 火球爆炸溅射AOE
+        // 火球爆炸溅射AOE（空间哈希加速）
         if (projectile.type === 'fireball' && (died || projectile.pierce <= 0)) {
             const splashRadius = (50 + projectile.radius * 2) * this.player.bonuses.areaMult;
             const splashDamage = damage * 0.6;
-            for (const e2 of this._lastEnemies || []) {
+            const splashTargets = this._spatialHash
+                ? this._spatialHash.querySafe(projectile.x, projectile.y, splashRadius + 30)
+                : (this._lastEnemies || []);
+            for (let si = 0; si < splashTargets.length; si++) {
+                const e2 = splashTargets[si];
                 if (!e2.alive || e2 === enemy) continue;
-                if (Utils.dist(projectile.x, projectile.y, e2.x, e2.y) < splashRadius + e2.radius) {
-                    const splashAngle = Utils.angle(projectile.x, projectile.y, e2.x, e2.y);
+                const sdx = e2.x - projectile.x, sdy = e2.y - projectile.y;
+                if (sdx * sdx + sdy * sdy < (splashRadius + e2.radius) * (splashRadius + e2.radius)) {
+                    const splashAngle = Math.atan2(sdy, sdx);
                     const splashDied = e2.takeDamage(splashDamage, this.particles, splashAngle, 6);
                     this._logDmg('火球溢射', splashDamage, false, splashDied);
                     this.particles.addDamageText(e2.x, e2.y, Math.floor(splashDamage), false, '#ffaa00');
@@ -1043,7 +1055,7 @@ class WeaponSystem {
         if (this.player.def.id === 'necromancer') {
             this.player.passive.souls = Math.min(this.player.passive.maxSouls, this.player.passive.souls + 1);
         }
-        // 爆裂击杀
+        // 爆裂击杀（空间哈希加速）
         if (this.player.bonuses.explosiveKill) {
             // 融合：暗影收割 — 爆炸范围+50%，爆炸回血30%
             const shadowHarvest = this.player.bonuses._fusionShadowHarvest;
@@ -1052,10 +1064,15 @@ class WeaponSystem {
             // 融合：连锁爆破 — 双重打击时爆炸范围翻倍
             if (this._doubleStrikeActive) explodeRange *= 2;
             let totalExpDmg = 0;
-            for (const e2 of this._lastEnemies || []) {
+            const expTargets = this._spatialHash
+                ? this._spatialHash.querySafe(enemy.x, enemy.y, explodeRange + 30)
+                : (this._lastEnemies || []);
+            for (let ei = 0; ei < expTargets.length; ei++) {
+                const e2 = expTargets[ei];
                 if (!e2.alive || e2 === enemy) continue;
-                if (Utils.dist(enemy.x, enemy.y, e2.x, e2.y) < explodeRange) {
-                    const a = Utils.angle(enemy.x, enemy.y, e2.x, e2.y);
+                const edx = e2.x - enemy.x, edy = e2.y - enemy.y;
+                if (edx * edx + edy * edy < explodeRange * explodeRange) {
+                    const a = Math.atan2(edy, edx);
                     const eDied = e2.takeDamage(explodeDmg, this.particles, a, 8);
                     this._logDmg(shadowHarvest ? '暗影收割' : '爆裂击杀', explodeDmg, false, eDied);
                     this.particles.addDamageText(e2.x, e2.y, Math.floor(explodeDmg), false, shadowHarvest ? '#cc44ff' : '#ffaa00');
@@ -1078,18 +1095,23 @@ class WeaponSystem {
 
     // _shadowCloneAttack removed - replaced by _shadowBlinkAttack
 
-    // --- 连锁闪电 ---
+    // --- 连锁闪电（空间哈希加速） ---
     _triggerChainLightning(sourceEnemy, damage, maxChains) {
         let current = sourceEnemy;
         const hit = new Set([current]);
         for (let c = 0; c < maxChains; c++) {
             let nearest = null;
-            let nearestDist = 200; // 闪电跳跃范围
-            for (const enemy of this._lastEnemies || []) {
+            let nearestDistSq = 200 * 200; // 闪电跳跃范围²
+            const chainCandidates = this._spatialHash
+                ? this._spatialHash.query(current.x, current.y, 200)
+                : (this._lastEnemies || []);
+            for (let ci = 0; ci < chainCandidates.length; ci++) {
+                const enemy = chainCandidates[ci];
                 if (!enemy.alive || hit.has(enemy)) continue;
-                const dist = Utils.dist(current.x, current.y, enemy.x, enemy.y);
-                if (dist < nearestDist) {
-                    nearestDist = dist;
+                const cdx = enemy.x - current.x, cdy = enemy.y - current.y;
+                const dSq = cdx * cdx + cdy * cdy;
+                if (dSq < nearestDistSq) {
+                    nearestDistSq = dSq;
                     nearest = enemy;
                 }
             }

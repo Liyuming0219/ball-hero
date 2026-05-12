@@ -856,16 +856,23 @@ svgSpriteLoader.loadAll();
         this.weapons.update(dt, this.enemies, this.camera, this._enemySpatialHash);
 
         // 更新怪物
+        const _offScreenSq = 800 * 800; // 超出屏幕可视范围的阈值平方
+        const _frameOdd = this.frameCount & 1;
         for (let i = this.enemies.length - 1; i >= 0; i--) {
             const enemy = this.enemies[i];
 
+            const rdx = enemy.x - this.player.x, rdy = enemy.y - this.player.y;
+            const rdSq = rdx * rdx + rdy * rdy;
+
             // 超远距离敌人回收（Boss不回收）
-            if (!enemy.isBoss) {
-                const rdx = enemy.x - this.player.x, rdy = enemy.y - this.player.y;
-                if (rdx * rdx + rdy * rdy > RECYCLE_DIST_SQ) {
-                    swapRemove(this.enemies, i);
-                    continue;
-                }
+            if (!enemy.isBoss && rdSq > RECYCLE_DIST_SQ) {
+                swapRemove(this.enemies, i);
+                continue;
+            }
+
+            // 远距离非Boss/精英敌人隔帧更新（视觉无差异，节省大量CPU）
+            if (rdSq > _offScreenSq && !enemy.isBoss && !enemy.isElite && ((i & 1) === _frameOdd)) {
+                continue;
             }
 
             const bossEvent = enemy.update(dt, this.player.x, this.player.y);
@@ -998,14 +1005,19 @@ svgSpriteLoader.loadAll();
                             life: 0.8,
                         });
                     }
-                    // 圣骑士被动：格挡时反击范围圣光伤害
+                    // 圣骑士被动：格挡时反击范围圣光伤害（空间哈希加速）
                     if (result === 'blocked' && this.player.def.id === 'paladin') {
                         const counterRange = 120 * this.player.bonuses.areaMult;
                         const counterDmg = this.player.getAttack() * 1.5;
-                        for (const e2 of this.enemies) {
+                        const counterTargets = this._enemySpatialHash
+                            ? this._enemySpatialHash.querySafe(this.player.x, this.player.y, counterRange)
+                            : this.enemies;
+                        for (let ci = 0; ci < counterTargets.length; ci++) {
+                            const e2 = counterTargets[ci];
                             if (!e2.alive) continue;
-                            if (Utils.dist(this.player.x, this.player.y, e2.x, e2.y) < counterRange) {
-                                const a = Utils.angle(this.player.x, this.player.y, e2.x, e2.y);
+                            const cdx = e2.x - this.player.x, cdy = e2.y - this.player.y;
+                            if (cdx * cdx + cdy * cdy < counterRange * counterRange) {
+                                const a = Math.atan2(cdy, cdx);
                                 const cDied = e2.takeDamage(counterDmg, this.particles, a, 10);
                                 this.combatLog.record('圣光反击', counterDmg, false, cDied);
                                 this.particles.addDamageText(e2.x, e2.y, Math.floor(counterDmg), false, '#ffdd44');
@@ -1018,17 +1030,20 @@ svgSpriteLoader.loadAll();
                         this.particles.superExplode(this.player.x, this.player.y, this.player.def.colors, 60);
                         return;
                     }
-                    // 荆棘反伤
+                    // 荆棘反伤（空间哈希加速）
                     if (this.player.bonuses.thornAura) {
                         // 融合：圣盾荆棘 — 反伤400%+击退
                         const holyThorns = this.player.bonuses._fusionHolyThorns;
                         const thornDmg = enemy.damage * (holyThorns ? 4 : 2);
                         const thornRange = holyThorns ? 130 : 100;
                         const knockForce = holyThorns ? 20 : 10;
-                        for (const e2 of this.enemies) {
+                        const thornTargets = this._enemySpatialHash ? this._enemySpatialHash.query(this.player.x, this.player.y, thornRange) : this.enemies;
+                        for (let ti = 0; ti < thornTargets.length; ti++) {
+                            const e2 = thornTargets[ti];
                             if (!e2.alive) continue;
-                            if (Utils.dist(this.player.x, this.player.y, e2.x, e2.y) < thornRange) {
-                                const thornAngle = Utils.angle(this.player.x, this.player.y, e2.x, e2.y);
+                            const tdx = e2.x - this.player.x, tdy = e2.y - this.player.y;
+                            if (tdx * tdx + tdy * tdy < thornRange * thornRange) {
+                                const thornAngle = Math.atan2(tdy, tdx);
                                 const tDied = e2.takeDamage(thornDmg, this.particles, thornAngle, knockForce);
                                 this.combatLog.record(holyThorns ? '圣盾荆棘' : '荆棘反伤', thornDmg, false, tDied);
                                 this.particles.addDamageText(e2.x, e2.y, thornDmg, false, holyThorns ? '#88ffaa' : '#44ff44');
@@ -1058,7 +1073,7 @@ svgSpriteLoader.loadAll();
             // 远程怪射击
             if (enemy.canShoot()) {
                 const angle = Utils.angle(enemy.x, enemy.y, this.player.x, this.player.y);
-                this.enemyBullets.push(new EnemyBullet(enemy.x, enemy.y, angle, 180, enemy.damage, '#aa44ff'));
+                this.enemyBullets.push(EnemyBullet.create(enemy.x, enemy.y, angle, 180, enemy.damage, '#aa44ff'));
                 this.particles.emit(enemy.x, enemy.y, 5, {
                     colors: ['#aa44ff', '#cc66ff'],
                     speedMin: 1,
@@ -1128,6 +1143,7 @@ svgSpriteLoader.loadAll();
             const bullet = this.enemyBullets[i];
             bullet.update(dt);
             if (!bullet.alive) {
+                EnemyBullet.recycle(bullet);
                 swapRemove(this.enemyBullets, i);
                 continue;
             }
@@ -1135,6 +1151,8 @@ svgSpriteLoader.loadAll();
             if (Utils.circleCollision(this.player.x, this.player.y, this.player.radius, bullet.x, bullet.y, bullet.radius)) {
                 const result = this.player.takeDamage(bullet.damage, this.particles);
                 bullet.alive = false;
+                EnemyBullet.recycle(bullet);
+                swapRemove(this.enemyBullets, i);
                 this.particles.explode(bullet.x, bullet.y, ['#ff4488', '#ff66aa'], 8, 3);
                 // 受伤反馈（格挡不触发红色渐变）
                 if (result && result !== 'blocked') {
@@ -1328,44 +1346,47 @@ svgSpriteLoader.loadAll();
     }
 
     _separateEnemies() {
-        // 优化：只处理玩家附近的敌人，且限制最大处理数
-        // 移动端减少处理数量，O(n²)在低性能设备上很致命
-        const MAX_SEP = this.isMobile ? 20 : 80;
-        const px = this.player.x;
-        const py = this.player.y;
-        const sepRange = this.isMobile ? 200 : 400; // 移动端缩小检测范围
-        // 复用缓冲数组避免每帧 GC 压力
-        if (!this._sepBuf) this._sepBuf = [];
-        const nearby = this._sepBuf;
-        nearby.length = 0;
-        for (let i = 0; i < this.enemies.length && nearby.length < MAX_SEP; i++) {
-            const e = this.enemies[i];
-            if (!e.alive) continue;
-            const dx = e.x - px;
-            const dy = e.y - py;
-            if (dx * dx + dy * dy < sepRange * sepRange) {
-                nearby.push(e);
-            }
-        }
-        for (let i = 0; i < nearby.length; i++) {
-            for (let j = i + 1; j < nearby.length; j++) {
-                const a = nearby[i];
-                const b = nearby[j];
-                const dx = b.x - a.x;
-                const dy = b.y - a.y;
-                const distSq = dx * dx + dy * dy;
-                const minDist = a.radius + b.radius;
-                if (distSq < minDist * minDist && distSq > 0.01) {
-                    const dist = Math.sqrt(distSq);
-                    const overlap = (minDist - dist) * 0.5;
-                    const nx = dx / dist;
-                    const ny = dy / dist;
-                    a.x -= nx * overlap;
-                    a.y -= ny * overlap;
-                    b.x += nx * overlap;
-                    b.y += ny * overlap;
+        // 使用空间哈希加速：对每个敌人只查同格子邻居，O(n*k)代替O(n²)
+        const hash = this._enemySpatialHash;
+        if (!hash) return;
+        const cs = hash.cellSize;
+        const enemies = this.enemies;
+        const len = enemies.length;
+        // 限制处理数（移动端更少）
+        const MAX_SEP = this.isMobile ? 40 : 120;
+        let processed = 0;
+        for (let i = 0; i < len && processed < MAX_SEP; i++) {
+            const a = enemies[i];
+            if (!a.alive) continue;
+            // 只查自身所在格子及相邻格子的敌人
+            const cx = Math.floor(a.x / cs);
+            const cy = Math.floor(a.y / cs);
+            for (let gx = cx - 1; gx <= cx + 1; gx++) {
+                for (let gy = cy - 1; gy <= cy + 1; gy++) {
+                    const key = gx * 73856093 ^ gy * 19349669;
+                    const cell = hash.grid.get(key);
+                    if (!cell) continue;
+                    for (let j = 0; j < cell.length; j++) {
+                        const b = cell[j];
+                        if (b === a || !b.alive) continue;
+                        const dx = b.x - a.x;
+                        const dy = b.y - a.y;
+                        const distSq = dx * dx + dy * dy;
+                        const minDist = a.radius + b.radius;
+                        if (distSq < minDist * minDist && distSq > 0.01) {
+                            const dist = Math.sqrt(distSq);
+                            const overlap = (minDist - dist) * 0.3;
+                            const nx = dx / dist;
+                            const ny = dy / dist;
+                            a.x -= nx * overlap;
+                            a.y -= ny * overlap;
+                            b.x += nx * overlap;
+                            b.y += ny * overlap;
+                        }
+                    }
                 }
             }
+            processed++;
         }
     }
 
@@ -2665,7 +2686,7 @@ svgSpriteLoader.loadAll();
             if (Math.floor((fire.maxLife - fire.life) * 4) > Math.floor((fire.maxLife - fire.life - dt) * 4)) {
                 const magmaMode = this.player.bonuses._fusionMagmaFission;
                 const hitRange = magmaMode ? 35 : 20;
-                const nearbyFire = this._enemySpatialHash ? this._enemySpatialHash.query(fire.x, fire.y, hitRange) : this.enemies;
+                const nearbyFire = this._enemySpatialHash ? this._enemySpatialHash.querySafe(fire.x, fire.y, hitRange) : this.enemies;
                 for (const enemy of nearbyFire) {
                     if (!enemy.alive) continue;
                     if (Utils.dist(fire.x, fire.y, enemy.x, enemy.y) < hitRange) {
@@ -2905,7 +2926,7 @@ svgSpriteLoader.loadAll();
                     boss._themeKey === 'crimson' ? '#ff3333' : '#ff44aa';
                 for (let i = 0; i < bulletCount; i++) {
                     const angle = (event.baseAngle || 0) + (i / bulletCount) * TWO_PI;
-                    this.enemyBullets.push(new EnemyBullet(boss.x, boss.y, angle, 150, boss.damage * 0.8, bulletColor));
+                    this.enemyBullets.push(EnemyBullet.create(boss.x, boss.y, angle, 150, boss.damage * 0.8, bulletColor));
                 }
                 this.particles.emit(boss.x, boss.y, 12, {
                     colors: [bulletColor, '#ffffff'],
@@ -2939,7 +2960,7 @@ svgSpriteLoader.loadAll();
                 const startAngle = event.angle - spread / 2;
                 for (let i = 0; i < rayCount; i++) {
                     const a = startAngle + (i / (rayCount - 1)) * spread;
-                    this.enemyBullets.push(new EnemyBullet(event.x, event.y, a, 200, boss.damage * 1.2, '#9944ff'));
+                    this.enemyBullets.push(EnemyBullet.create(event.x, event.y, a, 200, boss.damage * 1.2, '#9944ff'));
                 }
                 this.particles.emit(event.x, event.y, 8, {
                     colors: ['#6622cc', '#9944ff'],
@@ -2979,7 +3000,7 @@ svgSpriteLoader.loadAll();
                 for (let i = 0; i < breathCount; i++) {
                     const a = baseA - coneW / 2 + (i / (breathCount - 1)) * coneW;
                     const spd = 100 + Math.random() * 80;
-                    const bullet = new EnemyBullet(event.x, event.y, a, spd, boss.damage * 0.6, '#88ddff');
+                    const bullet = EnemyBullet.create(event.x, event.y, a, spd, boss.damage * 0.6, '#88ddff');
                     bullet._slow = true; // 标记减速弹
                     this.enemyBullets.push(bullet);
                 }

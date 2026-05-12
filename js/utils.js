@@ -217,9 +217,18 @@ class SpatialHash {
     constructor(cellSize = 100) {
         this.cellSize = cellSize;
         this.grid = new Map();
+        // 复用缓冲：避免每次 query 创建新数组和 Set
+        this._queryResult = [];
+        this._queryId = 0;   // 递增ID代替Set去重
+        this._cellPool = []; // cell数组对象池
     }
 
     clear() {
+        // 将旧cell放回池中复用，避免GC
+        for (const cell of this.grid.values()) {
+            cell.length = 0;
+            this._cellPool.push(cell);
+        }
         this.grid.clear();
     }
 
@@ -238,7 +247,7 @@ class SpatialHash {
                 const key = this._key(cx, cy);
                 let cell = this.grid.get(key);
                 if (!cell) {
-                    cell = [];
+                    cell = this._cellPool.length > 0 ? this._cellPool.pop() : [];
                     this.grid.set(key, cell);
                 }
                 cell.push(entity);
@@ -246,22 +255,51 @@ class SpatialHash {
         }
     }
 
+    // 快速查询（复用内部缓冲，注意：下次query会覆盖结果！）
+    // 适用于立即遍历且不嵌套query的场景
     query(x, y, radius) {
         const cs = this.cellSize;
         const minCX = Math.floor((x - radius) / cs);
         const minCY = Math.floor((y - radius) / cs);
         const maxCX = Math.floor((x + radius) / cs);
         const maxCY = Math.floor((y + radius) / cs);
-        const result = [];
-        const seen = new Set();
+        const result = this._queryResult;
+        result.length = 0;
+        const qid = ++this._queryId;
         for (let cx = minCX; cx <= maxCX; cx++) {
             for (let cy = minCY; cy <= maxCY; cy++) {
                 const key = this._key(cx, cy);
                 const cell = this.grid.get(key);
                 if (!cell) continue;
-                for (const e of cell) {
-                    if (seen.has(e)) continue;
-                    seen.add(e);
+                for (let i = 0; i < cell.length; i++) {
+                    const e = cell[i];
+                    if (e._qid === qid) continue;
+                    e._qid = qid;
+                    result.push(e);
+                }
+            }
+        }
+        return result;
+    }
+
+    // 安全查询（返回新数组，可在嵌套query时使用）
+    querySafe(x, y, radius) {
+        const cs = this.cellSize;
+        const minCX = Math.floor((x - radius) / cs);
+        const minCY = Math.floor((y - radius) / cs);
+        const maxCX = Math.floor((x + radius) / cs);
+        const maxCY = Math.floor((y + radius) / cs);
+        const result = [];
+        const qid = ++this._queryId;
+        for (let cx = minCX; cx <= maxCX; cx++) {
+            for (let cy = minCY; cy <= maxCY; cy++) {
+                const key = this._key(cx, cy);
+                const cell = this.grid.get(key);
+                if (!cell) continue;
+                for (let i = 0; i < cell.length; i++) {
+                    const e = cell[i];
+                    if (e._qid === qid) continue;
+                    e._qid = qid;
                     result.push(e);
                 }
             }
@@ -272,7 +310,8 @@ class SpatialHash {
     // 批量插入所有活着的敌人
     rebuild(enemies) {
         this.clear();
-        for (const e of enemies) {
+        for (let i = 0; i < enemies.length; i++) {
+            const e = enemies[i];
             if (e.alive) this.insert(e);
         }
     }
