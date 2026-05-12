@@ -16,29 +16,24 @@ class ParticleSystem {
         this.beams = [];        // 新增: 能量光柱
         this.screenFlash = null; // 新增: 全屏闪光/染色
 
-        // 性能上限 —— 优化后降低上限保持流畅
+        // 性能上限 —— PC大幅提高上限
         if (this.isMobile) {
-            this.MAX_PARTICLES = 100;
-            this.MAX_TEXT = 15;
-            this.MAX_TRAIL = 30;
-            this.MAX_SHOCKWAVES = 6;
-            this.MAX_FLASH = 6;
-            this.MAX_LIGHTNING = 3;
-            this.MAX_BEAMS = 3;
+            this.MAX_PARTICLES = 120;
+            this.MAX_TEXT = 20;
+            this.MAX_TRAIL = 40;
+            this.MAX_SHOCKWAVES = 8;
+            this.MAX_FLASH = 8;
+            this.MAX_LIGHTNING = 4;
+            this.MAX_BEAMS = 4;
         } else {
-            this.MAX_PARTICLES = 600;
-            this.MAX_TEXT = 50;
-            this.MAX_TRAIL = 200;
-            this.MAX_SHOCKWAVES = 20;
-            this.MAX_FLASH = 20;
-            this.MAX_LIGHTNING = 10;
-            this.MAX_BEAMS = 8;
+            this.MAX_PARTICLES = 1200;
+            this.MAX_TEXT = 80;
+            this.MAX_TRAIL = 400;
+            this.MAX_SHOCKWAVES = 40;
+            this.MAX_FLASH = 40;
+            this.MAX_LIGHTNING = 20;
+            this.MAX_BEAMS = 12;
         }
-
-        // 自适应质量等级 (1=低, 2=中, 3=高)
-        this.qualityLevel = 3;
-        this._fpsHistory = [];
-        this._qualityCheckTimer = 0;
     }
 
     // --- 基础粒子(增强) ---
@@ -147,10 +142,8 @@ class ParticleSystem {
         }
     }
 
-    // --- 爆炸效果(优化：根据质量等级减少粒子) ---
+    // --- 爆炸效果(增强) ---
     explode(x, y, color, count = 30, power = 6) {
-        const q = this._qMult();
-        count = Math.ceil(count * q);
         const colors = Array.isArray(color) ? color : [color, '#fff', '#ffaa00'];
         // 核心爆裂
         this.emit(x, y, count, {
@@ -159,79 +152,71 @@ class ParticleSystem {
             speedMax: power * 1.8,
             sizeMin: 2,
             sizeMax: 9,
-            lifeMin: 0.25,
-            lifeMax: 0.7,
+            lifeMin: 0.3,
+            lifeMax: 0.9,
             friction: 0.93,
-            glow: this.qualityLevel >= 2,
-            glowSize: 14,
+            glow: true,
+            glowSize: 18,
         });
-        // 外圈火花(仅中高质量)
-        if (this.qualityLevel >= 2) {
-            this.emit(x, y, Math.floor(count * 0.4), {
-                colors: ['#fff', '#ffffaa', colors[0]],
-                speedMin: power * 1.2,
-                speedMax: power * 3.0,
-                sizeMin: 1,
-                sizeMax: 3,
-                lifeMin: 0.12,
-                lifeMax: 0.35,
-                friction: 0.88,
-                shape: 'spark',
-                glow: false,
-            });
-        }
-        // 环形扩散（仅高质量）
-        if (this.qualityLevel >= 3) {
-            this.emitRing(x, y, Math.floor(count * 0.3), power * 3, {
-                colors: [colors[0], '#fff'],
-                speedMin: power * 0.3,
-                speedMax: power * 0.8,
-                sizeMin: 2,
-                sizeMax: 5,
-                lifeMin: 0.2,
-                lifeMax: 0.4,
-                glow: false,
-            });
-        }
+        // 外圈火花(spark形状)
+        this.emit(x, y, Math.floor(count * 0.6), {
+            colors: ['#fff', '#ffffaa', colors[0]],
+            speedMin: power * 1.2,
+            speedMax: power * 3.0,
+            sizeMin: 1,
+            sizeMax: 3,
+            lifeMin: 0.15,
+            lifeMax: 0.45,
+            friction: 0.88,
+            shape: 'spark',
+            glow: true,
+            glowSize: 6,
+        });
+        // 环形扩散粒子
+        this.emitRing(x, y, Math.floor(count * 0.4), power * 3, {
+            colors: [colors[0], '#fff'],
+            speedMin: power * 0.3,
+            speedMax: power * 0.8,
+            sizeMin: 2,
+            sizeMax: 5,
+            lifeMin: 0.2,
+            lifeMax: 0.5,
+            glow: true, glowSize: 10,
+        });
         // 冲击波
-        this.addShockwave(x, y, colors[0] || color, power * 16, 0.35);
-        // 中心闪光（仅中高质量）
-        if (this.qualityLevel >= 2) this.addFlash(x, y, '#fff', power * 6, 0.1);
+        this.addShockwave(x, y, colors[0] || color, power * 18, 0.45);
+        // 中心闪光
+        this.addFlash(x, y, '#fff', power * 8, 0.12);
     }
 
-    // --- 超级爆炸 (Boss死亡等)(优化) ---
+    // --- 超级爆炸 (Boss死亡等)(增强) ---
     superExplode(x, y, colors, count = 120) {
-        const q = this._qMult();
-        count = Math.ceil(count * q);
-        // 多波次连环爆炸（减少波数）
-        const waves = this.qualityLevel >= 3 ? 3 : 2;
-        for (let i = 0; i < waves; i++) {
+        // 多波次连环爆炸
+        for (let i = 0; i < 4; i++) {
             setTimeout(() => {
                 this.explode(
-                    x + Utils.rand(-30, 30),
-                    y + Utils.rand(-30, 30),
+                    x + Utils.rand(-40, 40),
+                    y + Utils.rand(-40, 40),
                     colors,
-                    Math.floor(count / waves),
-                    8
+                    Math.floor(count / 4),
+                    9
                 );
-            }, i * 100);
+            }, i * 80);
         }
         // 大冲击波
-        this.addShockwave(x, y, '#fff', 250, 0.6);
-        this.addShockwave(x, y, colors[0], 180, 0.45);
-        // 螺旋粒子（仅中高质量）
-        if (this.qualityLevel >= 2) {
-            this.emitSpiral(x, y, Math.ceil(25 * q), {
-                colors, radius: 70,
-                speedMin: 3, speedMax: 7,
-                sizeMin: 3, sizeMax: 6,
-                lifeMin: 0.5, lifeMax: 1.0,
-                glow: this.qualityLevel >= 3, glowSize: 10,
-            });
-        }
+        this.addShockwave(x, y, '#fff', 280, 0.7);
+        this.addShockwave(x, y, colors[0], 200, 0.5);
+        // 螺旋粒子
+        this.emitSpiral(x, y, 40, {
+            colors, radius: 80,
+            speedMin: 3, speedMax: 8,
+            sizeMin: 3, sizeMax: 7,
+            lifeMin: 0.6, lifeMax: 1.2,
+            glow: true, glowSize: 12,
+        });
         // 全屏闪白
-        this.triggerScreenFlash('#ffffff', 0.35, 0.18);
-        Utils.shake(15);
+        this.triggerScreenFlash('#ffffff', 0.4, 0.2);
+        Utils.shake(18);
     }
 
     // --- 新增: 全屏闪光/染色 ---
@@ -463,26 +448,6 @@ class ParticleSystem {
         }
     }
 
-    // --- 自适应质量调节 ---
-    adaptQuality(fps) {
-        this._fpsHistory.push(fps);
-        if (this._fpsHistory.length > 60) this._fpsHistory.shift();
-        if (this._fpsHistory.length < 30) return;
-        const avg = this._fpsHistory.reduce((a, b) => a + b, 0) / this._fpsHistory.length;
-        if (avg < 35 && this.qualityLevel > 1) {
-            this.qualityLevel--;
-            this._fpsHistory.length = 0;
-        } else if (avg > 55 && this.qualityLevel < 3) {
-            this.qualityLevel++;
-            this._fpsHistory.length = 0;
-        }
-    }
-
-    // 获取当前质量下的粒子倍率
-    _qMult() {
-        return this.qualityLevel === 3 ? 1.0 : this.qualityLevel === 2 ? 0.6 : 0.35;
-    }
-
     // --- 更新所有粒子 ---
     update(dt) {
         // 屏幕闪光
@@ -607,26 +572,27 @@ class ParticleSystem {
 
     // --- 渲染拖尾（在玩家之前调用，避免遮挡皮肤） ---
     renderTrails(ctx, camera, screenW, screenH) {
-        const len = this.trailEffects.length;
-        if (len === 0) return;
         ctx.save();
-        const margin = 30;
-        const hiQ = this.qualityLevel >= 2;
-        for (let i = 0; i < len; i++) {
-            const t = this.trailEffects[i];
+        const margin = 40;
+        for (const t of this.trailEffects) {
             const sx = t.x - camera.x;
             const sy = t.y - camera.y;
             if (sx < -margin || sx > screenW + margin || sy < -margin || sy > screenH + margin) continue;
             const alpha = t.life / t.maxLife;
             ctx.fillStyle = t.color;
-            if (hiQ && t.glow && t.size > 3) {
-                ctx.globalAlpha = alpha * 0.35;
+            if (t.glow && t.size > 2) {
+                ctx.globalAlpha = alpha * 0.4;
                 ctx.beginPath();
-                ctx.arc(sx, sy, t.size * 2, 0, TWO_PI);
+                ctx.arc(sx, sy, t.size * 2.5, 0, TWO_PI);
+                ctx.fill();
+                ctx.globalAlpha = alpha * 0.7;
+                ctx.beginPath();
+                ctx.arc(sx, sy, t.size * 1.4, 0, TWO_PI);
                 ctx.fill();
                 ctx.globalAlpha = alpha;
+                ctx.fillStyle = '#fff';
                 ctx.beginPath();
-                ctx.arc(sx, sy, t.size * 0.8, 0, TWO_PI);
+                ctx.arc(sx, sy, t.size * 0.6, 0, TWO_PI);
                 ctx.fill();
             } else {
                 ctx.globalAlpha = alpha;
@@ -637,17 +603,13 @@ class ParticleSystem {
         ctx.restore();
     }
 
-    // --- 渲染所有粒子(优化版，不含拖尾) ---
+    // --- 渲染所有粒子(增强版，不含拖尾) ---
     render(ctx, camera, screenW, screenH) {
         ctx.save();
-        const margin = 30;
-        const hiQ = this.qualityLevel >= 2;
-        const ultraQ = this.qualityLevel >= 3;
-        const pLen = this.particles.length;
+        const margin = 40;
 
-        // 基础粒子(优化渲染)
-        for (let idx = 0; idx < pLen; idx++) {
-            const p = this.particles[idx];
+        // 基础粒子(增强渲染)
+        for (const p of this.particles) {
             const sx = p.x - camera.x;
             const sy = p.y - camera.y;
             if (sx < -margin || sx > screenW + margin || sy < -margin || sy > screenH + margin) continue;
@@ -657,15 +619,15 @@ class ParticleSystem {
             // 混合模式
             if (p.blend) ctx.globalCompositeOperation = p.blend;
 
-            // 色相偏移（仅高质量）
+            // 色相偏移
             let fillColor = p.color;
-            if (p.hueShift && ultraQ) {
+            if (p.hueShift) {
                 fillColor = `hsl(${Math.floor(p._hue)}, 80%, 65%)`;
             }
             ctx.fillStyle = fillColor;
 
-            // 小圆形粒子快速路径（size<4 直接用方块代替）
-            if (p.size < 4 && (p.shape === 'circle' || !hiQ)) {
+            // 小圆形粒子快速路径
+            if (p.shape === 'circle' && p.size < 4 && !p.glow) {
                 ctx.globalAlpha = pulseAlpha;
                 const s = p.size;
                 ctx.fillRect(sx - s, sy - s, s * 2, s * 2);
@@ -673,13 +635,13 @@ class ParticleSystem {
                 continue;
             }
 
-            // 辉光（仅中高质量且size足够大）
-            if (p.glow && hiQ && p.size > 3) {
+            // 辉光
+            if (p.glow) {
                 const gc = p.glowColor || fillColor;
-                ctx.globalAlpha = pulseAlpha * 0.3;
+                ctx.globalAlpha = pulseAlpha * 0.35;
                 ctx.fillStyle = gc;
                 ctx.beginPath();
-                ctx.arc(sx, sy, p.size + p.glowSize * 0.7, 0, TWO_PI);
+                ctx.arc(sx, sy, p.size + p.glowSize, 0, TWO_PI);
                 ctx.fill();
                 ctx.fillStyle = fillColor;
             }

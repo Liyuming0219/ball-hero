@@ -902,17 +902,19 @@ svgSpriteLoader.loadAll();
                     this.particles.addDamageText(enemy.x, enemy.y - 20, '击杀!', true, enemy.isBoss ? '#ff4444' : '#ffaa00');
                 }
 
-                // 连杀里程碑特效(优化：减少粒子数)
+                // 连杀里程碑特效(V3增强)
                 if (this.player._comboMilestone > 0) {
                     SFX.comboMilestone();
                     const cc = this.player.getComboColor();
-                    this.particles.addShockwave(this.player.x, this.player.y, cc, 200, 0.5);
-                    this.particles.emit(this.player.x, this.player.y, 20, COMBO_MILESTONE_PARTICLES);
-                    this.particles.emitRing(this.player.x, this.player.y, 10, 25, {
-                        colors: [cc, '#fff'], speedMin: 3, speedMax: 7,
-                        sizeMin: 2, sizeMax: 4, lifeMin: 0.3, lifeMax: 0.6, glow: false,
+                    this.particles.addShockwave(this.player.x, this.player.y, cc, 250, 0.55);
+                    this.particles.addShockwave(this.player.x, this.player.y, '#fff', 150, 0.35);
+                    this.particles.emit(this.player.x, this.player.y, 45, COMBO_MILESTONE_PARTICLES);
+                    this.particles.emitRing(this.player.x, this.player.y, 16, 30, {
+                        colors: [cc, '#fff'], speedMin: 4, speedMax: 9,
+                        sizeMin: 2, sizeMax: 5, lifeMin: 0.4, lifeMax: 0.7, glow: true, glowSize: 8,
                     });
-                    this.particles.triggerScreenFlash(cc, 0.1, 0.08);
+                    this.particles.triggerScreenFlash(cc, 0.12, 0.1);
+                    // Utils.shake(8);
                     this.player._comboMilestone = 0;
                 }
 
@@ -1069,8 +1071,8 @@ svgSpriteLoader.loadAll();
             }
         }
 
-// 怪物间互斥（隔帧执行，O(n²)优化）
-if (this.frameCount % 2 === 0) this._separateEnemies();
+        // 怪物间互斥
+        this._separateEnemies();
 
         // === 新Buff逻辑 ===
         this._updateOrbitalBlades(dt);
@@ -1306,15 +1308,14 @@ if (this.frameCount % 2 === 0) this._separateEnemies();
 
         // 粒子更新
         this.particles.update(dt);
-        // 自适应质量调节（每秒检测一次）
-        this.particles.adaptQuality(this.fps);
 
-        // 皮肤系统更新（降频：每2帧更新一次拖尾）
+        // 皮肤系统更新
         if (window._skinRenderer) window._skinRenderer.update(dt);
         if (window._skinFxSystem) window._skinFxSystem.update(dt);
-        if (window._skinFxSystem && this.player && this.player.isMoving && (this.frameCount % 2 === 0)) {
+        if (window._skinFxSystem && this.player && this.player.isMoving) {
             const skin = (typeof skinManager !== 'undefined') ? skinManager.getEquippedSkin(this.player.def.id) : null;
             if (skin) {
+                // 拖尾发射在人物移动方向的后方远处，彻底避免遮挡皮肤
                 const trailOffsetDist = this.player.radius ? this.player.radius * 2.0 : 20;
                 const trailX = this.player.x - Math.cos(this.player.facingAngle) * trailOffsetDist;
                 const trailY = this.player.y - Math.sin(this.player.facingAngle) * trailOffsetDist;
@@ -1471,8 +1472,6 @@ if (this.frameCount % 2 === 0) this._separateEnemies();
 
     _render() {
         const ctx = this.ctx;
-        // 缓存帧时间戳，减少多次performance.now()调用
-        this._frameTimestamp = performance.now();
         // Screen pulse 已禁用
         const pulseFactor = 1;
         const zoom = this.gameZoom;
@@ -1618,88 +1617,158 @@ if (this.frameCount % 2 === 0) this._separateEnemies();
             ctx.globalAlpha = 1;
         }
 
-        // 灼烧光环范围视觉（优化：减少绘制层数）
+        // 灼烧光环范围视觉（全面增强：多层火焰环+旋转火星+脉冲呼吸）
         if (this.player.bonuses.burnAura) {
-            const now = this._frameTimestamp || performance.now();
+            const now = performance.now();
             const px = this.player.x - cam.x;
             const py = this.player.y - cam.y;
             const pulse = 1 + Math.sin(now * 0.005) * 0.06;
+            const pulse2 = 1 + Math.sin(now * 0.003 + 1.5) * 0.04;
 
-            // 主火焰圈
-            ctx.globalAlpha = 0.15 * pulse;
-            ctx.fillStyle = '#ff4422';
+            // 第一层：远距热浪光晕（最外圈）
+            ctx.globalAlpha = 0.08 * pulse;
+            ctx.fillStyle = '#ff2200';
             ctx.beginPath();
-            ctx.arc(px, py, 120 * pulse, 0, TWO_PI);
+            ctx.arc(px, py, 135 * pulse, 0, TWO_PI);
             ctx.fill();
 
-            // 边缘发光线
-            ctx.globalAlpha = 0.35;
-            ctx.strokeStyle = '#ff6644';
-            ctx.lineWidth = 2;
+            // 第二层：主火焰圈
+            ctx.globalAlpha = 0.18 * pulse2;
+            ctx.fillStyle = '#ff4422';
             ctx.beginPath();
-            ctx.arc(px, py, 120 * pulse, 0, TWO_PI);
+            ctx.arc(px, py, 120 * pulse2, 0, TWO_PI);
+            ctx.fill();
+
+            // 第三层：内圈橙色热核
+            ctx.globalAlpha = 0.12;
+            ctx.fillStyle = '#ff8800';
+            ctx.beginPath();
+            ctx.arc(px, py, 90 * pulse, 0, TWO_PI);
+            ctx.fill();
+
+            // 外圈边缘发光线 - 双层
+            ctx.globalAlpha = 0.4;
+            ctx.strokeStyle = '#ff6644';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.arc(px, py, 120 * pulse2, 0, TWO_PI);
             ctx.stroke();
 
-            // 旋转火星（仅5个）
-            ctx.globalAlpha = 0.6;
+            ctx.globalAlpha = 0.2;
+            ctx.strokeStyle = '#ffaa44';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.arc(px, py, 125 * pulse, 0, TWO_PI);
+            ctx.stroke();
+
+            // 旋转火星粒子（8个火焰点沿圆周旋转）
+            ctx.globalAlpha = 0.7;
             ctx.fillStyle = '#ffcc22';
+            const fireCount = 8;
+            for (let i = 0; i < fireCount; i++) {
+                const angle = now * 0.002 + (i / fireCount) * TWO_PI;
+                const fr = 118 * pulse2 + Math.sin(now * 0.008 + i * 2) * 5;
+                const fx = px + Math.cos(angle) * fr;
+                const fy = py + Math.sin(angle) * fr;
+                const fSize = 2.5 + Math.sin(now * 0.01 + i) * 1;
+                ctx.beginPath();
+                ctx.arc(fx, fy, fSize, 0, TWO_PI);
+                ctx.fill();
+            }
+
+            // 内圈逆向旋转火点（5个小火星）
+            ctx.globalAlpha = 0.5;
+            ctx.fillStyle = '#ff8844';
             for (let i = 0; i < 5; i++) {
-                const angle = now * 0.002 + (i / 5) * TWO_PI;
-                const fr = 115 * pulse;
+                const angle = -now * 0.0015 + (i / 5) * TWO_PI;
+                const fr = 85 * pulse;
                 const fx = px + Math.cos(angle) * fr;
                 const fy = py + Math.sin(angle) * fr;
                 ctx.beginPath();
-                ctx.arc(fx, fy, 2.5, 0, TWO_PI);
+                ctx.arc(fx, fy, 2, 0, TWO_PI);
                 ctx.fill();
             }
+
             ctx.globalAlpha = 1;
         }
 
-        // 护盾视觉（优化：简化绘制）
+        // 护盾视觉（全面增强：六边形能量盾+脉冲+旋转光点+裂纹效果）
         if (this.player.shield > 0) {
-            const now = this._frameTimestamp;
+            const now = performance.now();
             const shieldRatio = this.player.shield / this.player.bonuses.shieldMax;
             const px = this.player.x - cam.x;
             const py = this.player.y - cam.y;
             const shieldR = this.player.radius + 10;
             const pulse = 1 + Math.sin(now * 0.004) * 0.06;
 
-            // 主圆形护盾
-            ctx.globalAlpha = 0.15 * shieldRatio + 0.05;
-            ctx.fillStyle = '#6688ff';
+            // 外层柔光圈
+            ctx.globalAlpha = (0.1 * shieldRatio + 0.05) * pulse;
+            ctx.fillStyle = '#4466ff';
             ctx.beginPath();
-            ctx.arc(px, py, shieldR * pulse, 0, TWO_PI);
+            ctx.arc(px, py, shieldR + 8, 0, TWO_PI);
             ctx.fill();
 
-            // 护盾边框
+            // 六边形主体能量盾
+            ctx.globalAlpha = 0.2 * shieldRatio + 0.08;
+            ctx.fillStyle = '#6688ff';
+            ctx.beginPath();
+            for (let i = 0; i < 6; i++) {
+                const a = (i / 6) * TWO_PI - Math.PI / 6 + now * 0.0005;
+                const hx = px + Math.cos(a) * shieldR * pulse;
+                const hy = py + Math.sin(a) * shieldR * pulse;
+                if (i === 0) ctx.moveTo(hx, hy);
+                else ctx.lineTo(hx, hy);
+            }
+            ctx.closePath();
+            ctx.fill();
+
+            // 六边形边框（亮蓝发光）
             ctx.globalAlpha = 0.5 * shieldRatio + 0.2;
             ctx.strokeStyle = '#88aaff';
             ctx.lineWidth = 2 + shieldRatio * 2;
             ctx.beginPath();
-            ctx.arc(px, py, shieldR * pulse, 0, TWO_PI);
+            for (let i = 0; i < 6; i++) {
+                const a = (i / 6) * TWO_PI - Math.PI / 6 + now * 0.0005;
+                const hx = px + Math.cos(a) * shieldR * pulse;
+                const hy = py + Math.sin(a) * shieldR * pulse;
+                if (i === 0) ctx.moveTo(hx, hy);
+                else ctx.lineTo(hx, hy);
+            }
+            ctx.closePath();
             ctx.stroke();
 
-            // 旋转光点（4个）
+            // 内圈白色高光环
+            ctx.globalAlpha = 0.15 * shieldRatio;
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.arc(px, py, shieldR - 3, 0, TWO_PI);
+            ctx.stroke();
+
+            // 旋转能量光点（6个）
             ctx.fillStyle = '#aaccff';
-            ctx.globalAlpha = 0.5 * shieldRatio + 0.15;
-            for (let i = 0; i < 4; i++) {
-                const a = now * 0.003 + (i / 4) * TWO_PI;
-                const dx = px + Math.cos(a) * shieldR * pulse;
-                const dy = py + Math.sin(a) * shieldR * pulse;
+            ctx.globalAlpha = 0.6 * shieldRatio + 0.2;
+            for (let i = 0; i < 6; i++) {
+                const a = now * 0.003 + (i / 6) * TWO_PI;
+                const dr = shieldR * pulse;
+                const dx = px + Math.cos(a) * dr;
+                const dy = py + Math.sin(a) * dr;
                 ctx.beginPath();
-                ctx.arc(dx, dy, 2, 0, TWO_PI);
+                ctx.arc(dx, dy, 2 + shieldRatio * 1.5, 0, TWO_PI);
                 ctx.fill();
             }
 
-            // 低护盾警告
-            if (shieldRatio < 0.3 && Math.sin(now * 0.015) > 0) {
-                ctx.globalAlpha = 0.3;
+            // 低护盾时闪烁警告效果
+            if (shieldRatio < 0.3) {
+                const warn = Math.sin(now * 0.015) > 0 ? 0.3 : 0;
+                ctx.globalAlpha = warn;
                 ctx.strokeStyle = '#ff4444';
                 ctx.lineWidth = 1.5;
                 ctx.beginPath();
                 ctx.arc(px, py, shieldR + 3, 0, TWO_PI);
                 ctx.stroke();
             }
+
             ctx.globalAlpha = 1;
         }
 
