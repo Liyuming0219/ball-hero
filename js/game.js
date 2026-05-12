@@ -3097,7 +3097,7 @@ svgSpriteLoader.loadAll();
                     const dist = 100;
                     const ex = boss.x + Math.cos(angle) * dist;
                     const ey = boss.y + Math.sin(angle) * dist;
-                    const minion = new Enemy('demon', ex, ey, waveMult);
+                    const minion = new Enemy('demonCaster', ex, ey, waveMult);
                     this.enemies.push(minion);
                 }
                 // Boss获得护盾
