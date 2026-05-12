@@ -9,55 +9,55 @@ const SummonDefs = {
     skeleton: {
         name: '骷髅战士',
         radius: 10,
-        hpRatio: 0.45,          // 继承玩家 maxHp 的 45%
-        baseHp: 45,
-        speed: 200,
-        dmgRatio: 0.7,          // 继承玩家攻击力的 70%
-        attackRange: 30,
-        attackInterval: 0.7,
+        hpRatio: 0.6,           // 继承玩家 maxHp 的 60%
+        baseHp: 65,
+        speed: 220,
+        dmgRatio: 1.4,          // 继承玩家攻击力的 140%（主力输出）
+        attackRange: 32,
+        attackInterval: 0.55,
         color: '#55ddbb',
         colors: ['#55ddbb', '#33bb99', '#88ffdd'],
-        searchRange: 350,
+        searchRange: 380,
     },
     skeleton_mage: {
         name: '骷髅法师',
         radius: 9,
-        hpRatio: 0.35,          // 较脆但提升
-        baseHp: 30,
-        speed: 160,
-        dmgRatio: 0.9,          // 高伤害
-        attackRange: 200,       // 远程
-        attackInterval: 1.2,
+        hpRatio: 0.45,          // 略脆但远程
+        baseHp: 45,
+        speed: 170,
+        dmgRatio: 1.8,          // 高伤害远程炮台
+        attackRange: 220,       // 远程
+        attackInterval: 1.0,
         color: '#ff8844',
         colors: ['#ff8844', '#ff6622', '#ffaa66'],
-        searchRange: 400,
+        searchRange: 420,
     },
     skeleton_tank: {
         name: '骷髅守卫',
         radius: 14,
-        hpRatio: 1.0,           // 高血量
-        baseHp: 80,
-        speed: 140,
-        dmgRatio: 0.45,         // 低伤害但提升
-        attackRange: 25,
-        attackInterval: 0.9,
-        tauntRange: 140,        // 嘲讽范围加大
+        hpRatio: 1.4,           // 高血量
+        baseHp: 120,
+        speed: 155,
+        dmgRatio: 0.8,          // 中等伤害+嘲讽
+        attackRange: 28,
+        attackInterval: 0.8,
+        tauntRange: 170,        // 嘲讽范围加大
         color: '#4488ff',
         colors: ['#4488ff', '#2266dd', '#66aaff'],
-        searchRange: 280,
+        searchRange: 300,
     },
     beast: {
         name: '灵魂巨兽',
-        radius: 24,
-        hpRatio: 2.0,
-        baseHp: 180,
-        speed: 130,
-        dmgRatio: 2.2,
-        attackRange: 70,
-        attackInterval: 1.0,
+        radius: 26,
+        hpRatio: 2.8,
+        baseHp: 280,
+        speed: 145,
+        dmgRatio: 3.5,
+        attackRange: 80,
+        attackInterval: 0.85,
         color: '#66eedd',
         colors: ['#66eedd', '#44ccbb', '#aaffee'],
-        searchRange: 450,
+        searchRange: 500,
     },
 };
 
@@ -89,8 +89,9 @@ class Summon {
 
         // 属性继承玩家（可被 summonInheritBonus 加成提升）
         const inheritMult = 1 + (owner.bonuses.summonInheritBonus || 0);
+        const hpMult = 1 + (owner.bonuses.summonHpMult || 0);
         const ownerMaxHp = owner.getMaxHp();
-        this.maxHp = Math.floor(def.baseHp + ownerMaxHp * def.hpRatio * inheritMult);
+        this.maxHp = Math.floor((def.baseHp + ownerMaxHp * def.hpRatio * inheritMult) * hpMult);
         this.hp = this.maxHp;
 
         this.damageFlash = 0;
@@ -117,7 +118,9 @@ class Summon {
     getAttackInterval() {
         // 灵魂光环：每个灵魂-3%攻击间隔
         const soulReduction = 1 - (this.owner.passive.souls || 0) * 0.03;
-        return this.attackInterval * Math.max(0.5, soulReduction);
+        // 召唤物攻速加成
+        const atkSpdMult = 1 + (this.owner.bonuses.summonAttackSpeedMult || 0);
+        return this.attackInterval * Math.max(0.3, soulReduction / atkSpdMult);
     }
 
     // 召唤物按比例继承玩家暴击率和暴击伤害

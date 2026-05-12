@@ -45,14 +45,14 @@ const UpgradePool = {
             { level: 6, name: '万箭齐发', desc: '额外+1箭矢，攻速+10%', icon: '🌧️', apply(p) { p.bonuses.projectileBonus += 1; p.bonuses.attackSpeedMult += 0.10; } },
             { level: 7, name: '弓箭大师', desc: '全面强化，箭雨冷却减半', icon: '👑', apply(p) { p.bonuses.attackMult += 0.2; p.bonuses.attackSpeedMult += 0.15; p.bonuses.projectileBonus += 1; p.passive.interval = Math.max(3, Math.floor(p.passive.interval / 2)); } },
         ],
-        necro: [
-            { level: 2, name: '亡灵强化', desc: '召唤物伤害+30%，移速+15%', icon: '💀', apply(p) { p.bonuses.summonDamageMult += 0.3; p.bonuses.summonSpeedBonus += 0.15; } },
-            { level: 3, name: '骷髅法师', desc: '解锁法术型召唤物，喷火攻击远程敌人', icon: '🔥', apply(p) { if (p._summonManager) p._summonManager.unlockType('skeleton_mage'); } },
-            { level: 4, name: '灵魂汲取', desc: '召唤物伤害+40%，灵魂积攒需求-2', icon: '🩸', apply(p) { p.bonuses.summonDamageMult += 0.4; p.passive.maxSouls = Math.max(4, p.passive.maxSouls - 2); } },
-            { level: 5, name: '骷髅守卫', desc: '解锁坦克型召唤物，嘲讽吸引敌人', icon: '🛡️', apply(p) { if (p._summonManager) p._summonManager.unlockType('skeleton_tank'); } },
-            { level: 6, name: '亡者军团', desc: '召唤物伤害+50%，死亡爆炸', icon: '💀', apply(p) { p.bonuses.summonDamageMult += 0.5; p.bonuses.summonDeathExplode = true; } },
-            { level: 7, name: '死亡主宰', desc: '全召唤物伤害+60%，移速+30%，上限+2', icon: '👑', apply(p) { p.bonuses.summonDamageMult += 0.6; p.bonuses.summonSpeedBonus += 0.3; p.bonuses.summonMaxBonus += 2; } },
-        ],
+necro: [
+{ level: 2, name: '亡灵强化', desc: '召唤物伤害+50%，移速+20%，上限+1', icon: '💀', apply(p) { p.bonuses.summonDamageMult += 0.5; p.bonuses.summonSpeedBonus += 0.2; p.bonuses.summonMaxBonus += 1; } },
+{ level: 3, name: '骷髅法师', desc: '解锁法术型召唤物，喷火攻击远程敌人，召唤物伤害+25%', icon: '🔥', apply(p) { if (p._summonManager) p._summonManager.unlockType('skeleton_mage'); p.bonuses.summonDamageMult += 0.25; } },
+{ level: 4, name: '灵魂汲取', desc: '召唤物伤害+60%，灵魂积攒需求-2，攻速+20%', icon: '🩸', apply(p) { p.bonuses.summonDamageMult += 0.6; p.passive.maxSouls = Math.max(4, p.passive.maxSouls - 2); p.bonuses.summonAttackSpeedMult = (p.bonuses.summonAttackSpeedMult || 0) + 0.2; } },
+{ level: 5, name: '骷髅守卫', desc: '解锁坦克型召唤物嘲讽吸引敌人，全召唤物+30%生命', icon: '🛡️', apply(p) { if (p._summonManager) p._summonManager.unlockType('skeleton_tank'); p.bonuses.summonHpMult = (p.bonuses.summonHpMult || 0) + 0.3; } },
+{ level: 6, name: '亡者军团', desc: '召唤物伤害+70%，上限+2，死亡爆炸', icon: '💀', apply(p) { p.bonuses.summonDamageMult += 0.7; p.bonuses.summonMaxBonus += 2; p.bonuses.summonDeathExplode = true; } },
+{ level: 7, name: '死亡主宰', desc: '全召唤物伤害+100%，移速+40%，上限+3，攻速+30%', icon: '👑', apply(p) { p.bonuses.summonDamageMult += 1.0; p.bonuses.summonSpeedBonus += 0.4; p.bonuses.summonMaxBonus += 3; p.bonuses.summonAttackSpeedMult = (p.bonuses.summonAttackSpeedMult || 0) + 0.3; } },
+],
     },
 
     // --- 通用属性升级 ---
@@ -105,11 +105,18 @@ const UpgradePool = {
         // 弓箭手专属
         { id: 'archer_barrage', name: '箭雨强化', desc: '箭雨冷却减少2秒，箭雨伤害+30%', icon: '🏹', weight: 5, rarity: 'epic', maxCount: 1, classOnly: ['archer'], apply(p) { p.passive.interval = Math.max(3, p.passive.interval - 2); p.bonuses.attackMult += 0.15; } },
         { id: 'archer_multishot', name: '漫天箭雨', desc: '每次攻击额外+1箭矢，穿透力+1', icon: '🎯', weight: 3, rarity: 'legendary', maxCount: 1, classOnly: ['archer'], apply(p) { p.bonuses.projectileBonus += 1; p.bonuses.attackMult += 0.15; } },
-        // 亡灵师专属
-        { id: 'necro_soul_fast', name: '灵魂虹吸', desc: '灵魂积攒需求-2，更快召唤巨兽', icon: '💀', weight: 5, rarity: 'epic', maxCount: 1, classOnly: ['necromancer'], apply(p) { p.passive.maxSouls = Math.max(3, p.passive.maxSouls - 2); } },
-        { id: 'necro_heal_aura', name: '亡灵光环', desc: '召唤物持续回复玩家生命', icon: '💚', weight: 4, rarity: 'epic', maxCount: 1, classOnly: ['necromancer'], apply(p) { p.bonuses.summonHealAura = true; } },
-        { id: 'necro_army', name: '亡灵大军', desc: '召唤物上限+3，召唤物伤害+40%', icon: '☠️', weight: 4, rarity: 'legendary', maxCount: 1, classOnly: ['necromancer'], apply(p) { p.bonuses.summonMaxBonus += 3; p.bonuses.summonDamageMult += 0.4; } },
-        { id: 'necro_inherit', name: '灵魂共鸣', desc: '召唤物属性继承比例+25%，伤害+30%', icon: '💪', weight: 4, rarity: 'legendary', maxCount: 1, classOnly: ['necromancer'], apply(p) { p.bonuses.summonInheritBonus = (p.bonuses.summonInheritBonus || 0) + 0.25; p.bonuses.summonDamageMult += 0.3; } },
+    // 亡灵师专属（召唤流核心buff，高权重保证频繁出现）
+{ id: 'necro_soul_fast', name: '灵魂虹吸', desc: '灵魂积攒需求-2，更快召唤巨兽', icon: '💀', weight: 8, rarity: 'epic', maxCount: 1, classOnly: ['necromancer'], apply(p) { p.passive.maxSouls = Math.max(3, p.passive.maxSouls - 2); } },
+{ id: 'necro_heal_aura', name: '亡灵光环', desc: '召唤物持续回复玩家生命，召唤物+15%伤害', icon: '💚', weight: 7, rarity: 'epic', maxCount: 1, classOnly: ['necromancer'], apply(p) { p.bonuses.summonHealAura = true; p.bonuses.summonDamageMult += 0.15; } },
+{ id: 'necro_army', name: '亡灵大军', desc: '召唤物上限+3，召唤物伤害+50%', icon: '☠️', weight: 7, rarity: 'legendary', maxCount: 1, classOnly: ['necromancer'], apply(p) { p.bonuses.summonMaxBonus += 3; p.bonuses.summonDamageMult += 0.5; } },
+{ id: 'necro_inherit', name: '灵魂共鸣', desc: '召唤物属性继承比例+30%，伤害+35%', icon: '💪', weight: 6, rarity: 'legendary', maxCount: 1, classOnly: ['necromancer'], apply(p) { p.bonuses.summonInheritBonus = (p.bonuses.summonInheritBonus || 0) + 0.30; p.bonuses.summonDamageMult += 0.35; } },
+// 新增亡灵师召唤物buff
+{ id: 'necro_frenzy', name: '亡灵狂暴', desc: '召唤物攻速+40%，移速+20%', icon: '⚡', weight: 7, rarity: 'rare', maxCount: 1, classOnly: ['necromancer'], apply(p) { p.bonuses.summonAttackSpeedMult = (p.bonuses.summonAttackSpeedMult || 0) + 0.4; p.bonuses.summonSpeedBonus += 0.2; } },
+{ id: 'necro_swarm', name: '尸潮汹涌', desc: '召唤物上限+2，骷髅战士双倍召唤', icon: '💀', weight: 7, rarity: 'epic', maxCount: 1, classOnly: ['necromancer'], apply(p) { p.bonuses.summonMaxBonus += 2; p.bonuses.skeletonDouble = true; } },
+{ id: 'necro_doom', name: '死亡凋零', desc: '召唤物攻击附带腐蚀，敌人每秒损失3%最大生命', icon: '☠️', weight: 6, rarity: 'epic', maxCount: 1, classOnly: ['necromancer'], apply(p) { p.bonuses.summonCorrosion = true; } },
+{ id: 'necro_lifetap', name: '生命分流', desc: '玩家受伤时召唤物分担40%伤害', icon: '🛡️', weight: 6, rarity: 'rare', maxCount: 1, classOnly: ['necromancer'], apply(p) { p.bonuses.summonTankDamage = 0.4; } },
+{ id: 'necro_explode', name: '亡灵自爆', desc: '召唤物死亡时爆炸造成200%攻击力伤害，死亡后有30%概率重生', icon: '💥', weight: 6, rarity: 'epic', maxCount: 1, classOnly: ['necromancer'], apply(p) { p.bonuses.summonDeathExplode = true; p.bonuses.summonReviveChance = 0.3; } },
+{ id: 'necro_empower', name: '亡灵赋能', desc: '每个存活召唤物为其他召唤物+8%伤害（叠加）', icon: '🔮', weight: 6, rarity: 'legendary', maxCount: 1, classOnly: ['necromancer'], apply(p) { p.bonuses.summonSynergyMult = 0.08; } },
 
         // === 新增可叠加升级（保持升级池丰富） ===
         { id: 'crit3', name: '精确打击', desc: '暴击率+4%', icon: '🎯', weight: 5, rarity: 'common', classBonus: ['assassin'], apply(p) { p.bonuses.critRateBonus += 0.04; } },
@@ -186,8 +193,8 @@ const UpgradePool = {
             apply(p) { p.weaponEvolved = true; p.bonuses.areaMult += 0.8; p.passive.chance = 0.6; p.bonuses.armorBonus += 8; } },
         bow: { name: '星陨·万矢穿心', desc: '+8箭矢，追踪，暴击率+15%', icon: '🌟',
             apply(p) { p.weaponEvolved = true; p.bonuses.projectileBonus += 8; p.bonuses.critRateBonus += 0.15; p.bonuses.homingShot = true; } },
-        necro: { name: '冥王·亡灵天灾', desc: '召唤物上限+5，伤害+100%，死亡爆炸', icon: '🌟',
-            apply(p) { p.weaponEvolved = true; p.bonuses.summonMaxBonus += 5; p.bonuses.summonDamageMult += 1.0; p.bonuses.summonDeathExplode = true; } },
+necro: { name: '冥王·亡灵天灾', desc: '召唤物上限+8，伤害+150%，攻速+50%，死亡爆炸+复活', icon: '🌟',
+apply(p) { p.weaponEvolved = true; p.bonuses.summonMaxBonus += 8; p.bonuses.summonDamageMult += 1.5; p.bonuses.summonAttackSpeedMult = (p.bonuses.summonAttackSpeedMult || 0) + 0.5; p.bonuses.summonDeathExplode = true; p.bonuses.summonReviveChance = Math.min(1, (p.bonuses.summonReviveChance || 0) + 0.5); } },
     },
 
     // 已选升级记录（用于判断requires和唯一性）
@@ -245,10 +252,15 @@ const UpgradePool = {
             return true;
         });
 
-        // 加权：classBonus 职业匹配的buff权重×3
+        // 加权：classBonus 职业匹配的buff权重×3，亡灵师专属召唤buff×5
         const weighted = [];
         for (const u of available) {
-            const mult = (u.classBonus && u.classBonus.includes(classId)) ? 3 : 1;
+            let mult = 1;
+            if (u.classOnly && u.classOnly.includes(classId)) {
+                mult = 5; // 专属buff极高权重
+            } else if (u.classBonus && u.classBonus.includes(classId)) {
+                mult = 3;
+            }
             for (let i = 0; i < u.weight * mult; i++) weighted.push(u);
         }
 
