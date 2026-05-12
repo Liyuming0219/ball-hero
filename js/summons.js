@@ -273,7 +273,8 @@ class Summon {
                 if (Math.abs(angleDiff) <= coneHalf) {
                     const a = eAngle;
                     e.takeDamage(tickDmg, particles, a, 3);
-                    particles.addDamageText(e.x, e.y, tickDmg, isCrit, '#ffaa44');
+                    particles.addDamageText(e.x, e.y, tickDmg, isCrit, this._getSkinColor() || '#ffaa44');
+                    this._applySkinHitFx(e.x, e.y);
                 }
             }
         }
@@ -343,19 +344,22 @@ class Summon {
     _attack(target, enemies, particles) {
         const angle = Utils.angle(this.x, this.y, target.x, target.y);
 
+        // 皮肤命中特效（召唤物也触发）
+        this._applySkinHitFx(target.x, target.y);
+
         if (this.type === 'skeleton') {
             // 近战骷髅：单体挥砍（含暴击）
             const { damage, isCrit } = this.calcDamage();
             const died = target.takeDamage(damage, particles, angle, 5);
-            particles.addDamageText(target.x, target.y, damage, isCrit, this.color);
-            particles.addFlash(target.x, target.y, this.color, 20, 0.1);
+            particles.addDamageText(target.x, target.y, damage, isCrit, this._getSkinColor() || this.color);
+            particles.addFlash(target.x, target.y, this._getSkinColor() || this.color, 20, 0.1);
             particles.addSlashArc(
                 this.x, this.y,
                 angle - 0.4, angle + 0.4,
                 this.attackRange + 10,
-                this.color, 0.15
+                this._getSkinColor() || this.color, 0.15
             );
-            if (isCrit) particles.explode(target.x, target.y, this.colors, 6, 3);
+            if (isCrit) particles.explode(target.x, target.y, this._getSkinColors() || this.colors, 6, 3);
             // Utils.shake(isCrit ? 3 : 1);
             return died;
 
@@ -363,16 +367,17 @@ class Summon {
             // 法师骷髅：喷火/火球（扇形AOE，含暴击）
             const fireRange = this.attackRange * (this.owner.bonuses.areaMult || 1);
             const fireAngle = 0.6; // 扇形半角约35度
+            const skinCol = this._getSkinColor();
 
             // 喷火特效 — 扇形粒子
             particles.addSlashArc(
                 this.x, this.y,
                 angle - fireAngle, angle + fireAngle,
                 fireRange,
-                '#ff6622', 0.25
+                skinCol || '#ff6622', 0.25
             );
             particles.emit(this.x + Math.cos(angle) * 20, this.y + Math.sin(angle) * 20, 12, {
-                colors: this.colors,
+                colors: this._getSkinColors() || this.colors,
                 speedMin: 3, speedMax: 8,
                 sizeMin: 2, sizeMax: 5,
                 lifeMin: 0.15, lifeMax: 0.4,
@@ -394,7 +399,8 @@ class Summon {
                 if (Math.abs(angleDiff) <= fireAngle + 0.2) {
                     const a = Utils.angle(this.x, this.y, e.x, e.y);
                     const d = e.takeDamage(damage, particles, a, 6);
-                    particles.addDamageText(e.x, e.y, damage, isCrit, '#ffaa44');
+                    particles.addDamageText(e.x, e.y, damage, isCrit, skinCol || '#ffaa44');
+                    this._applySkinHitFx(e.x, e.y);
                     if (d) hitAny = true;
                 }
             }
@@ -405,8 +411,8 @@ class Summon {
             // 坦克骷髅：锤击 + 小范围击退（含暴击）
             const { damage, isCrit } = this.calcDamage();
             const smashRange = (this.attackRange + 15) * (this.owner.bonuses.areaMult || 1);
-            particles.addShockwave(this.x, this.y, this.color, smashRange, 0.2);
-            particles.addFlash(this.x, this.y, '#6699ff', 30, 0.15);
+            particles.addShockwave(this.x, this.y, this._getSkinColor() || this.color, smashRange, 0.2);
+            particles.addFlash(this.x, this.y, this._getSkinColor() || '#6699ff', 30, 0.15);
             // Utils.shake(2);
 
             let hitAny = false;
@@ -415,7 +421,8 @@ class Summon {
                 if (Utils.dist(this.x, this.y, e.x, e.y) < smashRange + e.radius) {
                     const a = Utils.angle(this.x, this.y, e.x, e.y);
                     const d = e.takeDamage(damage, particles, a, 12); // 强击退
-                    particles.addDamageText(e.x, e.y, damage, isCrit, '#66aaff');
+                    particles.addDamageText(e.x, e.y, damage, isCrit, this._getSkinColor() || '#66aaff');
+                    this._applySkinHitFx(e.x, e.y);
                     if (d) hitAny = true;
                 }
             }
@@ -425,9 +432,9 @@ class Summon {
             // 灵魂巨兽：范围重击（含暴击）
             const { damage, isCrit } = this.calcDamage();
             const range = this.attackRange * (this.owner.bonuses.areaMult || 1);
-            particles.addShockwave(this.x, this.y, '#66eedd', range, 0.3);
+            particles.addShockwave(this.x, this.y, this._getSkinColor() || '#66eedd', range, 0.3);
             particles.emit(this.x, this.y, 15, {
-                colors: ['#66eedd', '#44ccbb', '#aaffee'],
+                colors: this._getSkinColors() || ['#66eedd', '#44ccbb', '#aaffee'],
                 speedMin: 2, speedMax: 6,
                 sizeMin: 2, sizeMax: 5,
                 lifeMin: 0.2, lifeMax: 0.5,
@@ -440,12 +447,44 @@ class Summon {
                 if (Utils.dist(this.x, this.y, e.x, e.y) < range + e.radius) {
                     const a = Utils.angle(this.x, this.y, e.x, e.y);
                     const d = e.takeDamage(damage, particles, a, 10);
-                    particles.addDamageText(e.x, e.y, damage, isCrit, '#aaffee');
+                    particles.addDamageText(e.x, e.y, damage, isCrit, this._getSkinColor() || '#aaffee');
+                    this._applySkinHitFx(e.x, e.y);
                     if (d) return true;
                 }
             }
             return false;
         }
+    }
+
+    // === 皮肤系统集成：让召唤物的攻击/特效也使用玩家装备的皮肤 ===
+    _getEquippedSkin() {
+        if (typeof skinManager === 'undefined' || !this.owner || !this.owner.def) return null;
+        return skinManager.getEquippedSkin(this.owner.def.id);
+    }
+
+    _getSkinColor() {
+        const skin = this._getEquippedSkin();
+        if (!skin || !window._skinFxSystem) return null;
+        const cfg = window._skinFxSystem.getProjConfig(skin, 'necromancer');
+        if (cfg && cfg.trailColor) return cfg.trailColor;
+        // Fallback: try to get from skin data palette
+        if (skin.colors && skin.colors.length > 0) return skin.colors[0];
+        return null;
+    }
+
+    _getSkinColors() {
+        const skin = this._getEquippedSkin();
+        if (!skin || !window._skinFxSystem) return null;
+        const cfg = window._skinFxSystem.getProjConfig(skin, 'necromancer');
+        if (cfg && cfg.colors) return cfg.colors;
+        if (skin.colors && skin.colors.length > 0) return skin.colors;
+        return null;
+    }
+
+    _applySkinHitFx(x, y) {
+        const skin = this._getEquippedSkin();
+        if (!skin || !window._skinFxSystem) return;
+        window._skinFxSystem.onHitForHero(x, y, skin, 'necromancer');
     }
 
     takeDamage(amount, particles) {
@@ -454,7 +493,7 @@ class Summon {
         if (this.hp <= 0) {
             this.hp = 0;
             this.alive = false;
-            particles.explode(this.x, this.y, this.colors, 12, 4);
+            particles.explode(this.x, this.y, this._getSkinColors() || this.colors, 12, 4);
             if (this.owner.bonuses.summonDeathExplode) {
                 return { explode: true, x: this.x, y: this.y, damage: this.getDamage() * 1.5 };
             }
@@ -475,6 +514,17 @@ class Summon {
 
         ctx.save();
         ctx.globalAlpha = 1;
+
+        // 皮肤光环：在召唤物周围显示皮肤色光晕
+        const skinCol = this._getSkinColor();
+        if (skinCol) {
+            ctx.globalAlpha = 0.2;
+            ctx.fillStyle = skinCol;
+            ctx.beginPath();
+            ctx.arc(sx, sy + bob, this.radius + 6, 0, TWO_PI);
+            ctx.fill();
+            ctx.globalAlpha = 1;
+        }
 
         if (this.type === 'skeleton') {
             this._renderSkeleton(ctx, sx, sy, bob);
