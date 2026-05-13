@@ -579,21 +579,23 @@ class ParticleSystem {
             const sy = t.y - camera.y;
             if (sx < -margin || sx > screenW + margin || sy < -margin || sy > screenH + margin) continue;
             const alpha = t.life / t.maxLife;
+            ctx.fillStyle = t.color;
             if (t.glow && t.size > 2) {
-                // 柔和光晕拖尾：外圈半透明大圆 + 内圈同色小圆（无白色球心）
-                // 视觉上像平滑光斑，不像一个实心球
-                ctx.fillStyle = t.color;
-                ctx.globalAlpha = alpha * 0.25;
+                ctx.globalAlpha = alpha * 0.4;
                 ctx.beginPath();
-                ctx.arc(sx, sy, t.size * 2, 0, TWO_PI);
+                ctx.arc(sx, sy, t.size * 2.5, 0, TWO_PI);
                 ctx.fill();
-                ctx.globalAlpha = alpha * 0.6;
+                ctx.globalAlpha = alpha * 0.7;
                 ctx.beginPath();
-                ctx.arc(sx, sy, t.size, 0, TWO_PI);
+                ctx.arc(sx, sy, t.size * 1.4, 0, TWO_PI);
+                ctx.fill();
+                ctx.globalAlpha = alpha;
+                ctx.fillStyle = '#fff';
+                ctx.beginPath();
+                ctx.arc(sx, sy, t.size * 0.6, 0, TWO_PI);
                 ctx.fill();
             } else {
-                ctx.globalAlpha = alpha * 0.8;
-                ctx.fillStyle = t.color;
+                ctx.globalAlpha = alpha;
                 const s = t.size;
                 ctx.fillRect(sx - s, sy - s, s * 2, s * 2);
             }
