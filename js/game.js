@@ -586,6 +586,7 @@ svgSpriteLoader.loadAll();
         this.enemies = [];
         this.expGems = [];
         this.enemyBullets = [];
+        this._heroTrailHistory = [];
         this.dropItems = [];
         this.waveManager = new WaveManager(this.gameMode === 'daily' ? this.dailyRng : null);
         this.waveManager._isMobile = this.isMobile;
@@ -814,14 +815,17 @@ svgSpriteLoader.loadAll();
         this.player._gameTime = this.waveManager.gameTime;
         this.player.update(dt, this.inputDir, this.particles);
 
-        // 英雄移动拖尾（每3帧生成1个拖尾粒子，发射在球体后方远处）
-        if (this.player.isMoving && (this.frameCount % 3 === 0)) {
-            const trailDist = this.player.radius * 1.8;
-            this.particles.addTrail(
-                this.player.x - Math.cos(this.player.facingAngle) * trailDist,
-                this.player.y - Math.sin(this.player.facingAngle) * trailDist,
-                this.player.def.color, 4, 0.2
-            );
+        // 英雄移动拖尾：记录位置历史（用于连续渐变线段渲染）
+        if (!this._heroTrailHistory) this._heroTrailHistory = [];
+        if (this.player.isMoving) {
+            this._heroTrailHistory.push({ x: this.player.x, y: this.player.y });
+            if (this._heroTrailHistory.length > 16) this._heroTrailHistory.shift();
+        } else {
+            // 停下时逐渐清除历史（每帧去掉2个点实现淡出）
+            if (this._heroTrailHistory.length > 0) {
+                this._heroTrailHistory.shift();
+                if (this._heroTrailHistory.length > 0) this._heroTrailHistory.shift();
+            }
         }
 
         // 更新相机（平滑跟随）
@@ -1330,15 +1334,19 @@ svgSpriteLoader.loadAll();
         // 皮肤系统更新
         if (window._skinRenderer) window._skinRenderer.update(dt);
         if (window._skinFxSystem) window._skinFxSystem.update(dt);
-        if (window._skinFxSystem && this.player && this.player.isMoving) {
-            const skin = (typeof skinManager !== 'undefined') ? skinManager.getEquippedSkin(this.player.def.id) : null;
-            if (skin) {
-                // 拖尾发射在人物移动方向的后方远处，彻底避免遮挡皮肤
-                const trailOffsetDist = this.player.radius ? this.player.radius * 2.0 : 20;
-                const trailX = this.player.x - Math.cos(this.player.facingAngle) * trailOffsetDist;
-                const trailY = this.player.y - Math.sin(this.player.facingAngle) * trailOffsetDist;
-                window._skinFxSystem.emitMoveTrail(trailX, trailY, skin);
+        // 皮肤拖尾颜色缓存（每帧更新，供渲染使用）
+        if (typeof skinManager !== 'undefined') {
+            const skin = skinManager.getEquippedSkin(this.player.def.id);
+            if (skin && skin.colors && skin.colors.length > 0) {
+                this._heroTrailColor = skin.colors[0];
+                this._heroTrailColor2 = skin.colors[1] || skin.colors[0];
+            } else {
+                this._heroTrailColor = this.player.def.color;
+                this._heroTrailColor2 = null;
             }
+        } else {
+            this._heroTrailColor = this.player.def.color;
+            this._heroTrailColor2 = null;
         }
 
         // === 渲染 ===
@@ -1795,6 +1803,41 @@ svgSpriteLoader.loadAll();
 
         // 召唤物
         this.summonManager.render(ctx, cam, sw, sh);
+
+        // 英雄移动拖尾（连续渐变线段，在玩家之前渲染）
+        if (this._heroTrailHistory && this._heroTrailHistory.length >= 2) {
+            const hist = this._heroTrailHistory;
+            const len = hist.length;
+            const color1 = this._heroTrailColor || this.player.def.color;
+            const color2 = this._heroTrailColor2 || color1;
+            const baseWidth = this.player.radius * 1.2;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            // 外发光层（宽、淡）
+            ctx.globalAlpha = 0.12;
+            ctx.lineWidth = baseWidth * 2.2;
+            ctx.strokeStyle = color1;
+            ctx.beginPath();
+            ctx.moveTo(hist[0].x - cam.x, hist[0].y - cam.y);
+            for (let i = 1; i < len; i++) {
+                ctx.lineTo(hist[i].x - cam.x, hist[i].y - cam.y);
+            }
+            ctx.stroke();
+            // 主体层：逐段绘制，从细到粗、从淡到亮
+            for (let i = 1; i < len; i++) {
+                const progress = i / (len - 1); // 0→1 (旧→新)
+                const prev = hist[i - 1];
+                const cur = hist[i];
+                ctx.lineWidth = baseWidth * progress * progress; // 二次曲线让尾端更细
+                ctx.globalAlpha = progress * 0.65;
+                ctx.strokeStyle = progress > 0.5 ? color1 : color2;
+                ctx.beginPath();
+                ctx.moveTo(prev.x - cam.x, prev.y - cam.y);
+                ctx.lineTo(cur.x - cam.x, cur.y - cam.y);
+                ctx.stroke();
+            }
+            ctx.globalAlpha = 1;
+        }
 
         // 拖尾粒子（在玩家之前渲染，确保不遮挡皮肤）
         this.particles.renderTrails(ctx, cam, sw, sh);
