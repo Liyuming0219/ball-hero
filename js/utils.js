@@ -733,7 +733,7 @@ const BGM = {
     _ctx: null,
     _playing: false,
     _enabled: true,
-    _volume: 0.25,
+    _volume: 0.18,
     _nodes: [],
     _loopTimer: null,
 
@@ -784,25 +784,69 @@ const BGM = {
         }
     },
 
-    // --- 8-bit chiptune 工具 ---
-    _chip(freq, type, startT, dur, vol, dest) {
+    // --- 柔和音乐工具 ---
+    // 带缓入缓出的音符（避免方波的硬起硬停导致刺耳感）
+    _soft(freq, type, startT, dur, vol, dest, attack, release) {
         const ctx = this._ctx;
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
+        const atk = attack || 0.04;
+        const rel = release || Math.min(dur * 0.3, 0.15);
         osc.type = type;
         osc.frequency.value = freq;
-        gain.gain.setValueAtTime(vol, startT);
-        gain.gain.setValueAtTime(vol * 0.8, startT + dur * 0.6);
-        gain.gain.linearRampToValueAtTime(0, startT + dur - 0.01);
+        gain.gain.setValueAtTime(0, startT);
+        gain.gain.linearRampToValueAtTime(vol, startT + atk);
+        gain.gain.setValueAtTime(vol, startT + dur - rel);
+        gain.gain.linearRampToValueAtTime(0, startT + dur);
         osc.connect(gain).connect(dest);
         osc.start(startT);
-        osc.stop(startT + dur);
+        osc.stop(startT + dur + 0.01);
         this._nodes.push(osc);
     },
 
-    _noise(startT, dur, vol, dest) {
+    // 带低通滤波的音符（削掉高频刺耳泛波）
+    _filtered(freq, type, startT, dur, vol, dest, cutoff) {
         const ctx = this._ctx;
-        const bufSize = ctx.sampleRate * dur;
+        const osc = ctx.createOscillator();
+        const filter = ctx.createBiquadFilter();
+        const gain = ctx.createGain();
+        osc.type = type;
+        osc.frequency.value = freq;
+        filter.type = 'lowpass';
+        filter.frequency.value = cutoff || 1200;
+        filter.Q.value = 0.7;
+        const atk = 0.03;
+        const rel = Math.min(dur * 0.25, 0.12);
+        gain.gain.setValueAtTime(0, startT);
+        gain.gain.linearRampToValueAtTime(vol, startT + atk);
+        gain.gain.setValueAtTime(vol * 0.85, startT + dur - rel);
+        gain.gain.linearRampToValueAtTime(0, startT + dur);
+        osc.connect(filter).connect(gain).connect(dest);
+        osc.start(startT);
+        osc.stop(startT + dur + 0.01);
+        this._nodes.push(osc);
+    },
+
+    // 柔和打击音（正弦波下降音高模拟kick，不使用噪声）
+    _softKick(startT, vol, dest) {
+        const ctx = this._ctx;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(80, startT);
+        osc.frequency.exponentialRampToValueAtTime(30, startT + 0.12);
+        gain.gain.setValueAtTime(vol, startT);
+        gain.gain.exponentialRampToValueAtTime(0.001, startT + 0.15);
+        osc.connect(gain).connect(dest);
+        osc.start(startT);
+        osc.stop(startT + 0.16);
+        this._nodes.push(osc);
+    },
+
+    // 柔和军鼓（过滤后噪声，更短更安静）
+    _softSnare(startT, vol, dest) {
+        const ctx = this._ctx;
+        const bufSize = Math.floor(ctx.sampleRate * 0.08);
         const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
         const data = buf.getChannelData(0);
         for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
@@ -810,109 +854,208 @@ const BGM = {
         src.buffer = buf;
         const gain = ctx.createGain();
         gain.gain.setValueAtTime(vol, startT);
-        gain.gain.linearRampToValueAtTime(0, startT + dur * 0.3);
-        const hp = ctx.createBiquadFilter();
-        hp.type = 'highpass'; hp.frequency.value = 8000;
-        src.connect(hp).connect(gain).connect(dest);
+        gain.gain.exponentialRampToValueAtTime(0.001, startT + 0.07);
+        const bp = ctx.createBiquadFilter();
+        bp.type = 'bandpass'; bp.frequency.value = 3000; bp.Q.value = 1.0;
+        src.connect(bp).connect(gain).connect(dest);
         src.start(startT);
-        src.stop(startT + dur);
+        src.stop(startT + 0.09);
         this._nodes.push(src);
     },
 
+    // 闭合踩镲（很轻）
+    _softHat(startT, vol, dest) {
+        const ctx = this._ctx;
+        const bufSize = Math.floor(ctx.sampleRate * 0.03);
+        const buf = ctx.createBuffer(1, bufSize, ctx.sampleRate);
+        const data = buf.getChannelData(0);
+        for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
+        const src = ctx.createBufferSource();
+        src.buffer = buf;
+        const gain = ctx.createGain();
+        gain.gain.setValueAtTime(vol, startT);
+        gain.gain.exponentialRampToValueAtTime(0.001, startT + 0.025);
+        const hp = ctx.createBiquadFilter();
+        hp.type = 'highpass'; hp.frequency.value = 7000;
+        src.connect(hp).connect(gain).connect(dest);
+        src.start(startT);
+        src.stop(startT + 0.04);
+        this._nodes.push(src);
+    },
+
+    // ==========================================
+    // 大厅音乐 — 舒缓氛围感 Lo-Fi Chiptune
+    // BPM 75, 正弦波柔和琶音 + 三角波Pad + 极轻打击
+    // Am → F → C → G 进行，梦幻空灵感
+    // ==========================================
     _playMenuPhrase() {
         if (!this._playing) return;
         const ctx = this._ctx;
         const now = ctx.currentTime;
-        const bpm = 110;
+        const bpm = 75;
         const beat = 60 / bpm;
 
-        // 8-bit 梦幻菜单曲 — 明亮方波琶音 + 三角波低音衬底
-        // C大调 → Am → F → G 进行，16拍一轮
-        const arpPatterns = [
-            // C: C4 E4 G4 C5
-            [261.6, 329.6, 392, 523.3],
-            // Am: A3 C4 E4 A4
-            [220, 261.6, 329.6, 440],
-            // F: F3 A3 C4 F4
-            [174.6, 220, 261.6, 349.2],
-            // G: G3 B3 D4 G4
-            [196, 246.9, 293.7, 392],
+        // 和弦进行 (Am → F → C → G)，每个和弦4拍
+        const chords = [
+            { arp: [220, 261.6, 329.6, 440], bass: 110, pad: [220, 261.6, 329.6] },  // Am
+            { arp: [174.6, 220, 261.6, 349.2], bass: 87.3, pad: [174.6, 220, 261.6] }, // F
+            { arp: [261.6, 329.6, 392, 523.3], bass: 130.8, pad: [261.6, 329.6, 392] }, // C
+            { arp: [196, 246.9, 293.7, 392], bass: 98, pad: [196, 246.9, 293.7] },   // G
         ];
-        const bassNotes = [130.8, 110, 87.3, 98];
 
         let t = now;
-        for (let chord = 0; chord < 4; chord++) {
-            const arp = arpPatterns[chord];
-            const bass = bassNotes[chord];
-            // 低音 — 每和弦持续4拍
-            this._chip(bass, 'triangle', t, beat * 3.8, 0.07, this._masterGain);
-            // 琶音 — 16分音符循环
-            for (let n = 0; n < 16; n++) {
-                const freq = arp[n % 4];
-                const noteT = t + n * (beat / 4);
-                this._chip(freq, 'square', noteT, beat / 4 - 0.02, 0.03, this._masterGain);
+        for (let c = 0; c < chords.length; c++) {
+            const ch = chords[c];
+            const chordDur = beat * 4;
+
+            // Pad层：三角波和弦，缓入缓出，营造氛围
+            for (const pf of ch.pad) {
+                this._soft(pf, 'sine', t, chordDur * 0.95, 0.018, this._masterGain, 0.3, 0.4);
             }
-            t += beat * 4;
+
+            // 低音：正弦波，柔和深沉
+            this._soft(ch.bass, 'sine', t, chordDur * 0.85, 0.04, this._masterGain, 0.08, 0.2);
+
+            // 琶音：正弦波，8分音符，每个音有余韵（不密集）
+            for (let n = 0; n < 8; n++) {
+                const freq = ch.arp[n % 4];
+                const noteT = t + n * (beat / 2);
+                // 交替使用正弦和三角波增加层次感
+                const waveType = n % 2 === 0 ? 'sine' : 'triangle';
+                this._soft(freq, waveType, noteT, beat * 0.8, 0.025, this._masterGain, 0.02, 0.15);
+            }
+
+            // 极轻打击：仅在1拍和3拍放kick，很安静
+            this._softKick(t, 0.025, this._masterGain);
+            this._softKick(t + beat * 2, 0.02, this._masterGain);
+            // 偶尔的闭合踩镲，增加微妙律动
+            this._softHat(t + beat, 0.012, this._masterGain);
+            this._softHat(t + beat * 3, 0.012, this._masterGain);
+
+            t += chordDur;
+        }
+
+        // 第二轮变化：升高八度的装饰音，增加趣味但保持柔和
+        for (let c = 0; c < chords.length; c++) {
+            const ch = chords[c];
+            const chordDur = beat * 4;
+
+            // Pad层
+            for (const pf of ch.pad) {
+                this._soft(pf, 'sine', t, chordDur * 0.95, 0.016, this._masterGain, 0.35, 0.45);
+            }
+
+            // 低音
+            this._soft(ch.bass, 'sine', t, chordDur * 0.85, 0.035, this._masterGain, 0.1, 0.25);
+
+            // 琶音：加入高八度装饰音
+            for (let n = 0; n < 8; n++) {
+                const freq = ch.arp[n % 4];
+                const noteT = t + n * (beat / 2);
+                this._soft(freq, 'sine', noteT, beat * 0.7, 0.022, this._masterGain, 0.02, 0.12);
+                // 每4个音加一个高八度泛音
+                if (n % 4 === 0) {
+                    this._soft(freq * 2, 'sine', noteT + 0.05, beat * 0.5, 0.01, this._masterGain, 0.06, 0.15);
+                }
+            }
+
+            this._softKick(t, 0.022, this._masterGain);
+            this._softKick(t + beat * 2, 0.018, this._masterGain);
+            this._softHat(t + beat * 1.5, 0.01, this._masterGain);
+            this._softHat(t + beat * 3.5, 0.01, this._masterGain);
+
+            t += chordDur;
         }
 
         const totalDur = (t - now) * 1000;
-        this._loopTimer = setTimeout(() => { this._nodes = []; this._playMenuPhrase(); }, totalDur - 50);
+        this._loopTimer = setTimeout(() => { this._nodes = []; this._playMenuPhrase(); }, totalDur - 100);
     },
 
+    // ==========================================
+    // 战斗音乐 — 有节奏感但不刺耳的柔和战斗曲
+    // BPM 128, 三角波旋律 + 过滤方波低音 + 柔和鼓点
+    // Em调性，保持紧凑感但用滤波消除毛刺
+    // ==========================================
     _playBattlePhrase() {
         if (!this._playing) return;
         const ctx = this._ctx;
         const now = ctx.currentTime;
-        const bpm = 150;
+        const bpm = 128;
         const beat = 60 / bpm;
 
-        // 8-bit 战斗曲 — 激烈方波旋律 + 脉冲低音 + 噪声鼓点
-        // Em 调性，16拍一循环
-        const melody = [
-            659.3, 0, 659.3, 784, 880, 0, 784, 659.3,
-            587.3, 0, 587.3, 659.3, 784, 0, 659.3, 587.3,
-            523.3, 0, 587.3, 659.3, 784, 880, 784, 659.3,
-            587.3, 0, 523.3, 587.3, 659.3, 0, 523.3, 493.9,
-        ];
-        const bass = [
-            164.8, 0, 164.8, 164.8, 196, 0, 196, 196,
-            146.8, 0, 146.8, 146.8, 164.8, 0, 164.8, 164.8,
-            130.8, 0, 130.8, 130.8, 164.8, 0, 164.8, 164.8,
-            146.8, 0, 146.8, 146.8, 130.8, 0, 130.8, 123.5,
-        ];
-        // 鼓点模式: 1=kick(低噪声), 2=snare(高噪声), 0=无
-        const drums = [
-            1, 0, 0, 2, 1, 0, 0, 2,
-            1, 0, 0, 2, 1, 0, 1, 2,
-            1, 0, 0, 2, 1, 0, 0, 2,
-            1, 0, 1, 2, 1, 2, 1, 2,
+        // 旋律：Em → C → D → Bm 进行，三角波柔和音色
+        // 每个和弦2拍，共16拍(8小节 × 2拍)
+        const melodyPhrases = [
+            // 第一段：上行动机
+            { notes: [329.6, 392, 440, 392], dur: beat * 0.45 },       // Em 片段
+            { notes: [261.6, 329.6, 392, 329.6], dur: beat * 0.45 },   // C 片段
+            { notes: [293.7, 349.2, 440, 392], dur: beat * 0.45 },     // D 片段
+            { notes: [246.9, 293.7, 329.6, 293.7], dur: beat * 0.45 }, // Bm 片段
+            // 第二段：回旋变化
+            { notes: [440, 392, 329.6, 392], dur: beat * 0.45 },
+            { notes: [392, 329.6, 261.6, 329.6], dur: beat * 0.45 },
+            { notes: [440, 392, 349.2, 293.7], dur: beat * 0.45 },
+            { notes: [329.6, 293.7, 246.9, 293.7], dur: beat * 0.45 },
         ];
 
-        const eighthNote = beat / 2;
+        // 低音行进
+        const bassLine = [164.8, 130.8, 146.8, 123.5, 164.8, 130.8, 146.8, 123.5];
+
+        // 鼓点：kick在1和3位，snare在2和4位，hat均匀8分
         let t = now;
 
-        for (let i = 0; i < melody.length; i++) {
-            const noteT = t + i * eighthNote;
-            // 旋律（方波，经典8-bit音色）
-            if (melody[i] > 0) {
-                this._chip(melody[i], 'square', noteT, eighthNote * 0.85, 0.045, this._masterGain);
+        for (let i = 0; i < melodyPhrases.length; i++) {
+            const phrase = melodyPhrases[i];
+            const sectionDur = beat * 2;
+
+            // 低音（低通过滤方波，去掉高频刺耳泛波）
+            this._filtered(bassLine[i], 'square', t, sectionDur * 0.8, 0.035, this._masterGain, 800);
+
+            // 旋律音符（三角波，柔和清晰）
+            for (let n = 0; n < phrase.notes.length; n++) {
+                const noteT = t + n * (beat / 2);
+                this._soft(phrase.notes[n], 'triangle', noteT, phrase.dur, 0.035, this._masterGain, 0.015, 0.08);
             }
-            // 低音（锯齿波，厚实低频）
-            if (bass[i] > 0) {
-                this._chip(bass[i], 'sawtooth', noteT, eighthNote * 0.7, 0.05, this._masterGain);
-            }
-            // 鼓
-            if (drums[i] === 1) {
-                // Kick — 短促低频方波模拟
-                this._chip(55, 'square', noteT, 0.08, 0.09, this._masterGain);
-            } else if (drums[i] === 2) {
-                // Snare — 白噪声脉冲
-                this._noise(noteT, 0.1, 0.06, this._masterGain);
-            }
+
+            // 鼓点
+            this._softKick(t, 0.04, this._masterGain);                 // 拍1 kick
+            this._softHat(t + beat * 0.5, 0.015, this._masterGain);    // 拍1.5 hat
+            this._softSnare(t + beat, 0.03, this._masterGain);          // 拍2 snare
+            this._softHat(t + beat * 1.5, 0.015, this._masterGain);    // 拍2.5 hat
+
+            t += sectionDur;
         }
 
-        const totalDur = melody.length * eighthNote * 1000;
-        this._loopTimer = setTimeout(() => { this._nodes = []; this._playBattlePhrase(); }, totalDur - 50);
+        // 第二轮：加入和声层增加丰富度
+        for (let i = 0; i < melodyPhrases.length; i++) {
+            const phrase = melodyPhrases[i];
+            const sectionDur = beat * 2;
+
+            // 低音
+            this._filtered(bassLine[i], 'square', t, sectionDur * 0.8, 0.032, this._masterGain, 900);
+
+            // 旋律 + 五度和声
+            for (let n = 0; n < phrase.notes.length; n++) {
+                const noteT = t + n * (beat / 2);
+                this._soft(phrase.notes[n], 'triangle', noteT, phrase.dur, 0.032, this._masterGain, 0.015, 0.08);
+                // 添加低一个五度的和声（更柔和）
+                this._soft(phrase.notes[n] * 0.667, 'sine', noteT, phrase.dur * 0.6, 0.015, this._masterGain, 0.03, 0.1);
+            }
+
+            // 鼓点变化（加重第二轮律动）
+            this._softKick(t, 0.045, this._masterGain);
+            this._softHat(t + beat * 0.25, 0.01, this._masterGain);
+            this._softHat(t + beat * 0.5, 0.015, this._masterGain);
+            this._softSnare(t + beat, 0.035, this._masterGain);
+            this._softHat(t + beat * 1.25, 0.01, this._masterGain);
+            this._softHat(t + beat * 1.5, 0.015, this._masterGain);
+            this._softKick(t + beat * 1.75, 0.03, this._masterGain);
+
+            t += sectionDur;
+        }
+
+        const totalDur = (t - now) * 1000;
+        this._loopTimer = setTimeout(() => { this._nodes = []; this._playBattlePhrase(); }, totalDur - 80);
     },
 };
 
