@@ -266,7 +266,10 @@ class Enemy {
         this.hp = this.maxHp;
         this.damage = Math.floor(def.damage * waveMultiplier);
         this.speed = def.speed;
-        this.exp = Math.floor(def.exp * Math.sqrt(waveMultiplier));
+        // 经验缩放：对数增长，避免后期怪物经验爆炸导致升级过快
+        // waveMultiplier=1→1x, =4→1.7x, =9→2.2x, =16→2.6x, 逐渐趋平
+        const expScale = 1 + Math.log2(Math.max(1, waveMultiplier)) * 0.4;
+        this.exp = Math.floor(def.exp * Math.min(expScale, 3.5));
         this.score = def.score;
         this.color = def.color;
         this.colors = def.colors;

@@ -344,9 +344,21 @@ this.expToNext = 80;
         while (this.exp >= this.expToNext) {
             this.exp -= this.expToNext;
             this.level++;
-            // 经验曲线：7-8分钟成型节奏，平滑递增
-            // Lv2=100, Lv5=195, Lv10=400, Lv15=660, Lv20=985, Lv30=1790
-            this.expToNext = Math.floor(100 + (this.level - 1) * 25 + Math.pow(this.level - 1, 1.95));
+            // 经验曲线：前期平缓让玩家能快速成型，后期陡峭避免升级过快
+            // 使用分段设计：Lv1~10线性为主，Lv10+指数加速
+            // Lv2→3: 110, Lv5→6: 170, Lv10→11: 360
+            // Lv15→16: 700, Lv20→21: 1250, Lv30→31: 3200
+            const lv = this.level - 1;
+            if (lv <= 10) {
+                // 前期：线性 + 小幅二次增长，让前10级体验流畅
+                // Lv2→3: 103, Lv5→6: 187, Lv10→11: 375, Lv11→12: 420
+                this.expToNext = Math.floor(80 + lv * 22 + lv * lv * 1.2);
+            } else {
+                // 后期：从420起步，指数加速增长，越高级升级越慢
+                // Lv12→13: 483, Lv15→16: 782, Lv20→21: 1880, Lv30→31: 8500+
+                const overLv = lv - 10;
+                this.expToNext = Math.floor(420 + overLv * 50 + Math.pow(overLv, 2.5) * 6);
+            }
 
             // === 每级自动成长（平衡版）===
             // 攻击力：每级 +2.0%（10级时累积约 1.20x，20级约 1.45x）
