@@ -95,9 +95,13 @@ class WeaponSystem {
             const p = this.projectiles[i];
             p.update(dt);
 
-            // 拖尾
+            // 拖尾：记录位置历史（用于连续线段渲染）
             if (p.trail) {
-                this.particles.addTrail(p.x, p.y, p.color, p.trailSize || 3, 0.2);
+                if (!p._trailHistory) p._trailHistory = [];
+                p._trailHistory.push({ x: p.x, y: p.y });
+                // 限制历史长度（越大的 trailSize 留越长的尾巴）
+                const maxLen = Math.min(Math.floor((p.trailSize || 3) * 4), 18);
+                if (p._trailHistory.length > maxLen) p._trailHistory.shift();
             }
             // 龙卷风侧视拖尾：沿漏斗轮廓散发风屑
             if (p.type === 'wind_slash' && p.alive) {
@@ -1510,6 +1514,47 @@ class WeaponSystem {
     renderProjectiles(ctx, camera, screenW, screenH) {
         const margin = 30;
         const time = performance.now() / 1000;
+
+        // 先渲染所有拖尾（在弹丸本体之下）
+        for (const p of this.projectiles) {
+            if (!p.alive || !p._trailHistory || p._trailHistory.length < 2) continue;
+            const hist = p._trailHistory;
+            const len = hist.length;
+            // 从旧到新画逐渐变粗、逐渐变亮的连续线段
+            const baseWidth = (p.trailSize || 3) * 1.6;
+            const color = p.trailColor || p.color;
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            for (let i = 1; i < len; i++) {
+                const progress = i / (len - 1); // 0(最旧) → 1(最新)
+                const prev = hist[i - 1];
+                const cur = hist[i];
+                const psx = prev.x - camera.x;
+                const psy = prev.y - camera.y;
+                const csx = cur.x - camera.x;
+                const csy = cur.y - camera.y;
+                // 宽度从细到粗（旧端细，新端粗）
+                ctx.lineWidth = baseWidth * progress;
+                ctx.globalAlpha = progress * 0.7;
+                ctx.strokeStyle = color;
+                ctx.beginPath();
+                ctx.moveTo(psx, psy);
+                ctx.lineTo(csx, csy);
+                ctx.stroke();
+            }
+            // 外发光层（更宽更淡，营造光晕感）
+            ctx.globalAlpha = 0.15;
+            ctx.lineWidth = baseWidth * 2.5;
+            ctx.strokeStyle = color;
+            ctx.beginPath();
+            ctx.moveTo(hist[0].x - camera.x, hist[0].y - camera.y);
+            for (let i = 1; i < len; i++) {
+                ctx.lineTo(hist[i].x - camera.x, hist[i].y - camera.y);
+            }
+            ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
+
         for (const p of this.projectiles) {
             if (!p.alive) continue;
             const sx = p.x - camera.x;
